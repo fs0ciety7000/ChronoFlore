@@ -1,5 +1,4 @@
-import { existsSync } from 'node:fs';
-import { statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BESTIARY, GENTLE, HOSTILE, altOf, hourLabel, plateNumber } from '../../src/data/bestiary';

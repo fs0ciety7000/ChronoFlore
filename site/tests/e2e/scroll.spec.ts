@@ -237,8 +237,16 @@ test.describe('docked sleep clock', () => {
 
       await scrollToFraction(page, 0.5);
       await expect(dock(page)).toBeVisible();
-      // Half way, give or take one scrolled pixel (about 2 s on a long mobile page).
-      await expect(dock(page)).toContainText(/04:00:0[0-3]|03:59:5[6-9]/);
+      // Half way, give or take one scrolled pixel: one pixel is 28800 / max seconds
+      // of sleep, so the tolerance follows the page height at every viewport.
+      const max = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+      const tolerance = 28800 / max + 1;
+      await expect
+        .poll(async () => {
+          const m = /(\d+):(\d+):(\d+)/.exec((await dock(page).textContent()) ?? '');
+          return m ? Math.abs(+m[1]! * 3600 + +m[2]! * 60 + +m[3]! - 14400) : Infinity;
+        })
+        .toBeLessThanOrEqual(tolerance);
       const box = (await dock(page).boundingBox())!;
       expect(box.x, 'left side').toBeLessThan(viewport.width / 2);
       expect(box.y + box.height, 'bottom edge').toBeLessThanOrEqual(viewport.height);
