@@ -27,3 +27,6 @@ playwright-report/
 
 # Polyfork models: downloaded at build time (npm run fetch:models), never committed
 site/public/models/polyfork/
+
+# Web build of the game: downloaded at build time (npm run fetch:game), never committed
+site/public/jouer/

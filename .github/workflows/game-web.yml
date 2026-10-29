@@ -1,0 +1,116 @@
+# Builds the Web export of the game and publishes it as chronoflore-web.zip on
+# the rolling prerelease `game-web-latest`. The site build (site/scripts/
+# fetch-game.mjs) downloads that asset into /jouer/: no game binary in git.
+name: Game web build
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'game/**'
+      - '.github/workflows/game-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: game-web
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2
+  RELEASE_TAG: game-web-latest
+  ASSET_NAME: chronoflore-web.zip
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux.x86_64
+
+      - name: Download Godot
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/godot
+          curl -fsSL --retry 3 -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          mv "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" ~/godot/godot
+          chmod +x ~/godot/godot
+          rm -rf /tmp/godot /tmp/godot.zip
+
+      - name: Put Godot on the PATH
+        run: echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      # Only the two files the "Web" preset needs (thread_support=false,
+      # extensions_support=false) are kept, so the ~1.3 GB .tpz is downloaded
+      # once per Godot version.
+      - name: Cache export templates
+        id: cache-templates
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-templates-web-nothreads-${{ env.GODOT_VERSION }}
+
+      - name: Download export templates
+        if: steps.cache-templates.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          dest="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$dest"
+          curl -fsSL --retry 3 -o /tmp/templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q -j -o /tmp/templates.tpz \
+            templates/web_nothreads_release.zip templates/version.txt -d "$dest"
+          rm /tmp/templates.tpz
+          ls -l "$dest"
+
+      - name: Import project
+        run: godot --headless --path game --import
+
+      - name: Run game tests
+        run: godot --headless --path game --script res://tests/test_runner.gd
+
+      - name: Export Web
+        run: |
+          set -euo pipefail
+          mkdir -p build/web
+          godot --headless --path game --export-release "Web" ../build/web/index.html
+          test -s build/web/index.html
+          test -s build/web/index.wasm
+          test -s build/web/index.pck
+
+      - name: Zip export
+        run: |
+          set -euo pipefail
+          cd build/web
+          zip -q -r "../../${ASSET_NAME}" .
+          cd ../..
+          ls -l "${ASSET_NAME}"
+
+      - name: Publish to the rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          notes="Build Web automatique du jeu (dernier commit de ${GITHUB_REF_NAME}).
+
+          Commit : ${GITHUB_SHA}
+          Run : ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --prerelease --title "Jeu Web (dernier build)" --notes "$notes"
+          else
+            gh release create "$RELEASE_TAG" --prerelease --target "$GITHUB_SHA" \
+              --title "Jeu Web (dernier build)" --notes "$notes"
+          fi
+          gh release upload "$RELEASE_TAG" "$ASSET_NAME" --clobber

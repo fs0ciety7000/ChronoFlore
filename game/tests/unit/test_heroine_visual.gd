@@ -155,3 +155,24 @@ func test_swing_trail_follows_the_hoop() -> void:
 		await tree.process_frame
 	assert_eq((v.call("trail_points") as Array).size(), 0, "no net trail for a shot")
 	v.free()
+
+## Exported builds re-pack scenes (instantiate + PackedScene.pack): nodes saved inside the
+## instanced .glb were dropped there, so no tool was ever shown in hand outside the editor.
+func test_hand_tools_survive_a_scene_repack() -> void:
+	for path in ["res://scenes/heroine/heroine_visual.tscn", "res://scenes/heroine/hero2_visual.tscn"]:
+		var edit := (load(path) as PackedScene).instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE)
+		var repacked := PackedScene.new()
+		assert_eq(repacked.pack(edit), OK, path + " re-packs")
+		edit.free()
+		var v := repacked.instantiate() as Node3D
+		tree.root.add_child(v)
+		await tree.process_frame
+		var tools := v.get_node_or_null(v.get("hand_tools_path")) as Node3D
+		assert_true(tools != null, path + ": hand tools built after a re-pack")
+		if tools != null:
+			var attach := tools.get_parent() as BoneAttachment3D
+			assert_true(attach != null and attach.bone_name == "hand.R", path + ": tools on hand.R")
+			var net := tools.get_node_or_null(^"Net") as Node3D
+			assert_true(net != null and net.is_visible_in_tree(), path + ": net shown in hand")
+			assert_eq(v.call("shown_tool_prop"), "Net", path + ": net is the shown prop")
+		v.free()

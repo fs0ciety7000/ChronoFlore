@@ -43,6 +43,7 @@ deploy:  push sur la branche suivie par Coolify -> build du Dockerfile de site/
 
 - Coolify : `site/Dockerfile` (build Astro puis nginx). Variables d'API dans `.env` (voir `.env.example`).
 - DNS : enregistrement Cloudflare `chronoflore.cardormedia.com` vers `COOLIFY_SERVER_IP`.
+- Jeu Web (`/jouer/`) : construit par `.github/workflows/game-web.yml` (release `game-web-latest`), téléchargé au build du site par `npm run fetch:game` avec `GAME_RELEASE_TOKEN` = variable de *build* Coolify, PAT fine-grained `Contents: read` sur ce dépôt (sans lui : page « Le jeu arrive bientôt »).
 
 ## Structure du dépôt
 
