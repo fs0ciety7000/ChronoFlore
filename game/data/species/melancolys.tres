@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"melancolys"
+display_name = "Mélancolys"
+emotion = "mélancolie"
+rarity = 1
+capturable = true
+base_speed = 2.2
+min_hour = 3.0
+behavior = 6
+panic_after = 10.0
+fragment = "(provisoire) Une tristesse douce, de celles qu'on garde parce qu'elles ressemblent à quelqu'un. Elle marche lentement vers l'eau pour s'y cacher. Dans l'étang, plus rien ne l'atteint."
+details = PackedStringArray("(provisoire) Ses pétales tombent comme des paupières lourdes, mais elle sourit encore un peu.", "(provisoire) Sur l'eau, elle flotte comme un nénuphar et regarde le ciel.")

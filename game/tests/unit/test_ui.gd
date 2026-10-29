@@ -73,7 +73,7 @@ func test_herbarium_hides_unknown() -> void:
 	var h := await _add("res://scenes/ui/herbarium.tscn")
 	h.show_species(&"timidelle")
 	assert_eq(h.name_label.text, "???", "unknown page shows ???")
-	assert_eq(h.list_buttons.size(), 4, "four species listed")
+	assert_eq(h.list_buttons.size(), 8, "eight species listed")
 	assert_eq(h.list_buttons[2].text, "???", "unknown entries are hidden in the list")
 	GameState.herbarium.counts[&"timidelle"] = 5
 	h.refresh()

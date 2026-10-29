@@ -1,7 +1,8 @@
 extends "res://tests/test_case.gd"
 ## Hand-made plant models (game/assets/custom/plants/build_plants.py): animations, budget, state.
 
-const SPECIES_IDS: Array[String] = ["revette", "nostalgerbe", "timidelle", "ronce_angoisse"]
+const SPECIES_IDS: Array[String] = ["revette", "nostalgerbe", "timidelle", "ronce_angoisse", "calinette", "souffloine",
+	"melancolys", "lumiole"]
 const HOSTILE_IDS: Array[String] = ["ronce_angoisse"]
 const PLANT_SCENE := "res://scenes/plants/plant.tscn"
 const MIN_TRIS := 800

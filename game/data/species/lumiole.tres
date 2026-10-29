@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"lumiole"
+display_name = "Lumiole"
+emotion = "espoir"
+rarity = 2
+capturable = true
+base_speed = 6.0
+min_hour = 4.0
+behavior = 7
+panic_after = 8.0
+fragment = "(provisoire) Une petite lumière apparue au cœur de la nuit, quand tout semblait trop loin. Elle file à toute allure et laisse derrière elle une traînée de lucioles. La suivre, c'est déjà avancer."
+details = PackedStringArray("(provisoire) Elle flotte juste à hauteur de main, comme pour se laisser rattraper.", "(provisoire) Ses lucioles s'éteignent une à une, mais il en reste toujours une.")

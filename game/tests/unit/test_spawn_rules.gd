@@ -11,8 +11,8 @@ func _ids(list: Array[PlantSpecies]) -> Array:
 
 func test_eligible() -> void:
 	var c := _catalog()
-	assert_eq(_ids(SpawnRules.eligible_capturables(c, 0.0)), [&"revette", &"nostalgerbe"], "0h")
-	assert_eq(_ids(SpawnRules.eligible_capturables(c, 2.0)), [&"revette", &"nostalgerbe", &"timidelle"], "2h")
+	assert_eq(_ids(SpawnRules.eligible_capturables(c, 0.0)), [&"revette", &"nostalgerbe", &"calinette"], "0h")
+	assert_eq(_ids(SpawnRules.eligible_capturables(c, 2.0)), [&"revette", &"nostalgerbe", &"timidelle", &"calinette", &"souffloine"], "2h")
 
 func test_population_and_nightmares() -> void:
 	assert_eq(SpawnRules.target_population(0.0), 6, "pop 0h")
