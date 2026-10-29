@@ -122,6 +122,19 @@ test.describe('scroll drives palette and sleep clock', () => {
       expect(failures, `text under 4.5:1 at ${f}`).toEqual([]);
     }
   });
+
+  test('keeps herbarium text, open pages included, at >= 4.5:1', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto('/');
+    await page.evaluate(() => document.querySelectorAll('#herbier details').forEach((d) => d.setAttribute('open', '')));
+    await expect(page.locator('#herbier details[open] p').first()).toBeVisible();
+    for (const f of [0.3, 0.5, 0.6, 0.78, 0.9]) {
+      await scrollToFraction(page, f);
+      await page.waitForTimeout(100);
+      const failures = await lowContrastText(page);
+      expect(failures, `text under 4.5:1 with open pages at ${f}`).toEqual([]);
+    }
+  });
 });
 
 /** Contrast of an element's text against the real background colour of `bgSelector`. */
@@ -167,6 +180,10 @@ test('keeps .btn--primary and surface-card text at >= 4.5:1 across the crossover
     expect(quiet, `.btn--quiet at ${f}`).toBeGreaterThanOrEqual(4.5);
     const note = await contrastOn(page, '.herbarium__note', '.herbarium__note');
     expect(note, `.herbarium__note at ${f}`).toBeGreaterThanOrEqual(4.5);
+    const rarity = await contrastOn(page, '.plate__rarity', '.plate__rarity');
+    expect(rarity, `.plate__rarity at ${f}`).toBeGreaterThanOrEqual(4.5);
+    const hostile = await contrastOn(page, '.plate__hostile', '.plate__hostile');
+    expect(hostile, `.plate__hostile at ${f}`).toBeGreaterThanOrEqual(4.5);
     const share = await contrastOn(page, '.share__card p', '.share__card');
     expect(share, `.share__card p at ${f}`).toBeGreaterThanOrEqual(4.5);
   }
@@ -220,7 +237,8 @@ test.describe('docked sleep clock', () => {
 
       await scrollToFraction(page, 0.5);
       await expect(dock(page)).toBeVisible();
-      await expect(dock(page)).toContainText('04:00:00');
+      // Half way, give or take one scrolled pixel (about 2 s on a long mobile page).
+      await expect(dock(page)).toContainText(/04:00:0[0-3]|03:59:5[6-9]/);
       const box = (await dock(page).boundingBox())!;
       expect(box.x, 'left side').toBeLessThan(viewport.width / 2);
       expect(box.y + box.height, 'bottom edge').toBeLessThanOrEqual(viewport.height);
