@@ -39,32 +39,48 @@ API="$COOLIFY_API_URL/api/v1"
 Le `Dockerfile` fait `npm ci` puis `npm run build` (Astro) et sert `dist/` avec nginx.
 `nginx.conf` : cache long (`immutable`, 1 an) sur `/_astro/*` et `/models/*`, `no-cache` sur le HTML.
 
+> **Attention** : tout fichier sous `/models/` est servi `immutable` pendant un an. Un modèle modifié
+> doit donc changer de nom (nom versionné ou haché, ex. `island.3f9a2c.glb`), sinon les navigateurs
+> garderont l'ancienne version.
+
 ## 1. Coolify : découverte (lecture seule)
 
 ```bash
 curl -sS "${CO[@]}" "$API/servers"      | jq -c '.[] | {uuid,name,ip}'
 curl -sS "${CO[@]}" "$API/projects"     | jq -c '.[] | {uuid,name}'
 curl -sS "${CO[@]}" "$API/github-apps"  | jq -c '.[] | {id,uuid,name,is_public}'
+
+# Valeurs réutilisées à l'étape 2 (vides si l'objet n'existe pas encore)
+SERVER_UUID=$(curl -sS "${CO[@]}" "$API/servers" | jq -r '.[] | select(.name=="localhost") | .uuid')
+GITHUB_APP_UUID=$(curl -sS "${CO[@]}" "$API/github-apps" | jq -r '[.[] | select(.is_public==false)][0].uuid // empty')
+PROJECT_UUID=$(curl -sS "${CO[@]}" "$API/projects" | jq -r '[.[] | select(.name=="ChronoFlore")][0].uuid // empty')
 # Une application porte-t-elle déjà ce domaine ? Si oui, la réutiliser.
-curl -sS "${CO[@]}" "$API/applications" \
-  | jq -c '.[] | select((.fqdn // "") | contains("chronoflore.cardormedia.com")) | {uuid,name}'
+APP_UUID=$(curl -sS "${CO[@]}" "$API/applications" \
+  | jq -r '[.[] | select((.fqdn // "") | contains("chronoflore.cardormedia.com"))][0].uuid // empty')
+echo "server=$SERVER_UUID github_app=$GITHUB_APP_UUID project=${PROJECT_UUID:-<à créer>} app=${APP_UUID:-<à créer>}"
 ```
+
+Vérifier que `SERVER_UUID` et `GITHUB_APP_UUID` sont non vides (et uniques) avant de continuer.
 
 ## 2. Coolify : projet et application (seulement s'ils n'existent pas)
 
 ```bash
 # Projet dédié (convention : un projet Coolify par produit)
-PROJECT_UUID=$(curl -sS "${CO[@]}" -X POST "$API/projects" \
-  -d '{"name":"ChronoFlore","description":"Site vitrine ChronoFlore"}' | jq -r .uuid)
+if [ -z "$PROJECT_UUID" ]; then
+  PROJECT_UUID=$(curl -sS "${CO[@]}" -X POST "$API/projects" \
+    -d '{"name":"ChronoFlore","description":"Site vitrine ChronoFlore"}' | jq -r .uuid)
+fi
 
-# Application depuis le dépôt privé via la GitHub App (uuid lu à l'étape 1)
-APP_UUID=$(curl -sS "${CO[@]}" -X POST "$API/applications/private-github-app" -d "$(jq -n \
-  --arg p "$PROJECT_UUID" --arg s "r0os4cws004gs88k840wckok" --arg g "cckkooog08wk8088gg8wg4sk" '{
-    project_uuid:$p, environment_name:"production", server_uuid:$s, github_app_uuid:$g,
-    git_repository:"fs0ciety7000/ChronoFlore", git_branch:"claude/focused-cerf-d2kgbx",
-    build_pack:"dockerfile", base_directory:"/site", dockerfile_location:"/Dockerfile",
-    ports_exposes:"80", domains:"https://chronoflore.cardormedia.com",
-    name:"chronoflore-site", instant_deploy:false }')" | jq -r .uuid)
+# Application depuis le dépôt privé via la GitHub App (uuids lus à l'étape 1)
+if [ -z "$APP_UUID" ]; then
+  APP_UUID=$(curl -sS "${CO[@]}" -X POST "$API/applications/private-github-app" -d "$(jq -n \
+    --arg p "$PROJECT_UUID" --arg s "$SERVER_UUID" --arg g "$GITHUB_APP_UUID" '{
+      project_uuid:$p, environment_name:"production", server_uuid:$s, github_app_uuid:$g,
+      git_repository:"fs0ciety7000/ChronoFlore", git_branch:"claude/focused-cerf-d2kgbx",
+      build_pack:"dockerfile", base_directory:"/site", dockerfile_location:"/Dockerfile",
+      ports_exposes:"80", domains:"https://chronoflore.cardormedia.com",
+      name:"chronoflore-site", instant_deploy:false }')" | jq -r .uuid)
+fi
 ```
 
 ## 3. Cloudflare : enregistrement DNS
