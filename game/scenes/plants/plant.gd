@@ -1,7 +1,7 @@
 class_name Plant
 extends CharacterBody3D
-## A capturable (or nightmare) plant: state machine, flight, tool hits and its hand-made model
-## (PlantModelVisual), whose animation follows the state.
+## A capturable (or nightmare) plant: state machine, flight and tool hits. Its hand-made model
+## is driven by a PlantPresenter; a hostile's attacks go through its HostileAttack.
 ## IslandShape is the only source of truth for edges: physics never decides a fall.
 
 enum State { WANDER, ALERT, FLEE, PANIC, BURROWED, EMERGING, CAPTURED, ESCAPED }
@@ -65,8 +65,8 @@ var speed_multiplier: float = 1.0
 var island: IslandShape
 var _behavior: PlantBehavior
 var _rng := RandomNumberGenerator.new()
-var _model: PlantModelVisual
-var _glow: float = 0.0 ## last plant_glow, reapplied whenever the visual is rebuilt
+var _presenter: PlantPresenter
+var _attack: HostileAttack
 
 var _has_threat: bool = false
 var _threat: Vector2 = Vector2.ZERO
@@ -82,17 +82,15 @@ var _wander_pause: float = 0.0
 var _fall_speed: float = 0.0
 var _fall_dir: Vector2 = Vector2.ZERO
 var _fall_travel: float = 0.0 ## ground distance run outward since the escape
-var _anim_t: float = 0.0
 var _moving: bool = false
-var _stun_left: float = 0.0
 var _hidden: bool = false ## last is_hidden(), to switch the collider when it changes
-var _hover: float = 0.0 ## smoothed model height above the ground
 
 func _init() -> void:
 	torpor = Torpor.new()
 	torpor.fell_asleep.connect(func() -> void: fell_asleep.emit(self))
 	_rng.randomize()
-	_anim_t = _rng.randf() * TAU # desynchronise idle bobs
+	_presenter = PlantPresenter.new(self, _rng)
+	_attack = HostileAttack.new(self, _presenter)
 
 func _ready() -> void:
 	add_to_group("plants")
@@ -102,8 +100,8 @@ func setup(p_species: PlantSpecies, p_island: IslandShape, p_speed_multiplier: f
 	island = p_island
 	speed_multiplier = p_speed_multiplier
 	_behavior = PlantBehavior.for_species(species)
-	_hover = hover_height()
-	_build_visual()
+	_presenter.reset_hover()
+	_presenter.build()
 
 ## Heroine position and aim direction (XZ), fed every frame by the night session.
 func set_threat(position_xz: Vector2, aim_dir: Vector2) -> void:
@@ -201,15 +199,13 @@ func flee_direction() -> Vector2:
 
 ## Pastel emission driven by the night palette's plant_glow (0..1).
 func set_glow(value: float) -> void:
-	_glow = value
-	if _model != null:
-		_model.set_glow(value)
+	_presenter.set_glow(value)
 
 func _physics_process(delta: float) -> void:
 	step(delta)
 
 func _process(delta: float) -> void:
-	_animate_visual(delta)
+	_presenter.animate(delta, _moving)
 
 func is_hostile() -> bool:
 	return species != null and species.hostile
@@ -220,24 +216,24 @@ func can_attack() -> bool:
 
 ## Adds a hazard next to the plant (same parent: NightSession's Plants root) and starts it.
 func spawn_hazard(hazard: Hazard, at: Vector3, telegraph: float) -> Hazard:
-	var parent := get_parent() if get_parent() != null else self
-	parent.add_child(hazard)
-	hazard.setup(at, telegraph)
-	return hazard
+	return _attack.spawn_hazard(hazard, at, telegraph)
 
 ## Adds a world-placed effect (ground sign) that dies with the plant but does not follow it.
 func add_effect(node: Node3D) -> void:
-	node.top_level = true
-	add_child(node)
+	_attack.add_effect(node)
 
 ## Plays the model's Attack so that its strike lands `impact_in` seconds from now (0: at once).
 func play_attack(impact_in: float = 0.0) -> void:
-	if _model != null:
-		_model.play_attack(impact_in)
+	_attack.play_attack(impact_in)
 
 ## True while a hostile rests after an accepted contact hit.
 func is_stunned() -> bool:
-	return _stun_left > 0.0
+	return _attack.is_stunned()
+
+## Drops the behavior's current cycle (charge, wind-up, hop).
+func reset_behavior() -> void:
+	if _behavior != null:
+		_behavior.reset()
 
 ## One simulation tick (called by _physics_process; tests call it directly).
 func step(delta: float) -> void:
@@ -251,21 +247,21 @@ func step(delta: float) -> void:
 		_behavior.tick_hidden(self, delta)
 		_update_hidden()
 		return
-	_sync_animation()
+	_presenter.sync_animation()
 	_state_time += delta
 	var dist := xz().distance_to(_threat) if _has_threat else INF
 	var dir := Vector2.ZERO
 	match state:
 		State.WANDER:
 			if is_hostile():
-				if _stun_left > 0.0:
-					_stun_left -= delta
+				if _attack.is_stunned():
+					_attack.tick_stun(delta)
 				elif _has_threat:
 					# Read before the tick: the last charge frame still hurts, a wind-up never does.
 					var hurts := _behavior.contact_hurts()
 					dir = _behavior.desired_velocity(self, delta)
 					if hurts:
-						_check_contact(dist)
+						_attack.check_contact(dist)
 				elif _behavior.wanders():
 					dir = _wander(delta)
 			else:
@@ -331,7 +327,7 @@ func _set_state(value: State) -> void:
 	if shape != null:
 		var off := value == State.BURROWED or value == State.CAPTURED or value == State.ESCAPED
 		shape.set_deferred("disabled", off)
-	_sync_animation()
+	_presenter.sync_animation()
 
 ## Collider off while hidden in the pond (the model stays, sunk to a floating lily).
 func _update_hidden() -> void:
@@ -342,12 +338,7 @@ func _update_hidden() -> void:
 	var shape := get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if shape != null:
 		shape.set_deferred("disabled", hidden)
-	_sync_animation()
-
-## Idle/Move/Sleep/Caught on the model, from the state and the torpor.
-func _sync_animation() -> void:
-	if _model != null:
-		_model.play_state(State.WANDER if is_hidden() else state, torpor.is_asleep())
+	_presenter.sync_animation()
 
 func _alert_from_hit() -> void:
 	if not is_hostile() and (state == State.WANDER or state == State.ALERT):
@@ -397,17 +388,6 @@ func _emerge() -> void:
 		target = island.clamp_walkable(target, EDGE_MARGIN, OBSTACLE_MARGIN)
 	_set_xz(target)
 	state = State.EMERGING
-
-func _check_contact(dist: float) -> void:
-	if dist >= CONTACT_DISTANCE or torpor.is_asleep() or not is_inside_tree():
-		return
-	var heroine := get_tree().get_first_node_in_group("heroine")
-	if heroine != null and heroine.has_method("take_nightmare_hit"):
-		if heroine.call("take_nightmare_hit", xz()) == true:
-			_stun_left = CONTACT_STUN_DURATION
-			_behavior.reset() # a charge or a wind-up never outlives the hit
-			if _model != null:
-				_model.play_attack()
 
 func _wander(delta: float) -> Vector2:
 	if _wander_pause > 0.0:
@@ -472,32 +452,3 @@ func _set_xz(p: Vector2) -> void:
 		global_position = Vector3(p.x, global_position.y, p.y)
 	else:
 		position = Vector3(p.x, position.y, p.y)
-
-func _build_visual() -> void:
-	var holder := get_node_or_null("Visual") as Node3D
-	if holder == null:
-		return
-	for child in holder.get_children():
-		child.queue_free()
-	_model = null
-	if species == null or species.visual_scene == null:
-		return
-	var visual := species.visual_scene.instantiate()
-	holder.add_child(visual)
-	_model = visual as PlantModelVisual # owns per-plant material copies
-	set_glow(_glow)
-	_sync_animation()
-
-func _animate_visual(delta: float) -> void:
-	var visual := get_node_or_null("Visual") as Node3D
-	if visual == null or state == State.CAPTURED:
-		return # the capture tween owns the visual's scale
-	_anim_t += delta
-	_hover = lerpf(_hover, hover_height(), 1.0 - exp(-HOVER_RATE * delta))
-	var offset := Vector3(0.0, _hover, 0.0) # sleep, flight and capture are the model's own animations
-	if not torpor.is_asleep():
-		if state == State.ALERT:
-			offset.x = sin(_anim_t * 70.0) * TREMBLE_AMPLITUDE
-		elif state == State.WANDER and _moving:
-			offset.y += absf(sin(_anim_t * BOB_FREQ)) * BOB_HEIGHT * 2.0
-	visual.position = offset
