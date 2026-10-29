@@ -1,6 +1,6 @@
 """Generate the pastel placeholder visuals of the plant species (primitive meshes, .tscn).
 
-Usage: python3 scripts/gen_plant_visuals.py game/scenes/plants/visuals
+Usage: python3 game/scenes/plants/visuals/gen_plant_visuals.py game/scenes/plants/visuals
 Front of every visual is +Z (Plant turns its Visual to face its motion).
 """
 import math
@@ -60,7 +60,6 @@ def y_to(d):
     up = (0, 1, 0) if abs(y) < 0.99 else (1, 0, 0)
     ax = (up[1]*z - up[2]*y, up[2]*x - up[0]*z, up[0]*y - up[1]*x)
     n = math.sqrt(sum(a*a for a in ax)); ax = tuple(a/n for a in ax)
-    az = (ax[1]*y - ax[2]*x, ax[2]*x - ax[0]*z, ax[0]*y - ax[1]*x)
     az = (ax[1]*z - ax[2]*y, ax[2]*x - ax[0]*z, ax[0]*y - ax[1]*x)
     return [[ax[0], x, az[0]], [ax[1], y, az[1]], [ax[2], z, az[2]]]
 
