@@ -65,6 +65,11 @@ test.describe('static one-page layout', () => {
     expect(errors).toEqual([]);
   });
 
+  test('hero links to the playable game at /jouer/', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.hero .actions a[href="/jouer/"]')).toHaveText('Jouer au prototype');
+  });
+
   test('keyboard: Tab reaches "Le rêve" then "Partager le rêve"', async ({ page }) => {
     await page.goto('/');
     const focused = () =>
