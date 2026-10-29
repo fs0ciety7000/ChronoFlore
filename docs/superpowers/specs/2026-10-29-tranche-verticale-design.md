@@ -1,6 +1,6 @@
 # ChronoFlore — Tranche verticale : design
 
-Date : 2026-10-29 · Statut : brouillon à valider
+Date : 2026-10-29 · Statut : validé par l'utilisateur
 
 ## 1. Intention
 
