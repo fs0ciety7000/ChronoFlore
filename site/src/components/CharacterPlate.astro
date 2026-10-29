@@ -1,0 +1,66 @@
+---
+// A character plate: portrait card beside the plate heading and its copy.
+// `mirrored` puts the portrait on the right on desktop (the DOM order, and so
+// the small-screen order, stays portrait first).
+import type { CharacterKey } from '../scripts/characters';
+import PlateHeading from './PlateHeading.astro';
+import Portrait from './Portrait.astro';
+
+interface Props {
+  id: string;
+  plate: string;
+  title: string;
+  character: CharacterKey;
+  mirrored?: boolean;
+}
+const { id, plate, title, character, mirrored = false } = Astro.props;
+---
+
+<section id={id} class:list={['character wrap section', { 'character--mirrored': mirrored }]} data-scene={id} aria-labelledby={`${id}-title`}>
+  <Portrait character={character} />
+  <div class="character__text">
+    <PlateHeading plate={plate} id={`${id}-title`}>{title}</PlateHeading>
+    <slot />
+  </div>
+</section>
+
+<style>
+  .character {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+    gap: 2rem 4rem;
+  }
+  @media (min-width: 56rem) {
+    .character {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    }
+    .character--mirrored {
+      grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    }
+    .character--mirrored > :global(.portrait) {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+    }
+    .character--mirrored > .character__text {
+      grid-column: 1;
+      grid-row: 1;
+    }
+  }
+  .character__text {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-width: 34rem;
+    font-size: var(--step-lead);
+    line-height: 1.55;
+  }
+  .character__text > :global(p) {
+    margin: 0;
+    text-wrap: pretty;
+  }
+  .character__text > :global(.plate-heading) {
+    margin-bottom: 0.5rem;
+  }
+</style>

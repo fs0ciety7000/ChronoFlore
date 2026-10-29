@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-const ANCHORS = ['top', 'reve', 'chasseuse', 'outils', 'herbier', 'partager'];
-const HEROINE_PLACEHOLDER = "[Rendu 3D de l'héroïne — à venir]";
+const ANCHORS = ['top', 'reve', 'chasseuse', 'compagnon', 'outils', 'herbier', 'partager'];
 
 test.describe('static one-page layout', () => {
-  test('renders the opening, all sections and the placeholders', async ({ page }) => {
+  test('renders the opening, all sections and the portraits', async ({ page }) => {
     await page.goto('/');
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
@@ -17,7 +16,8 @@ test.describe('static one-page layout', () => {
     }
 
     await expect(page.locator('[data-specimen]')).toHaveCount(4);
-    await expect(page.locator('#chasseuse [data-heroine]')).toHaveText(HEROINE_PLACEHOLDER);
+    await expect(page.locator('#chasseuse [data-portrait="heroine"]')).toHaveCount(1);
+    await expect(page.locator('#compagnon [data-portrait="companion"]')).toHaveCount(1);
 
     await expect(page.locator('output#countdown')).toHaveText('00:00:00');
     // Served as the poster; the live 3D scene may already have replaced it.

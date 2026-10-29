@@ -1,0 +1,63 @@
+---
+// A character card: still image (rendered from the real model by
+// scripts/render-poster.mjs), upgraded to a live 3D portrait by
+// src/scripts/portraits/ when the device can take it.
+import { CHARACTERS, type CharacterKey } from '../scripts/characters';
+import heroine from '../assets/portraits/heroine.webp';
+import companion from '../assets/portraits/companion.webp';
+
+interface Props {
+  character: CharacterKey;
+}
+const { character } = Astro.props;
+const { label } = CHARACTERS[character];
+const still = { heroine, companion }[character];
+---
+
+<div class="portrait" data-portrait={character} data-state="still" role="img" aria-label={label} data-reveal>
+  <img class="portrait__still" src={still.src} width={still.width} height={still.height} alt={label} loading="lazy" decoding="async" />
+</div>
+
+<style>
+  .portrait {
+    position: relative;
+    width: 100%;
+    max-width: 28rem;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: 2rem;
+    /* A soft light behind the figure, on the --field card of the plate. */
+    background:
+      radial-gradient(60% 46% at 50% 40%, color-mix(in srgb, var(--surface) 62%, transparent), transparent 72%),
+      radial-gradient(48% 10% at 50% 86%, color-mix(in srgb, var(--lavender) 30%, transparent), transparent 100%),
+      var(--field);
+    color: var(--on-field);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .portrait:focus-visible {
+    outline-offset: 4px;
+    border-radius: 2rem;
+  }
+  .portrait__still,
+  .portrait :global(.portrait__canvas) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .portrait__still {
+    object-fit: cover;
+    transition: opacity 400ms var(--ease-out);
+  }
+  .portrait[data-state='live'] .portrait__still {
+    opacity: 0;
+  }
+  .portrait :global(.portrait__canvas) {
+    animation: portrait-in 400ms var(--ease-out);
+  }
+  @keyframes portrait-in {
+    from {
+      opacity: 0;
+    }
+  }
+</style>
