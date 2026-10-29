@@ -59,6 +59,14 @@ func test_spawn_keeps_targets_and_distance() -> void:
 	assert_eq(_count(s, true) + _count(s, false), plants.size(), "spawn_tick refills the population")
 	_end(s)
 
+## Spawns must stay within the visible ground so a new plant can be seen (16:9 viewport).
+func test_spawn_distance_fits_the_camera_view() -> void:
+	var half_height_ground := IsoCamera.ORTHO_SIZE * 0.5 / sin(deg_to_rad(-IsoCamera.PITCH_DEG))
+	var half_width_ground := IsoCamera.ORTHO_SIZE * 0.5 * 16.0 / 9.0
+	var visible := minf(half_height_ground, half_width_ground)
+	assert_true(NightSession.SPAWN_MIN_DISTANCE <= visible - 1.0,
+			"spawn min distance %.2f <= visible half-extent %.2f - 1 m" % [NightSession.SPAWN_MIN_DISTANCE, visible])
+
 func test_spawn_point_far_from_heroine() -> void:
 	var s: NightSession = await _session()
 	var shape: IslandShape = s.island.shape
