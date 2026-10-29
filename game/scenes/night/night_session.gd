@@ -324,7 +324,7 @@ func _on_plant_captured(plant: Plant) -> void:
 	captures.append(species.id)
 	if plant.state != Plant.State.CAPTURED and not plant.is_queued_for_deletion():
 		plant.queue_free() # a real capture frees itself after its shrink tween
-	clock.add_minutes(species.minutes_reward())
+	clock.add_minutes(GameState.capture_minutes(species))
 	var speed := SpawnRules.speed_multiplier(clock.hour())
 	for p in live_plants():
 		p.speed_multiplier = speed

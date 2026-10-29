@@ -76,3 +76,25 @@ func test_finish_night_lists_new_species() -> void:
 	assert_eq(r["new_species"], [&"nostalgerbe"], "only this night's discoveries")
 	assert_eq(r["captures"], [&"revette", &"nostalgerbe"], "captures echoed")
 	_end()
+
+func test_capture_minutes_defaults_to_species_reward() -> void:
+	var saved := GameState.debug_minutes_multiplier
+	GameState.debug_minutes_multiplier = 1
+	var revette := _species(&"revette")
+	assert_eq(GameState.capture_minutes(revette), revette.minutes_reward(), "multiplier 1 keeps the reward")
+	GameState.debug_minutes_multiplier = saved
+
+func test_capture_minutes_applies_debug_multiplier_in_debug_builds() -> void:
+	var saved := GameState.debug_minutes_multiplier
+	GameState.debug_minutes_multiplier = 24
+	var revette := _species(&"revette")
+	var expected := revette.minutes_reward() * (24 if OS.is_debug_build() else 1)
+	assert_eq(GameState.capture_minutes(revette), expected, "multiplier only in debug builds")
+	GameState.debug_minutes_multiplier = saved
+
+func test_parse_multiplier_rejects_invalid_values() -> void:
+	assert_eq(GameState.parse_multiplier("24"), 24, "valid integer")
+	assert_eq(GameState.parse_multiplier(""), 1, "empty")
+	assert_eq(GameState.parse_multiplier("abc"), 1, "not a number")
+	assert_eq(GameState.parse_multiplier("0"), 1, "zero clamps to 1")
+	assert_eq(GameState.parse_multiplier("-5"), 1, "negative clamps to 1")

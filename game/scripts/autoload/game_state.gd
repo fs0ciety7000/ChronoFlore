@@ -14,12 +14,40 @@ var save_path: String = SaveStore.DEFAULT_PATH
 var last_night: Dictionary = {} ## filled by finish_night, read by the wake screen
 ## Last chosen mode; kept for the whole session (title and wake screens do not reset it).
 var mode: Mode = Mode.SOLO_HEROINE
+## Playtest speed-up: scales the minutes a capture adds. Only read in debug builds.
+## Set from the Web URL (`?minutes_x=24`) or the command line (`-- --minutes-x=24`).
+var debug_minutes_multiplier: int = 1
 
 ## Species discovered since begin_night(), in discovery order.
 var _night_discoveries: Array[StringName] = []
 
 func _ready() -> void:
+	if OS.is_debug_build():
+		debug_minutes_multiplier = parse_multiplier(_debug_multiplier_arg())
 	load_save()
+
+## Minutes a capture of `species` adds to the clock (debug multiplier applied in debug builds).
+func capture_minutes(species: PlantSpecies) -> int:
+	var minutes := species.minutes_reward()
+	if OS.is_debug_build():
+		minutes *= maxi(debug_minutes_multiplier, 1)
+	return minutes
+
+## Parses a multiplier argument; anything invalid or below 1 gives 1.
+static func parse_multiplier(text: String) -> int:
+	if not text.is_valid_int():
+		return 1
+	return maxi(text.to_int(), 1)
+
+func _debug_multiplier_arg() -> String:
+	if OS.has_feature("web"):
+		var value: Variant = JavaScriptBridge.eval(
+			"new URLSearchParams(window.location.search).get('minutes_x') || ''", true)
+		return str(value) if value != null else ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--minutes-x="):
+			return arg.trim_prefix("--minutes-x=")
+	return ""
 
 func load_save() -> void:
 	herbarium = SaveStore.load_or_new(save_path)
