@@ -1,6 +1,6 @@
 # Site vitrine et logo ChronoFlore — design
 
-Date : 2026-10-29 · Statut : validé. Révision : la nuit dure 8 h (compte à rebours 08:00:00), décision utilisateur. Le plan d'implémentation prévoit un point de contrôle visuel (logo + page statique) avant le gros du travail 3D.
+Date : 2026-10-29 · Statut : validé. Révision : la nuit dure 8 h ; horloge du sommeil qui monte de 00:00:00 à 08:00:00 (pas de compte à rebours), décisions utilisateur. Le plan d'implémentation prévoit un point de contrôle visuel (logo + page statique) avant le gros du travail 3D.
 
 ## Intention
 
