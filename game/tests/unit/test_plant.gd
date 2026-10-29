@@ -355,13 +355,13 @@ func test_set_glow_drives_emission() -> void:
 	var lit := 0
 	for node in a.get_node("Visual").find_children("*", "MeshInstance3D", true, false):
 		var mat := (node as MeshInstance3D).get_active_material(0) as StandardMaterial3D
-		if mat != null and mat.emission_enabled and mat.emission_energy_multiplier > 0.0:
+		if mat != null and mat.emission_enabled and mat.emission_energy_multiplier > PlantModelVisual.LIGHT_LIFT + 0.001:
 			lit += 1
 	assert_true(lit > 0, "glow lights the visual")
 	var leaked := false
 	for node in b.get_node("Visual").find_children("*", "MeshInstance3D", true, false):
 		var mat := (node as MeshInstance3D).get_active_material(0) as StandardMaterial3D
-		if mat != null and mat.emission_enabled and mat.emission_energy_multiplier > 0.0:
+		if mat != null and mat.emission_enabled and mat.emission_energy_multiplier > PlantModelVisual.LIGHT_LIFT + 0.001:
 			leaked = true
 	assert_false(leaked, "materials are per plant")
 	_cleanup()

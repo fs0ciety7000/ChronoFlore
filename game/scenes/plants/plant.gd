@@ -1,6 +1,7 @@
 class_name Plant
 extends CharacterBody3D
-## A capturable (or nightmare) plant: state machine, flight, tool hits and placeholder visual.
+## A capturable (or nightmare) plant: state machine, flight, tool hits and its hand-made model
+## (PlantModelVisual).
 ## IslandShape is the only source of truth for edges: physics never decides a fall.
 
 enum State { WANDER, ALERT, FLEE, PANIC, BURROWED, EMERGING, CAPTURED, ESCAPED }
@@ -66,7 +67,7 @@ var speed_multiplier: float = 1.0
 var island: IslandShape
 var _behavior: PlantBehavior
 var _rng := RandomNumberGenerator.new()
-var _materials: Array[StandardMaterial3D] = []
+var _model: PlantModelVisual
 var _glow: float = 0.0 ## last plant_glow, reapplied whenever the visual is rebuilt
 
 var _has_threat: bool = false
@@ -165,14 +166,8 @@ func flee_direction() -> Vector2:
 ## Pastel emission driven by the night palette's plant_glow (0..1).
 func set_glow(value: float) -> void:
 	_glow = value
-	_apply_glow()
-
-func _apply_glow() -> void:
-	var value := _glow
-	for mat in _materials:
-		mat.emission_enabled = value > 0.001
-		mat.emission = mat.albedo_color
-		mat.emission_energy_multiplier = maxf(value, 0.0) * GLOW_ENERGY
+	if _model != null:
+		_model.set_glow(value)
 
 func _physics_process(delta: float) -> void:
 	step(delta)
@@ -376,21 +371,13 @@ func _build_visual() -> void:
 		return
 	for child in holder.get_children():
 		child.queue_free()
-	_materials.clear()
+	_model = null
 	if species == null or species.visual_scene == null:
 		return
 	var visual := species.visual_scene.instantiate()
 	holder.add_child(visual)
-	# Per-plant material copies so glow and tints never leak between instances.
-	for node in visual.find_children("*", "MeshInstance3D", true, false):
-		var mi := node as MeshInstance3D
-		var mat := mi.get_active_material(0) as StandardMaterial3D
-		if mat == null:
-			continue
-		var copy := mat.duplicate() as StandardMaterial3D
-		mi.material_override = copy
-		_materials.append(copy)
-	_apply_glow()
+	_model = visual as PlantModelVisual # owns per-plant material copies
+	set_glow(_glow)
 
 func _animate_visual(delta: float) -> void:
 	var visual := get_node_or_null("Visual") as Node3D
