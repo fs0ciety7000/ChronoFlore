@@ -110,7 +110,18 @@ func test_nightmare_knockback() -> void:
 	h.take_nightmare_hit(Vector2(8.5, 0.0))
 	for i in 20:
 		h._physics_process(1.0 / 60.0)
+	assert_true(h.global_position.x > 9.0, "pushed outward towards the edge")
 	assert_true(h.global_position.x <= 10.0 - Heroine.EDGE_MARGIN + 0.05, "clamped inside the island")
+	# A knockback that would land in the pond is pushed out of it.
+	shape.obstacles = PackedVector3Array([Vector3(2.0, 0.3, 1.0)])
+	h.lucidity = Lucidity.new(5)
+	h.global_position = Vector3(0.5, 0.0, 0.0)
+	h.take_nightmare_hit(Vector2(-0.5, 0.0))
+	for i in 20:
+		h._physics_process(1.0 / 60.0)
+	var p := Vector2(h.global_position.x, h.global_position.z)
+	assert_true(p.distance_to(Vector2(0.5, 0.0)) > 0.5, "still knocked back")
+	assert_true(shape.is_clear(p, Heroine.EDGE_MARGIN - 0.05), "not inside the pond (%s)" % p)
 	h.free()
 
 func test_nightmare_hit() -> void:

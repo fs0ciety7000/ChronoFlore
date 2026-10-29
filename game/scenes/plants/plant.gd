@@ -305,7 +305,7 @@ func _emerge() -> void:
 		dir = Vector2.from_angle(_rng.randf() * TAU)
 	var target := xz() + dir * _rng.randf_range(EMERGE_MIN_DISTANCE, EMERGE_MAX_DISTANCE)
 	if island != null:
-		target = island.clamp_inside(island.push_out_of_obstacles(target, OBSTACLE_MARGIN), EDGE_MARGIN)
+		target = island.clamp_walkable(target, EDGE_MARGIN, OBSTACLE_MARGIN)
 	_set_xz(target)
 	state = State.EMERGING
 
@@ -325,7 +325,7 @@ func _wander(delta: float) -> Vector2:
 	if not _wander_has_target or pos.distance_to(_wander_target) < 0.2:
 		var target := pos + Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(WANDER_HOP_MIN, WANDER_HOP_MAX)
 		if island != null:
-			target = island.clamp_inside(island.push_out_of_obstacles(target, OBSTACLE_MARGIN), WANDER_MARGIN)
+			target = island.clamp_walkable(target, WANDER_MARGIN, OBSTACLE_MARGIN)
 		_wander_target = target
 		_wander_has_target = true
 		_wander_pause = _rng.randf_range(WANDER_PAUSE_MIN, WANDER_PAUSE_MAX)

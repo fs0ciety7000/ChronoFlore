@@ -53,6 +53,14 @@ func test_obstacles() -> void:
 		var p := s.random_point(rng, 0.5)
 		assert_true(s.is_clear(p, 0.5), "random point avoids the obstacle %s" % p)
 
+func test_clamp_walkable_stays_clear_near_the_edge() -> void:
+	var s := _square()
+	s.obstacles = PackedVector3Array([Vector3(9.5, 5, 1.5)]) # pond touching the east edge
+	var p := s.clamp_walkable(Vector2(11, 5), 0.5, 0.4)
+	assert_true(s.is_clear(p, 0.4 - 0.0001), "out of the obstacle after clamping (%s)" % p)
+	var q := s.clamp_walkable(Vector2(3, 3), 0.5, 0.4)
+	assert_eq(q, Vector2(3, 3), "free point unchanged")
+
 func test_centroid() -> void:
 	var c := _square().centroid()
 	assert_near(c.x, 5.0, 0.0001, "cx")

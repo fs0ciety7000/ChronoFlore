@@ -313,7 +313,23 @@ func test_stalker_stuns_after_accepted_hit() -> void:
 	assert_eq(heroine.get("hits"), 2, "contact can hit again after the stun")
 	_cleanup()
 
-func test_wander_avoids_obstacles() -> void:
+func test_wander_targets_avoid_obstacles() -> void:
+	var plant := _spawn("revette", Vector2(4, 10))
+	var shape := _square()
+	shape.obstacles = PackedVector3Array([Vector3(8, 10, 3), Vector3(1.5, 10, 1)])
+	plant.island = shape
+	var checked := 0
+	for i in 1200:
+		plant.step(DT)
+		if plant._wander_has_target:
+			checked += 1
+			assert_true(shape.is_clear(plant._wander_target, Plant.OBSTACLE_MARGIN - 0.001),
+					"wander target clear of obstacles %s" % plant._wander_target)
+			assert_true(shape.contains(plant._wander_target), "wander target on the island")
+	assert_true(checked > 0, "wander targets were picked")
+	_cleanup()
+
+func test_emerge_avoids_obstacles() -> void:
 	var plant := _spawn("revette", Vector2(10, 10))
 	var shape := _square()
 	shape.obstacles = PackedVector3Array([Vector3(10, 10, 3)])

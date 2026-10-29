@@ -77,6 +77,12 @@ func push_out_of_obstacles(p: Vector2, margin: float) -> Vector2:
 			result = c + dir * (o.z + margin)
 	return result
 
+## p moved out of obstacles, inside the outline with edge_margin, then out of obstacles again
+## (clamping can push a point back into an obstacle near the edge).
+func clamp_walkable(p: Vector2, edge_margin: float, obstacle_margin: float) -> Vector2:
+	var q := clamp_inside(push_out_of_obstacles(p, obstacle_margin), edge_margin)
+	return push_out_of_obstacles(q, obstacle_margin)
+
 func random_point(rng: RandomNumberGenerator, margin: float) -> Vector2:
 	if outline.size() < 3:
 		return Vector2.ZERO

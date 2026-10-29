@@ -101,7 +101,7 @@ func knock_back_from(from_xz: Vector2) -> void:
 		dir = -aim_dir
 	var target := here + dir.normalized() * KNOCKBACK_DISTANCE
 	if island != null:
-		target = island.clamp_inside(island.push_out_of_obstacles(target, EDGE_MARGIN), EDGE_MARGIN)
+		target = island.clamp_walkable(target, EDGE_MARGIN, EDGE_MARGIN)
 	_knockback_velocity = Vector3(target.x - here.x, 0.0, target.y - here.y) / KNOCKBACK_DURATION
 	_knockback_left = KNOCKBACK_DURATION
 
