@@ -19,7 +19,7 @@ Cette passe est **automatique** (Chromium headless via Playwright). Elle vérifi
 ## Vérifié automatiquement
 
 Environnement : Chromium headless, WebGL 2 via **SwiftShader** (rendu logiciel, sans GPU), viewport 1280×720.
-Script : `/tmp/claude-0/-home-user-ChronoFlore/f264b819-aaa3-553d-973a-709f6d3bd3d7/scratchpad/preview/web/smoke.js` (scratchpad de session, non versionné).
+Script : `smoke.js` (Playwright), resté dans le scratchpad de la session de playtest : non versionné, à réécrire au besoin.
 
 Déroulé : chargement → titre → Entrée (choix du personnage) → Entrée (Elle, solo) → 20 s de jeu (ZQSD/WASD maintenus, visée souris en cercle autour de l'héroïne, clics avec le fusil, le harpon et le filet) → Échap (pause) → « Abandonner la nuit » → écran de réveil → rechargement de l'onglet → Herbier.
 
@@ -33,7 +33,7 @@ Déroulé : chargement → titre → Entrée (choix du personnage) → Entrée (
 | Sauvegarde relue après rechargement | OK : une sauvegarde injectée (Rêvette ×6, Timidelle ×2, Souffloine ×1, harpon, record 140 min) est lue (record « 2 h 20 », harpon dans la ceinture), réécrite à l'abandon sans perte, puis affichée dans l'Herbier après rechargement |
 | Option debug `?minutes_x=24` | Lue sans erreur en build debug ; non exercée, faute de capture pendant le jeu automatique |
 
-Captures (`/tmp/claude-0/-home-user-ChronoFlore/f264b819-aaa3-553d-973a-709f6d3bd3d7/scratchpad/preview/web/`) :
+Captures (scratchpad de la session de playtest, non versionnées) :
 
 - `release-01-title.png` : écran titre
 - `release-02-character-select.png` : Elle / Lui / À deux
@@ -82,12 +82,12 @@ Notez pour chaque point : OK / problème (avec l'heure en jeu et une capture).
 - [ ] **Réveil en sursaut** : perdre les 5 pétales (fuites, coups des hostiles), fondu blanc, écran de réveil cohérent.
 - [ ] **Harpon débloqué** à 3 espèces capturables découvertes (Timidelle comprise) : message sur l'écran de réveil, harpon présent à la nuit suivante, il cloue 3 s, recharge 2,5 s.
 - [ ] **Herbier persistant après rechargement** de l'onglet (F5) : en fin de nuit, et aussi en fermant l'onglet en pleine nuit juste après une découverte.
-- [ ] Navigation privée ou stockage bloqué : le jeu démarre quand même (sans persistance).
+- [ ] Navigation privée ou stockage bloqué : le jeu démarre quand même (sans persistance) et le titre affiche la note crème « Sauvegarde indisponible dans ce navigateur ».
 - [ ] **Passage souris ↔ manette** en pleine nuit, dans les deux sens ; débrancher la manette en jeu : la visée suit le dernier périphérique et ne se fige pas.
 - [ ] **Coop avec 2 manettes** (« À deux ») : attribution J1/J2, caméra qui garde les deux héros, outils et pétales de chacun.
-- [ ] **Coop au clavier partagé** (J1 ZQSD/WASD + souris, J2 flèches + Ctrl) : les flèches ne doivent plus bouger J1 en coop (elles sont aussi liées à `p1_move_*`), J2 jouable sans souris.
+- [ ] **Coop au clavier partagé** (J1 ZQSD/WASD + F (outil) + R (changer), J2 flèches + Entrée ou 0 du pavé (outil) + Point ou point du pavé (changer) ; visée automatique pour les deux, personne ne vise à la souris) : les flèches ne bougent que J2 (réglé dans `DeviceAssignment`, à confirmer en jeu) ; J2 qui tient son outil pendant que J1 marche ne ferme jamais l'onglet (aucune touche modificatrice).
 - [ ] **Lisibilité des signes d'attaque** de chaque hostile, chacune au moins 3 fois : Ronce d'angoisse, Croque-colère, Lierre de jalousie, Champi-panique, Ortie du regret. Le signe au sol se voit-il assez tôt, de jour comme de nuit ?
 - [ ] Les 7 gentilles (Rêvette, Souffloine, Câlinette, Nostalgerbe, Lumiole, Timidelle, Mélancolys) : comportement reconnaissable, capture faisable.
 - [ ] **Rythme de la difficulté** : vitesse +8 %/h sensible sans être injuste ; peu communes dès 2 h, rares dès 4 h ; 1 à 3 cauchemars ; la pression des Ronces ; Timidelle trop facile ou trop dure.
-- [ ] **Performance** sur vraie machine : fps en début de nuit et vers 6 h (plus de plantes), temps de chargement en ligne.
+- [ ] **Performance** sur vraie machine : fps en début de nuit et vers 6 h (plus de plantes), temps de chargement en ligne ; pas d'à-coup vers 2 h (lueur des plantes) ni au premier signe d'attaque (shaders pré-chauffés en début de nuit), sur Chrome et Firefox avec un GPU modeste.
 - [ ] Échap / pause, Herbier depuis la pause, « Abandonner la nuit » ; focus clavier et manette dans tous les menus.
