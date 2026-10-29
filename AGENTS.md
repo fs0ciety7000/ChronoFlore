@@ -4,32 +4,54 @@ Règles communes à tous les agents de code (Claude Code, Codex, Cursor, etc.). 
 
 ## Contexte du projet
 
-- **Nom** : `TODO`
-- **Type** : `TODO` (voir `.claude/skills-registry.md`)
-- **Résumé en une phrase** : `TODO`
+- **Nom** : ChronoFlore
+- **Type** : `gamedev-godot` (`game/`) + `web-frontend` (`site/`)
+- **Résumé en une phrase** : jeu d'action-arcade isométrique kawaï et mélancolique où une rêveuse lucide, botaniste-chasseuse, capture au filet, au harpon et au fusil tranquillisant les plantes nées de ses émotions avant de se réveiller (~2 h de sommeil = une run chronométrée).
+
+### Direction artistique (référence pour tout asset)
+
+- **Diorama** : île de terrain flottante, bords en coupe de terre, lumière douce, ombres légères, fond crème uni, couleurs pastel.
+- **Caméra** : 3D, `Camera3D` orthographique, angle isométrique fixe.
+- **Héroïne** : peau foncée, longues tresses noires, lunettes rondes teintées roses, grand sourire, haut à rayures multicolores (vert, rouge, orange, violet), petit collier doré. Proportions chibi.
+- **Ton** : mélancolique mais kawaï ; les plantes sont des émotions, des souvenirs et des pensées.
 
 ## Commandes
 
 ```bash
-# À remplir selon la stack
-install: TODO
-dev:     TODO
-test:    TODO
-lint:    TODO
-build:   TODO
+# Jeu (Godot 4.7, binaire `godot` dans le PATH)
+import:  godot --headless --path game --import
+test:    godot --headless --path game --script res://tests/test_runner.gd
+run:     godot --path game
+build:   godot --headless --path game --export-release "Web" ../build/web/index.html
+
+# Site vitrine (Node 22, depuis site/)
+install: npm install
+dev:     npm run dev
+build:   npm run build          # sortie dans site/dist/
+lint:    npm run check          # astro check
+deploy:  push sur la branche suivie par Coolify -> build du Dockerfile de site/
 ```
+
+## Déploiement
+
+- Coolify : `site/Dockerfile` (build Astro puis nginx). Variables d'API dans `.env` (voir `.env.example`).
+- DNS : enregistrement Cloudflare `chronoflore.cardormedia.com` vers `COOLIFY_SERVER_IP`.
 
 ## Structure du dépôt
 
 ```
 .
-├── AGENTS.md            # ce fichier
-├── CLAUDE.md            # entrée Claude Code (importe AGENTS.md)
-├── .claude/
-│   ├── skills-registry.md   # routage type de projet → skills
-│   └── commands/new-project.md
+├── AGENTS.md, CLAUDE.md     # règles agents
+├── .claude/                 # settings, commandes, registre des skills, skills installés
+├── .agents/skills/          # sources des skills (npx skills)
 ├── scripts/setup-skills.sh  # installation des skills
-└── src/                 # code (TODO)
+├── game/                    # projet Godot (project.godot)
+│   ├── scenes/  scripts/  assets/
+│   └── tests/test_runner.gd
+├── site/                    # site vitrine Astro
+│   ├── src/pages/  public/
+│   └── Dockerfile, nginx.conf
+└── branding/                # logo (sources SVG + exports)
 ```
 
 ## Règles de travail

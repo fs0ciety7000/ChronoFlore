@@ -15,9 +15,9 @@ Avant de commencer toute tâche non triviale :
 
 ## Projet courant
 
-- **Type** : `TODO` (web-frontend | shopify | gamedev-godot | backend-go | backend-rust | video-slides | autre)
-- **Stack** : `TODO`
-- **Commandes** : `TODO` (install, dev, test, build, lint)
+- **Type** : `gamedev-godot` (jeu, `game/`) + `web-frontend` (site vitrine, `site/`)
+- **Stack** : Godot 4.7 / GDScript, 3D + caméra orthographique isométrique, renderer Compatibility (export Web possible) · Astro 5 statique servi par nginx (Docker) sur Coolify, DNS Cloudflare `chronoflore.cardormedia.com`
+- **Commandes** : voir `AGENTS.md` § Commandes
 
 > Remplis cette section avec `/new-project` ou à la main. Le reste du fichier ne change pas d'un projet à l'autre.
 
