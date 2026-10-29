@@ -15,6 +15,8 @@ var mode: Mode = Mode.SOLO_HEROINE
 ## Playtest speed-up: scales the minutes a capture adds. Only read in debug builds.
 ## Set from the Web URL (`?minutes_x=24`) or the command line (`-- --minutes-x=24`).
 var debug_minutes_multiplier: int = 1
+## The "change tool" hint was shown this session (first night only).
+var tool_hint_shown: bool = false
 
 ## Species discovered since begin_night(), in discovery order.
 var _night_discoveries: Array[StringName] = []

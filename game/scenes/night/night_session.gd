@@ -176,6 +176,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			for i in 3:
 				if event.is_action_pressed(player.action(StringName("tool_%d" % (i + 1)))):
+					if i >= belt.tools.size() and player == heroine:
+						hud.nudge_locked(i) # locked (harpoon before 4 species)
 					belt.select(i)
 
 ## Builds the players for a mode: the scene's Heroine node is always P1 (heroine visual, or the
