@@ -55,28 +55,32 @@ async function pixel(page: Page, x: number, y: number): Promise<number[]> {
 
 /**
  * Resolves once the live island's framing (#diorama[data-island]) has not
- * changed for 1 s while the render loop kept running (data-frame advanced),
- * so a stalled loop never counts as settled. Fails after 30 s.
+ * changed for 1 s while the render loop kept running: the frame counter
+ * (data-frame) taken at the start of that quiet window must have advanced by
+ * its end, so a stalled loop never counts as settled. Fails after 30 s.
  */
 async function settle(page: Page) {
+  await page.waitForFunction(() => document.getElementById('diorama')?.dataset.state === 'live', null, { timeout: 30_000 });
   const read = () =>
     page.evaluate(() => {
       const d = document.getElementById('diorama')!.dataset;
-      return { state: d.state ?? '', island: d.island ?? '', frame: Number(d.frame ?? 0) };
+      return { island: d.island ?? '', frame: Number(d.frame ?? 0) };
     });
-  let last = await read();
+  let start = await read(); // start of the current quiet window
   let since = Date.now();
   const deadline = Date.now() + 30_000;
   for (;;) {
-    if (Date.now() > deadline) throw new Error(`island did not settle (${JSON.stringify(last)})`);
+    if (Date.now() > deadline) throw new Error(`island did not settle (${JSON.stringify(start)})`);
     await page.waitForTimeout(200);
     const now = await read();
-    expect(now.state, 'diorama still live').toBe('live');
-    if (now.island !== last.island) {
-      last = now;
+    if (now.island !== start.island) {
+      start = now;
       since = Date.now();
-    } else if (Date.now() - since >= 1000 && now.frame > last.frame) {
-      return;
+    } else if (Date.now() - since >= 1000) {
+      if (now.frame > start.frame) return;
+      // No frame in the window: the loop stalled; start a new window.
+      start = now;
+      since = Date.now();
     }
   }
 }

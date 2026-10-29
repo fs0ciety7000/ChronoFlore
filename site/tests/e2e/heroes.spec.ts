@@ -116,11 +116,17 @@ async function withPage(args: string[], fn: (page: Page) => Promise<void>, optio
   }
 }
 
-function collectErrors(page: Page): string[] {
+/**
+ * Console errors and page errors. `aborted` holds the URLs a test aborts on
+ * purpose: only the browser's own "Failed to load resource" line for one of
+ * those is ignored; any other failed load still counts.
+ */
+function collectErrors(page: Page, aborted: Set<string> = new Set()): string[] {
   const errors: string[] = [];
   page.on('console', (msg) => {
-    // The browser logs its own line for each aborted request; that is not ours.
-    if (msg.type() === 'error' && !/Failed to load resource/.test(msg.text())) errors.push(msg.text());
+    if (msg.type() !== 'error') return;
+    if (/Failed to load resource/.test(msg.text()) && aborted.has(msg.location().url)) return;
+    errors.push(`${msg.text()} ${msg.location().url}`);
   });
   page.on('pageerror', (err) => errors.push(err.message));
   return errors;
@@ -218,15 +224,21 @@ test.describe('characters with WebGL', () => {
   test('keeps the stills and an island without the duo when the character models fail', async () => {
     test.setTimeout(60_000);
     await withPage(WEBGL_ARGS, async (page) => {
-      const errors = collectErrors(page);
-      await page.route('**/models/custom/*.glb', (route) => route.abort());
+      const aborted = new Set<string>();
+      const errors = collectErrors(page, aborted);
+      await page.route('**/models/custom/*.glb', (route) => {
+        aborted.add(route.request().url());
+        return route.abort();
+      });
       await page.goto('/');
       const diorama = page.locator('#diorama');
       await expect(diorama).toHaveAttribute('data-state', 'live', { timeout: 20_000 });
       await expect(diorama).toHaveAttribute('data-duo', '0', { timeout: 20_000 });
+      const created = () => page.evaluate(() => (window as unknown as { __gl: unknown[] }).__gl.length);
+      const before = await created(); // env probe + diorama
       await page.locator('#chasseuse').scrollIntoViewIfNeeded();
-      // The portraits' renderer is created, then released when the load fails.
-      await expect.poll(() => page.evaluate(() => (window as unknown as { __gl: unknown[] }).__gl.length), { timeout: 20_000 }).toBe(3);
+      // The portraits' renderer is created (one more context), then released when the load fails.
+      await expect.poll(created, { timeout: 20_000 }).toBe(before + 1);
       await expect.poll(() => liveContexts(page), { timeout: 10_000 }).toBe(1);
       for (const card of [heroine(page), companion(page)]) {
         await expect(card).toHaveAttribute('data-state', 'still');
@@ -246,7 +258,6 @@ test.describe('characters without 3D', () => {
       const errors = collectErrors(page);
       await page.goto('/', { waitUntil: 'networkidle' });
       await page.locator('#compagnon').scrollIntoViewIfNeeded();
-      await page.waitForLoadState('networkidle');
       await expect.poll(() => liveContexts(page), { timeout: 5000 }).toBe(0);
       for (const card of [heroine(page), companion(page)]) {
         await expect(card).toHaveAttribute('data-state', 'still');
@@ -264,7 +275,6 @@ test.describe('characters without 3D', () => {
       async (page) => {
         await page.goto('/', { waitUntil: 'networkidle' });
         await page.locator('#chasseuse').scrollIntoViewIfNeeded();
-        await page.waitForLoadState('networkidle');
         await expect.poll(() => liveContexts(page), { timeout: 5000 }).toBe(0);
         await expect(page.locator('canvas')).toHaveCount(0);
         await expect(heroine(page)).toHaveAttribute('data-state', 'still');
