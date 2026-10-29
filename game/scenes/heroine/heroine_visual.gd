@@ -9,6 +9,9 @@ const ONE_SHOT_BLEND := 0.05
 const WALK_SPEED := 1.5
 const ONE_SHOTS: Array[StringName] = [&"Swing", &"Hurt"]
 const FLASH_ALPHA := 0.85
+## Dart gun / harpoon shot: the prop kicks back this far (hand space, m) and settles.
+const RECOIL_DISTANCE := 0.12
+const RECOIL_TIME := 0.18
 ## Hand prop shown for each tool effect; the net is the default.
 const TOOL_PROPS := {
 	ToolData.Effect.CAPTURE: ^"Net",
@@ -24,6 +27,8 @@ const TOOL_PROPS := {
 var _walking: bool = false
 var _flash: StandardMaterial3D
 var _blink: Tween
+var _recoil: Tween
+var _shots: int = 0
 @onready var _anim: AnimationPlayer = $Model/AnimationPlayer
 @onready var _mesh: MeshInstance3D = get_node(body_mesh_path)
 @onready var _hand_tools: Node3D = get_node_or_null(hand_tools_path)
@@ -67,6 +72,22 @@ func shown_tool_prop() -> String:
 ## Net/tool swing (wired to ToolBelt.tool_used by Heroine).
 func play_swing() -> void:
 	_play_one_shot(&"Swing")
+
+## Dart gun / harpoon shot: a short recoil of the hand prop instead of the net swing.
+func play_shot() -> void:
+	_shots += 1
+	if _hand_tools == null:
+		return
+	if _recoil != null:
+		_recoil.kill()
+	_hand_tools.position = Vector3.ZERO
+	_recoil = create_tween()
+	_recoil.tween_property(_hand_tools, "position", Vector3(0.0, -RECOIL_DISTANCE, 0.0), RECOIL_TIME * 0.3)
+	_recoil.tween_property(_hand_tools, "position", Vector3.ZERO, RECOIL_TIME * 0.7).set_ease(Tween.EASE_OUT)
+
+## Shots played so far (tests).
+func shot_count() -> int:
+	return _shots
 
 ## Quick flinch and white flash while invulnerable.
 func blink_hurt() -> void:
