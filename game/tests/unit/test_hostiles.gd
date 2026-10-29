@@ -5,7 +5,7 @@ extends "res://tests/test_case.gd"
 const PLANT_SCENE := "res://scenes/plants/plant.tscn"
 const HEROINE_SCENE := preload("res://scenes/heroine/heroine.tscn")
 const DT := 1.0 / 60.0
-const HOSTILE_IDS: Array[String] = ["ronce_angoisse", "croque_colere", "lierre_jalousie"]
+const HOSTILE_IDS: Array[String] = ["ronce_angoisse", "croque_colere", "lierre_jalousie", "ortie_regret"]
 
 var _root: Node3D
 
@@ -132,6 +132,8 @@ func test_eligible_hostiles_by_hour() -> void:
 	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 2.0)), [&"ronce_angoisse", &"croque_colere"], "2 h: + Croque")
 	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 3.0)), [&"ronce_angoisse", &"croque_colere", &"lierre_jalousie"],
 		"3 h: + Lierre")
+	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 4.0)).back(), &"ortie_regret", "4 h: + Ortie")
+	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 3.99)).has(&"ortie_regret"), false, "Ortie not before 4 h")
 	for s in SpawnRules.eligible_capturables(c, 8.0):
 		assert_false(s.hostile, "%s: gentle list has no hostile" % s.id)
 
@@ -226,4 +228,52 @@ func test_root_trap_casts_vine_ring_under_heroine() -> void:
 		plant.set_threat(Vector2(15, 10), Vector2(-1, 0))
 		plant.step(DT)
 	assert_eq(rings.size(), 3, "one ring every 5 s (%d)" % rings.size())
+	_cleanup()
+
+# --- Ortie-Regret (SPITTER) --------------------------------------------------------------------
+
+func test_spitter_shadow_precedes_impact() -> void:
+	var ortie := _species("ortie_regret")
+	assert_eq(ortie.behavior, PlantSpecies.Behavior.SPITTER, "ortie spits")
+	var heroine := await _heroine(Vector2(15, 10))
+	var plant := _spawn("ortie_regret", Vector2(10, 10))
+	var thorns: Array[Hazard] = []
+	var shown_at: Array[float] = []
+	var struck_at: Array[float] = []
+	var t := [0.0]
+	plant.hazard_spawned.connect(func(h: Hazard) -> void:
+		thorns.append(h)
+		shown_at.append(t[0] if h.has_ground_mark() else INF)
+		h.struck.connect(func(_target: Node3D) -> void: struck_at.append(t[0])))
+	while struck_at.is_empty() and t[0] < 6.0:
+		plant.set_threat(_xz(heroine), Vector2(-1, 0))
+		plant.step(DT)
+		for h in thorns:
+			if is_instance_valid(h) and not h.is_queued_for_deletion():
+				h.tick(DT)
+		t[0] += DT
+	assert_true(thorns.size() >= 1 and thorns[0] is ThornProjectile, "spits a thorn")
+	assert_eq(struck_at.size(), 1, "the thorn lands on the standing heroine")
+	if struck_at.size() == 1:
+		assert_true(struck_at[0] - shown_at[0] >= Hazard.MIN_TELEGRAPH - 1e-6,
+			"shadow shown %.2f s before the impact" % (struck_at[0] - shown_at[0]))
+		assert_true(thorns[0].center_xz().distance_to(Vector2(15, 10)) < 0.05, "aimed where she stood")
+	assert_eq(heroine.lucidity.petals, 4, "one petal")
+	assert_true(_xz(plant).distance_to(Vector2(10, 10)) < 1e-4, "rooted: never moves")
+	_cleanup()
+
+func test_spitter_range_and_rhythm() -> void:
+	var plant := _spawn("ortie_regret", Vector2(10, 10))
+	var count: Array[int] = [0]
+	plant.hazard_spawned.connect(func(_h: Hazard) -> void: count[0] += 1)
+	for i in int(4.0 / DT):
+		plant.set_threat(Vector2(10 + BehaviorSpitter.RANGE + 0.5, 10), Vector2(-1, 0))
+		plant.step(DT)
+	assert_eq(count[0], 0, "no thorn beyond 7 m")
+	for i in int(7.0 / DT):
+		plant.set_threat(Vector2(16, 10), Vector2(-1, 0))
+		plant.step(DT)
+	assert_eq(count[0], 3, "one thorn every 3 s within range (%d)" % count[0])
+	assert_near(BehaviorSpitter.RANGE, 7.0, 1e-6, "range 7 m")
+	assert_near(BehaviorSpitter.COOLDOWN, 3.0, 1e-6, "every 3 s")
 	_cleanup()
