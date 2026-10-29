@@ -9,10 +9,20 @@ const SPEED := 5.0
 const SCREEN_UP := Vector2(-1, -1)
 const SCREEN_RIGHT := Vector2(1, -1)
 const AIM_RAY_LENGTH := 200.0
+## An accepted nightmare hit slides the heroine this far away from the nightmare...
+const KNOCKBACK_DISTANCE := 1.5
+## ...over this many seconds.
+const KNOCKBACK_DURATION := 0.15
+## The heroine is kept this far inside the island outline (NightSession clamps with it too).
+const EDGE_MARGIN := 0.4
 
 var aim_dir: Vector2 = Vector2(0, 1) ## unit XZ, never zero
 var aim_source: AimAssist.Source = AimAssist.Source.MOVE
 var lucidity: Lucidity ## injected by NightSession
+var island: IslandShape ## injected by NightSession; clamps knockbacks
+
+var _knockback_velocity: Vector3 = Vector3.ZERO
+var _knockback_left: float = 0.0
 
 var _mouse_moved: bool = false
 @onready var _visual: Node = $Visual
@@ -37,6 +47,11 @@ func _physics_process(_delta: float) -> void:
 	var stick := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
 	var w := screen_to_world(move)
 	velocity = Vector3(w.x, 0.0, w.y) * SPEED
+	if _knockback_left > 0.0:
+		var dt := minf(_delta, _knockback_left)
+		_knockback_left -= dt
+		velocity = Vector3.ZERO
+		move_and_collide(_knockback_velocity * dt) # input ignored during the slide
 	move_and_slide()
 	update_aim(_mouse_moved, _mouse_ground_point(), stick, move, not Input.get_connected_joypads().is_empty())
 	_mouse_moved = false
@@ -60,13 +75,35 @@ func update_aim(mouse_moved: bool, mouse_ground: Variant, stick: Vector2, move: 
 		aim_dir = dir.normalized()
 		_apply_facing()
 
-func take_nightmare_hit() -> void:
+## Nightmare contact from a nightmare at from_xz (XZ). Returns true when the hit is accepted
+## (not invulnerable); an accepted hit with a source position knocks the heroine back.
+func take_nightmare_hit(from_xz: Variant = null) -> bool:
 	if lucidity == null:
-		return
-	if lucidity.take_hit(Time.get_ticks_msec() / 1000.0):
-		nightmare_hit.emit()
-		if _visual != null and _visual.has_method("blink_hurt"):
-			_visual.call("blink_hurt")
+		return false
+	if not lucidity.take_hit(Time.get_ticks_msec() / 1000.0):
+		return false
+	nightmare_hit.emit()
+	if _visual != null and _visual.has_method("blink_hurt"):
+		_visual.call("blink_hurt")
+	if from_xz is Vector2:
+		knock_back_from(from_xz)
+	return true
+
+## Starts a KNOCKBACK_DISTANCE slide away from from_xz, clamped inside the island.
+func knock_back_from(from_xz: Vector2) -> void:
+	var p := global_position if is_inside_tree() else position
+	var here := Vector2(p.x, p.z)
+	var dir := here - from_xz
+	if dir.length_squared() < 1e-6:
+		dir = -aim_dir
+	var target := here + dir.normalized() * KNOCKBACK_DISTANCE
+	if island != null:
+		target = island.clamp_inside(island.push_out_of_obstacles(target, EDGE_MARGIN), EDGE_MARGIN)
+	_knockback_velocity = Vector3(target.x - here.x, 0.0, target.y - here.y) / KNOCKBACK_DURATION
+	_knockback_left = KNOCKBACK_DURATION
+
+func is_knocked_back() -> bool:
+	return _knockback_left > 0.0
 
 func _apply_facing() -> void:
 	if _visual is Node3D:

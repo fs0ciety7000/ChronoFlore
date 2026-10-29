@@ -14,10 +14,11 @@ const PAUSE_SCENE := preload("res://scenes/ui/pause.tscn")
 const SPAWN_INTERVAL := 2.0
 ## Spawn points keep this distance to the island edge.
 const SPAWN_MARGIN := 2.0
-const SPAWN_MIN_DISTANCE := 8.0
-## Random candidates tried before falling back to the farthest one (the plateau is small).
+## Spawns keep this gap beyond the plants' alert radius from the heroine.
+const SPAWN_ALERT_GAP := 3.0
+const SPAWN_MIN_DISTANCE := Plant.ALERT_RADIUS + SPAWN_ALERT_GAP
+## Random candidates tried before falling back to the farthest one.
 const SPAWN_TRIES := 24
-const HEROINE_EDGE_MARGIN := 0.4
 const TOOL_ORIGIN_HEIGHT := 0.5
 const FADE_DURATION := 1.0
 const DAWN_FADE_COLOR := Color(1.0, 0.82, 0.88)
@@ -62,6 +63,7 @@ func _ready() -> void:
 	var start := island.shape.centroid()
 	heroine.global_position = Vector3(start.x, island.ground_height(), start.y)
 	heroine.lucidity = lucidity
+	heroine.island = island.shape
 	heroine.nightmare_hit.connect(_on_nightmare_hit)
 	_belt.set_tools(_available_tools())
 	hud.bind(self, _belt)
@@ -82,7 +84,7 @@ func _physics_process(delta: float) -> void:
 	if ended:
 		return
 	var h := _heroine_xz()
-	var clamped := island.shape.clamp_inside(h, HEROINE_EDGE_MARGIN)
+	var clamped := island.shape.clamp_inside(h, Heroine.EDGE_MARGIN)
 	if clamped != h:
 		heroine.global_position = Vector3(clamped.x, heroine.global_position.y, clamped.y)
 		h = clamped

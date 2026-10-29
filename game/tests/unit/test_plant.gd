@@ -249,7 +249,7 @@ func test_burrower_cycle() -> void:
 
 func test_stalker_hits_heroine() -> void:
 	var script := GDScript.new()
-	script.source_code = "extends Node3D\nvar hits: int = 0\nfunc take_nightmare_hit() -> void:\n\thits += 1\n"
+	script.source_code = "extends Node3D\nvar hits: int = 0\nfunc take_nightmare_hit(_from: Variant = null) -> bool:\n\thits += 1\n\treturn true\n"
 	script.reload()
 	var heroine := Node3D.new()
 	heroine.set_script(script)
@@ -264,6 +264,44 @@ func test_stalker_hits_heroine() -> void:
 	plant.set_threat(Vector2(plant.position.x + 0.5, 10), Vector2(-1, 0))
 	plant.step(DT)
 	assert_true(int(heroine.get("hits")) >= 1, "contact calls take_nightmare_hit")
+	_cleanup()
+
+func test_stalker_stuns_after_accepted_hit() -> void:
+	var script := GDScript.new()
+	script.source_code = "extends Node3D\nvar hits: int = 0\nvar from: Vector2\nfunc take_nightmare_hit(p: Variant = null) -> bool:\n\thits += 1\n\tfrom = p\n\treturn true\n"
+	script.reload()
+	var heroine := Node3D.new()
+	heroine.set_script(script)
+	heroine.add_to_group("heroine")
+	var plant := _spawn("ronce_angoisse", Vector2(10, 10))
+	_root.add_child(heroine)
+	plant.set_threat(Vector2(10.5, 10), Vector2(-1, 0))
+	plant.step(DT)
+	assert_eq(heroine.get("hits"), 1, "first contact hits")
+	assert_true(heroine.get("from").distance_to(Vector2(10, 10)) < 0.1, "hit carries the Ronce position")
+	assert_true(plant.is_stunned(), "stunned after an accepted hit")
+	var pos := _xz(plant)
+	_steps(plant, int(0.9 / DT))
+	assert_eq(heroine.get("hits"), 1, "no chained hit while stunned")
+	assert_true(_xz(plant).distance_to(pos) < 0.001, "stunned Ronce stays still")
+	plant.set_threat(Vector2(18, 18), Vector2(-1, 0))
+	_steps(plant, int(0.2 / DT))
+	assert_false(plant.is_stunned(), "stun ends after ~1 s")
+	plant.set_threat(_xz(plant) + Vector2(0.3, 0), Vector2(-1, 0))
+	plant.step(DT)
+	assert_eq(heroine.get("hits"), 2, "contact can hit again after the stun")
+	_cleanup()
+
+func test_wander_avoids_obstacles() -> void:
+	var plant := _spawn("revette", Vector2(10, 10))
+	var shape := _square()
+	shape.obstacles = PackedVector3Array([Vector3(10, 10, 3)])
+	plant.island = shape
+	plant.state = Plant.State.BURROWED
+	plant.set_threat(Vector2(9, 10), Vector2(1, 0))
+	_steps(plant, int(1.25 / DT))
+	assert_eq(plant.state, Plant.State.EMERGING, "emerged")
+	assert_true(shape.is_clear(_xz(plant), Plant.OBSTACLE_MARGIN - 0.001), "emerges outside the obstacle")
 	_cleanup()
 
 func test_stalker_without_heroine_is_safe() -> void:

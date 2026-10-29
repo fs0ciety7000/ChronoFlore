@@ -9,10 +9,11 @@ signal captured(plant: Plant)
 signal escaped(plant: Plant)
 signal fell_asleep(plant: Plant) ## relays Torpor.fell_asleep (herbarium page for Ronce)
 
-## Heroine closer than this alerts a wandering plant (plateau is only ~20 x 17.5 m).
-const ALERT_RADIUS := 5.0
-## Heroine farther than this for CALM_DURATION calms the plant down (back to WANDER).
-const CALM_DISTANCE := 9.0
+## Heroine closer than this alerts a wandering plant: a careful approach to ~4 m is possible.
+const ALERT_RADIUS := 4.0
+## Heroine farther than this for CALM_DURATION calms the plant down (back to WANDER);
+## reachable on the ~37 x 34 m meadow.
+const CALM_DISTANCE := 10.0
 const CALM_DURATION := 4.0
 ## Short tremble before fleeing.
 const ALERT_DURATION := 0.25
@@ -28,6 +29,10 @@ const EMERGE_MIN_DISTANCE := 4.0
 const EMERGE_MAX_DISTANCE := 6.0
 ## Stalker contact radius with the heroine.
 const CONTACT_DISTANCE := 0.9
+## After an accepted contact hit the stalker stays still this long, so contact cannot chain.
+const CONTACT_STUN_DURATION := 1.0
+## Wander and emerge targets keep this distance to island obstacles (the pond).
+const OBSTACLE_MARGIN := 0.4
 const WANDER_SPEED_SCALE := 0.35
 const WANDER_HOP_MIN := 1.5
 const WANDER_HOP_MAX := 3.5
@@ -76,6 +81,7 @@ var _fall_speed: float = 0.0
 var _fall_dir: Vector2 = Vector2.ZERO
 var _anim_t: float = 0.0
 var _moving: bool = false
+var _stun_left: float = 0.0
 
 func _init() -> void:
 	torpor = Torpor.new()
@@ -170,6 +176,10 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	_animate_visual(delta)
 
+## True while a stalker rests after an accepted contact hit.
+func is_stunned() -> bool:
+	return _stun_left > 0.0
+
 ## One simulation tick (called by _physics_process; tests call it directly).
 func step(delta: float) -> void:
 	if species == null or state == State.CAPTURED:
@@ -184,8 +194,11 @@ func step(delta: float) -> void:
 	match state:
 		State.WANDER:
 			if _is_stalker():
-				dir = _behavior.desired_velocity(self, delta) if _has_threat else _wander(delta)
-				_check_contact(dist)
+				if _stun_left > 0.0:
+					_stun_left -= delta
+				else:
+					dir = _behavior.desired_velocity(self, delta) if _has_threat else _wander(delta)
+					_check_contact(dist)
 			else:
 				dir = _wander(delta)
 				if dist < ALERT_RADIUS:
@@ -276,7 +289,7 @@ func _emerge() -> void:
 		dir = Vector2.from_angle(_rng.randf() * TAU)
 	var target := xz() + dir * _rng.randf_range(EMERGE_MIN_DISTANCE, EMERGE_MAX_DISTANCE)
 	if island != null:
-		target = island.clamp_inside(target, EDGE_MARGIN)
+		target = island.clamp_inside(island.push_out_of_obstacles(target, OBSTACLE_MARGIN), EDGE_MARGIN)
 	_set_xz(target)
 	state = State.EMERGING
 
@@ -285,7 +298,8 @@ func _check_contact(dist: float) -> void:
 		return
 	var heroine := get_tree().get_first_node_in_group("heroine")
 	if heroine != null and heroine.has_method("take_nightmare_hit"):
-		heroine.call("take_nightmare_hit")
+		if heroine.call("take_nightmare_hit", xz()) == true:
+			_stun_left = CONTACT_STUN_DURATION
 
 func _wander(delta: float) -> Vector2:
 	if _wander_pause > 0.0:
@@ -295,7 +309,7 @@ func _wander(delta: float) -> Vector2:
 	if not _wander_has_target or pos.distance_to(_wander_target) < 0.2:
 		var target := pos + Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(WANDER_HOP_MIN, WANDER_HOP_MAX)
 		if island != null:
-			target = island.clamp_inside(target, WANDER_MARGIN)
+			target = island.clamp_inside(island.push_out_of_obstacles(target, OBSTACLE_MARGIN), WANDER_MARGIN)
 		_wander_target = target
 		_wander_has_target = true
 		_wander_pause = _rng.randf_range(WANDER_PAUSE_MIN, WANDER_PAUSE_MAX)

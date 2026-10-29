@@ -89,6 +89,30 @@ func test_update_aim_sources() -> void:
 	assert_true(h.aim_dir.length() > 0.99, "aim never zero")
 	h.free()
 
+func test_nightmare_knockback() -> void:
+	var h: Heroine = await _heroine()
+	h.lucidity = Lucidity.new(5)
+	var shape := IslandShape.new()
+	shape.outline = PackedVector2Array([Vector2(-10, -10), Vector2(10, -10), Vector2(10, 10), Vector2(-10, 10)])
+	h.island = shape
+	h.global_position = Vector3.ZERO
+	assert_true(h.take_nightmare_hit(Vector2(-0.5, 0.0)), "accepted hit")
+	assert_true(h.is_knocked_back(), "knockback started")
+	assert_false(h.take_nightmare_hit(Vector2(-0.5, 0.0)), "second hit refused while invulnerable")
+	for i in 20:
+		h._physics_process(1.0 / 60.0)
+	assert_false(h.is_knocked_back(), "knockback over")
+	assert_near(h.global_position.x, Heroine.KNOCKBACK_DISTANCE, 0.05, "pushed 1.5 m away from the Ronce")
+	assert_near(h.global_position.z, 0.0, 0.05, "along the hit direction")
+	# Near the edge the knockback target is clamped inside the island.
+	h.lucidity = Lucidity.new(5)
+	h.global_position = Vector3(9.0, 0.0, 0.0)
+	h.take_nightmare_hit(Vector2(8.5, 0.0))
+	for i in 20:
+		h._physics_process(1.0 / 60.0)
+	assert_true(h.global_position.x <= 10.0 - Heroine.EDGE_MARGIN + 0.05, "clamped inside the island")
+	h.free()
+
 func test_nightmare_hit() -> void:
 	var h: Heroine = await _heroine()
 	h.take_nightmare_hit() # no lucidity: no-op

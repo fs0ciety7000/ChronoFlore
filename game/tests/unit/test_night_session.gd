@@ -62,16 +62,21 @@ func test_spawn_keeps_targets_and_distance() -> void:
 func test_spawn_point_far_from_heroine() -> void:
 	var s: NightSession = await _session()
 	var shape: IslandShape = s.island.shape
-	s.heroine.global_position = Vector3(-5.0, 0.0, 0.0) # west side: plenty of room >= 8 m east
+	assert_true(NightSession.SPAWN_MIN_DISTANCE >= Plant.ALERT_RADIUS + 2.0, "spawns outside the alert radius + 2 m")
+	assert_true(Plant.CALM_DISTANCE > Plant.ALERT_RADIUS, "calm distance beyond the alert radius")
+	s.heroine.global_position = Vector3(-8.0, 0.0, 4.0)
 	for i in 20:
 		var p := s.spawn_point()
 		assert_true(shape.contains(p), "spawn point on the island")
-		assert_true(p.distance_to(Vector2(-5.0, 0.0)) >= NightSession.SPAWN_MIN_DISTANCE, "spawn point at least 8 m away")
-	# From the centre, 8 m is rarely reachable on the small plateau: fall back to a far point.
+		assert_true(shape.is_clear(p, NightSession.SPAWN_MARGIN), "spawn point not in the pond")
+		assert_true(p.distance_to(Vector2(-8.0, 4.0)) >= NightSession.SPAWN_MIN_DISTANCE, "spawn point far enough")
+	# From the centre of the meadow the minimum distance is always achievable.
 	var c := shape.centroid()
 	s.heroine.global_position = Vector3(c.x, 0.0, c.y)
-	for i in 20:
-		assert_true(s.spawn_point().distance_to(c) >= 5.0, "fallback keeps spawns away from the heroine")
+	for i in 50:
+		var p := s.spawn_point()
+		assert_true(p.distance_to(c) >= NightSession.SPAWN_MIN_DISTANCE, "min distance achieved from the centre")
+		assert_true(shape.is_clear(p, NightSession.SPAWN_MARGIN), "centre spawn not in the pond")
 	_end(s)
 
 func test_capture_advances_clock() -> void:
