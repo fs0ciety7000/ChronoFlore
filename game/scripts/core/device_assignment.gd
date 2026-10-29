@@ -2,8 +2,8 @@ class_name DeviceAssignment
 extends RefCounted
 ## Who plays with which device, and the InputMap rebuild that applies it at runtime.
 ## Solo: keyboard-mouse and any pad. Co-op: 2 pads -> one each; 1 pad -> keyboard-mouse for P1,
-## the pad for P2; no pad -> shared keyboard (P1 ZQSD/WASD + F + R, P2 arrows + right Ctrl +
-## right Shift), both aiming AUTO. A pad unplugged mid-night sends its player to their keyboard
+## the pad for P2; no pad -> shared keyboard (P1 ZQSD/WASD + F + R, P2 arrows + Enter/keypad 0 +
+## Period/keypad period, never a modifier: Ctrl+W would close the browser tab), both aiming AUTO. A pad unplugged mid-night sends its player to their keyboard
 ## half (AUTO aim); the other player keeps their device.
 ## The project's p1_* / p2_* bindings are the templates: p1 holds the keyboard-mouse keys and the
 ## pad layout, p2 holds the right-hand keys.

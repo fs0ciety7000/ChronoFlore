@@ -124,11 +124,24 @@ func test_shared_keyboard_split() -> void:
 	assert_true(InputMap.event_is_action(_key(KEY_R), &"p1_next_tool"), "R cycles P1's tool")
 	assert_eq(DeviceAssignment.player_for_event(_key(KEY_UP)), 1, "arrows -> P2 only")
 	assert_false(InputMap.event_is_action(_key(KEY_LEFT), &"p1_move_left"), "arrows no longer move P1")
-	assert_true(InputMap.event_is_action(_key(KEY_CTRL, KEY_LOCATION_RIGHT), &"p2_use_tool"), "right Ctrl -> P2 tool")
-	assert_true(InputMap.event_is_action(_key(KEY_SHIFT, KEY_LOCATION_RIGHT), &"p2_next_tool"), "right Shift -> P2 next tool")
+	assert_true(InputMap.event_is_action(_key(KEY_ENTER), &"p2_use_tool"), "Enter -> P2 tool")
+	assert_true(InputMap.event_is_action(_key(KEY_KP_0), &"p2_use_tool"), "keypad 0 -> P2 tool")
+	assert_true(InputMap.event_is_action(_key(KEY_PERIOD), &"p2_next_tool"), "Period -> P2 next tool")
+	assert_true(InputMap.event_is_action(_key(KEY_KP_PERIOD), &"p2_next_tool"), "keypad period -> P2 next tool")
+	assert_eq(DeviceAssignment.player_for_event(_key(KEY_ENTER)), 1, "Enter is P2's only")
+	assert_eq(DeviceAssignment.player_for_event(_key(KEY_PERIOD)), 1, "Period is P2's only")
 	assert_eq(DeviceAssignment.player_for_event(_stick(0, JOY_AXIS_LEFT_X, 1.0)), -1, "no pad bound")
 	assert_eq(DeviceAssignment.player_for_event(_click()), -1, "nobody reads the mouse")
 	_restore()
+
+## Web: a held modifier turns P1's W/Q/Z into Ctrl+W (close tab) or Ctrl+Q; Shift x5 opens
+## Sticky Keys on Windows. P2's keys must never be modifiers.
+func test_p2_keys_are_not_modifiers() -> void:
+	var modifiers: Array[int] = [KEY_CTRL, KEY_SHIFT, KEY_ALT, KEY_META]
+	for base in DeviceAssignment.BASES:
+		for e in DeviceAssignment.events_for(base, RIGHT, DeviceAssignment.NO_PAD):
+			var k := e as InputEventKey
+			assert_true(k != null and not modifiers.has(int(k.physical_keycode)), "p2_%s key %s is not a modifier" % [base, e])
 
 func test_one_pad_split() -> void:
 	DeviceAssignment.apply(DeviceAssignment.assign(_pads([0]), true))

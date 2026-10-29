@@ -37,7 +37,7 @@ L'utilisateur veut un deuxième personnage jouable, modélisé maison dans Blend
 - **Entrées :**
   - les deux manettes branchées : manette 1 → J1, manette 2 → J2 ;
   - une seule manette : clavier-souris → J1, manette → J2 ;
-  - aucune manette : clavier partagé, ZQSD/WASD + F (outil) + R (changer) pour J1, flèches + Ctrl droit (outil) + Maj droite (changer) pour J2. Visée automatique pour les deux, comme le futur mode mobile.
+  - aucune manette : clavier partagé, ZQSD/WASD + F (outil) + R (changer) pour J1, flèches + Entrée ou 0 du pavé (outil) + Point ou point du pavé (changer) pour J2 ; jamais de touche modificatrice (Ctrl+W fermerait l'onglet du navigateur). Visée automatique pour les deux, comme le futur mode mobile.
 - **HUD :** une seule fleur-horloge (partagée), plus une petite cartouche d'outil par joueur, à gauche pour J1 et à droite pour J2.
 
 ## 4. Approches envisagées

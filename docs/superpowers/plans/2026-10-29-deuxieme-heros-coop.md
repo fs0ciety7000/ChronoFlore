@@ -31,7 +31,7 @@
 - Assignation des entrées :
   - 2 manettes → manette 0 pour J1, manette 1 pour J2 ;
   - 1 manette → clavier-souris pour J1, manette 0 pour J2 ;
-  - 0 manette → clavier partagé : J1 en ZQSD/WASD + F (outil) + R (outil suivant), J2 en flèches + Ctrl droit (outil) + Maj droite (outil suivant). Visée en mode AUTO pour les deux.
+  - 0 manette → clavier partagé : J1 en ZQSD/WASD + F (outil) + R (outil suivant), J2 en flèches + Entrée / 0 du pavé (outil) + Point / point du pavé (outil suivant), jamais de touche modificatrice (Ctrl+W ferme l'onglet sur le Web). Visée en mode AUTO pour les deux.
 - La caméra cadre le barycentre des joueurs. Sa taille ortho va de la taille solo (Tâche V) jusqu'à ×1,5 au maximum, selon l'écart entre les joueurs.
 
 ## Review Focus
