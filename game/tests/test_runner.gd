@@ -44,6 +44,7 @@ func _report_errors(count: int, where: String) -> int:
 
 func _run_file(file: String) -> void:
 	var script: Script = load("%s/%s" % [UNIT_DIR, file])
+	failed += _report_errors(_errors.count() - _seen, file) # parse errors while loading
 	if script == null or not script.can_instantiate():
 		failed += 1
 		push_error("FAIL %s: cannot load script (parse error?)" % file)
