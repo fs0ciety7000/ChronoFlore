@@ -20,7 +20,7 @@ describe('shareLinks', () => {
   });
   it('exposes the canonical constants', () => {
     expect(SHARE_URL).toBe('https://chronoflore.cardormedia.com/');
-    expect(SHARE_TEXT).toBe('ChronoFlore — deux heures de sommeil, toute une flore à capturer.');
+    expect(SHARE_TEXT).toBe('ChronoFlore — huit heures de sommeil, toute une flore à capturer.');
   });
 });
 

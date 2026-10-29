@@ -39,9 +39,9 @@ async function textContrast(page: Page, selector: string): Promise<number> {
 }
 
 test.describe('scroll drives palette and countdown', () => {
-  test('top: day palette and 02:00:00', async ({ page }) => {
+  test('top: day palette and 08:00:00', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#countdown')).toHaveText('02:00:00');
+    await expect(page.locator('#countdown')).toHaveText('08:00:00');
     expect(await bgOf(page)).toBe('#f6f1e7');
   });
 

@@ -8,7 +8,7 @@ test.describe('static one-page layout', () => {
     await page.goto('/');
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
-    await expect(page.locator('h1')).toHaveText('Deux heures de sommeil. Toute une flore à capturer.');
+    await expect(page.locator('h1')).toHaveText('Huit heures de sommeil. Toute une flore à capturer.');
 
     for (const id of ANCHORS) {
       const section = page.locator(`section#${id}`);
@@ -19,7 +19,7 @@ test.describe('static one-page layout', () => {
     await expect(page.locator('[data-specimen]')).toHaveCount(4);
     await expect(page.locator('#chasseuse [data-heroine]')).toHaveText(HEROINE_PLACEHOLDER);
 
-    await expect(page.locator('output#countdown')).toHaveText('02:00:00');
+    await expect(page.locator('output#countdown')).toHaveText('08:00:00');
     const diorama = page.locator('div#diorama');
     await expect(diorama).toHaveAttribute('data-state', 'poster');
     await expect(diorama.locator('img[src="/poster.webp"]')).toHaveAttribute('alt', '');

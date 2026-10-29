@@ -33,12 +33,12 @@ describe('clampProgress', () => {
 });
 
 describe('countdownAt', () => {
-  it('formats HH:MM:SS from 2h', () => {
-    expect(countdownAt(0)).toBe('02:00:00');
+  it('formats HH:MM:SS from 8h', () => {
+    expect(countdownAt(0)).toBe('08:00:00');
     expect(countdownAt(1)).toBe('00:00:00');
-    expect(countdownAt(0.5)).toBe('01:00:00');
-    expect(countdownAt(-3)).toBe('02:00:00');
-    expect(countdownAt(NaN)).toBe('02:00:00');
+    expect(countdownAt(0.5)).toBe('04:00:00');
+    expect(countdownAt(-3)).toBe('08:00:00');
+    expect(countdownAt(NaN)).toBe('08:00:00');
   });
 });
 

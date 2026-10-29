@@ -1,5 +1,5 @@
 export const SHARE_URL = 'https://chronoflore.cardormedia.com/';
-export const SHARE_TEXT = 'ChronoFlore — deux heures de sommeil, toute une flore à capturer.';
+export const SHARE_TEXT = 'ChronoFlore — huit heures de sommeil, toute une flore à capturer.';
 
 export type ShareOutcome = 'shared' | 'copied' | 'manual' | 'cancelled';
 

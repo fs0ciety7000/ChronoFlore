@@ -8,7 +8,7 @@ export const PALETTES: { day: Palette; night: Palette; dawn: Palette } = {
   dawn: { bg: '#fbeee9', ink: '#3b3350', accent: '#f4b9c8', surface: '#fffdf8' },
 };
 
-const TOTAL_SECONDS = 7200;
+const TOTAL_SECONDS = 28800;
 const MIN_CONTRAST = 4.5;
 const CROSSOVER_LUMINANCE = 0.179; // sqrt(1.05 * 0.05) - 0.05
 
@@ -50,7 +50,7 @@ export function paletteAt(p: number): Palette {
   return { bg, ink, accent: mix('accent'), surface: mix('surface') };
 }
 
-/** Remaining time of the 2h night as `HH:MM:SS`. */
+/** Remaining time of the 8h night as `HH:MM:SS`. */
 export function countdownAt(p: number): string {
   const left = Math.round(TOTAL_SECONDS * (1 - clampProgress(p)));
   const pad = (n: number) => String(n).padStart(2, '0');
