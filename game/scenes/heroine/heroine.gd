@@ -21,6 +21,10 @@ var aim_source: AimAssist.Source = AimAssist.Source.MOVE
 var lucidity: Lucidity ## injected by NightSession
 var island: IslandShape ## injected by NightSession; clamps knockbacks
 
+var _immobile_left: float = 0.0
+var _slow_left: float = 0.0
+var _slow_factor: float = 1.0
+
 var _knockback_velocity: Vector3 = Vector3.ZERO
 var _knockback_left: float = 0.0
 
@@ -49,10 +53,11 @@ func _input(event: InputEvent) -> void:
 		_mouse_moved = true
 
 func _physics_process(_delta: float) -> void:
+	tick_status(_delta)
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var stick := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
 	var w := screen_to_world(move)
-	velocity = Vector3(w.x, 0.0, w.y) * SPEED
+	velocity = Vector3(w.x, 0.0, w.y) * move_speed()
 	if _knockback_left > 0.0:
 		var dt := minf(_delta, _knockback_left)
 		_knockback_left -= dt
@@ -62,7 +67,7 @@ func _physics_process(_delta: float) -> void:
 	update_aim(_mouse_moved, _mouse_ground_point(), stick, move, not Input.get_connected_joypads().is_empty())
 	_mouse_moved = false
 	if _visual != null and _visual.has_method("set_walking"):
-		_visual.call("set_walking", move.length() > 0.1)
+		_visual.call("set_walking", move.length() > 0.1 and move_speed() > 0.0)
 
 ## Per-frame aim update from already-sampled inputs. mouse_ground is a Vector3 or null.
 func update_aim(mouse_moved: bool, mouse_ground: Variant, stick: Vector2, move: Vector2, pad_active: bool) -> void:
@@ -107,6 +112,42 @@ func knock_back_from(from_xz: Vector2) -> void:
 		target = island.clamp_walkable(target, EDGE_MARGIN, EDGE_MARGIN)
 	_knockback_velocity = Vector3(target.x - here.x, 0.0, target.y - here.y) / KNOCKBACK_DURATION
 	_knockback_left = KNOCKBACK_DURATION
+
+## Held by vines (Lierre-Jalousie): no walking for `seconds`. Keeps the longest remaining hold,
+## never the sum, so overlapping rings cannot chain into a long lock.
+func immobilize(seconds: float) -> void:
+	_immobile_left = maxf(_immobile_left, seconds)
+
+## In spores (Champi-Panique): walk at `factor` of the speed for `seconds`. Keeps the longest
+## remaining duration and the strongest factor of the active slows, without stacking them.
+func slow(factor: float, seconds: float) -> void:
+	_slow_factor = minf(_slow_factor, factor) if _slow_left > 0.0 else factor
+	_slow_left = maxf(_slow_left, seconds)
+
+func is_immobilized() -> bool:
+	return _immobile_left > 0.0
+
+func is_slowed() -> bool:
+	return _slow_left > 0.0
+
+func immobilized_left() -> float:
+	return _immobile_left
+
+func slowed_left() -> float:
+	return _slow_left
+
+## Walking speed with the current status (immobilized: 0, slowed: SPEED x factor).
+func move_speed() -> float:
+	if is_immobilized():
+		return 0.0
+	return SPEED * (_slow_factor if is_slowed() else 1.0)
+
+## Counts the immobilized / slowed timers down (called by _physics_process; tests call it).
+func tick_status(delta: float) -> void:
+	_immobile_left = maxf(_immobile_left - delta, 0.0)
+	_slow_left = maxf(_slow_left - delta, 0.0)
+	if _slow_left <= 0.0:
+		_slow_factor = 1.0
 
 func is_knocked_back() -> bool:
 	return _knockback_left > 0.0
