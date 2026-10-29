@@ -6,7 +6,7 @@ Règles communes à tous les agents de code (Claude Code, Codex, Cursor, etc.). 
 
 - **Nom** : ChronoFlore
 - **Type** : `gamedev-godot` (`game/`) + `web-frontend` (`site/`)
-- **Résumé en une phrase** : jeu d'action-arcade isométrique kawaï et mélancolique où une rêveuse lucide, botaniste-chasseuse, capture au filet, au harpon et au fusil tranquillisant les plantes nées de ses émotions avant de se réveiller (~8 h de sommeil = une run chronométrée).
+- **Résumé en une phrase** : jeu d'action-arcade isométrique kawaï et mélancolique où une rêveuse lucide, botaniste-chasseuse, capture au filet, au harpon et au fusil tranquillisant les plantes nées de ses émotions avant de se réveiller. Une run = une nuit de 8 h de sommeil, sans chronomètre en temps réel : chaque capture fait avancer l'heure, une jauge de lucidité (pétales) qui se vide la réveille trop tôt (voir `docs/superpowers/specs/`).
 
 ### Direction artistique (référence pour tout asset)
 
@@ -28,7 +28,7 @@ Règles communes à tous les agents de code (Claude Code, Codex, Cursor, etc.). 
 ```bash
 # Jeu (Godot 4.7.2, binaire `godot` dans le PATH ; export Web : templates 4.7.2 installés)
 import:  godot --headless --path game --import
-test:    godot --headless --path game --script res://tests/test_runner.gd
+test:    godot --headless --path game --import && godot --headless --path game --script res://tests/test_runner.gd
 run:     godot --path game
 build:   mkdir -p build/web && godot --headless --path game --export-release "Web" ../build/web/index.html
 
