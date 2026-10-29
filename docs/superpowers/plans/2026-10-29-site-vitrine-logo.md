@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Langue : français uniquement ; `<html lang="fr">`.
-- Textes : copiés tels quels des maquettes `SiteJour.dc.html` (structure, accroche, sections) et `SiteNuit.dc.html` (noms latins, légendes « Planche I… IV » en Fraunces italique). Titre d'ouverture exact : « Deux heures de sommeil. Toute une flore à capturer. »
+- Textes : copiés tels quels des maquettes `SiteJour.dc.html` (structure, accroche, sections) et `SiteNuit.dc.html` (noms latins, légendes « Planche I… IV » en Fraunces italique). Titre d'ouverture exact : « Huit heures de sommeil. Toute une flore à capturer. »
 - Spécimens : Nostalgie rampante / *Nostalgia repens*, Joie-pissenlit / *Gaudium volans*, Doute grimpant / *Dubium scandens*, Souvenir d'été / *Memoria aestiva* ; mention « [Espèces d'exemple — à définir avec le game design] ».
 - Emplacement héroïne : texte exact « [Rendu 3D de l'héroïne — à venir] ».
 - Palette jour : fond `#f6f1e7`, encre `#3b3350`, rose `#f4b9c8`, lavande `#cdc4ef`, menthe `#8fcf9f`, surface `#fffdf8`. Nuit : fond `#22203a`, texte `#ede8fb`, rose `#f7c3d2`, surface `#2d2a4c`. Aube : fond `#fbeee9`, encre `#3b3350`, rose `#f4b9c8`, surface `#fffdf8`.
@@ -95,7 +95,7 @@ game/icon.svg
   - `clampProgress(p: number): number` — NaN → 0, borné [0,1].
   - `nightFactor(p): number` = smoothstep(0.08, 0.75, p) ; `dawnFactor(p): number` = smoothstep(0.82, 0.97, p).
   - `paletteAt(p): Palette` — mix(day, night, nightFactor) puis mix(résultat, dawn, dawnFactor).
-  - `countdownAt(p): string` — `HH:MM:SS` de `round(7200 × (1 − p))` secondes.
+  - `countdownAt(p): string` — `HH:MM:SS` de `round(28800 × (1 − p))` secondes.
 
 - [ ] **Step 1: Ajouter les dépendances** — `astro`, `three`, `gsap`, `lenis`, `@fontsource/fredoka`, `@fontsource/nunito`, `@fontsource/fraunces` ; dev : `vitest`, `@playwright/test`, `@types/three`, `png-to-ico`, `@astrojs/check`, `typescript`. Scripts : `test` (`vitest run`), `test:e2e` (`playwright test`), `fetch:models`, `brand`, `poster`. `npm install` génère `package-lock.json` (commité).
 - [ ] **Step 2: Écrire les tests qui échouent**
@@ -106,11 +106,11 @@ expect(mixHex('#000000', '#ffffff', 0.5)).toBe('#808080');
 expect(mixHex('#f6f1e7', '#22203a', 0)).toBe('#f6f1e7');
 expect(mixHex('#f6f1e7', '#22203a', 2)).toBe('#22203a');
 // timeline.test.ts
-expect(countdownAt(0)).toBe('02:00:00');
+expect(countdownAt(0)).toBe('08:00:00');
 expect(countdownAt(1)).toBe('00:00:00');
-expect(countdownAt(0.5)).toBe('01:00:00');
-expect(countdownAt(-3)).toBe('02:00:00');
-expect(countdownAt(NaN)).toBe('02:00:00');
+expect(countdownAt(0.5)).toBe('04:00:00');
+expect(countdownAt(-3)).toBe('08:00:00');
+expect(countdownAt(NaN)).toBe('08:00:00');
 expect(paletteAt(0)).toEqual(PALETTES.day);
 expect(paletteAt(0.78).bg).toBe(PALETTES.night.bg);
 expect(paletteAt(1)).toEqual(PALETTES.dawn);
@@ -159,10 +159,10 @@ expect(nightFactor(0.08)).toBe(0); expect(nightFactor(0.75)).toBe(1);
   - Variables CSS sur `:root` : `--bg`, `--ink`, `--accent`, `--surface`, `--progress` (0 par défaut) ; valeurs initiales = jour.
   - Ancres : `#top`, `#reve`, `#chasseuse`, `#outils`, `#herbier`, `#partager` ; `<section data-scene>` sur chaque section.
   - Conteneur `<div id="diorama" data-state="poster">` contenant `<img src="/poster.webp" alt="">` (poster temporaire : capture de la maquette tant que Task 9 n'a pas tourné).
-  - `<output id="countdown">02:00:00</output>`.
+  - `<output id="countdown">08:00:00</output>`.
 
 - [ ] **Step 1: Test e2e qui échoue** — `playwright.config.ts` : `webServer` = `npm run build && npx astro preview --port 4321`, `use.launchOptions.executablePath = '/opt/pw-browsers/chromium'` si la version de `@playwright/test` ne trouve pas son navigateur. Assertions :
-  - `h1` a pour texte « Deux heures de sommeil. Toute une flore à capturer. »
+  - `h1` a pour texte « Huit heures de sommeil. Toute une flore à capturer. »
   - les six ancres existent ; 4 cartes de spécimens ; l'emplacement héroïne a le texte exact des Global Constraints ;
   - à 360×740 : `document.documentElement.scrollWidth <= 360` ;
   - aucune requête vers `fonts.googleapis.com` ; aucune erreur console ;
@@ -188,7 +188,7 @@ expect(nightFactor(0.08)).toBe(0); expect(nightFactor(0.75)).toBe(1);
   - `shouldUse3D(env: Env): boolean` — faux si `reducedMotion`, `!webgl`, `saveData` ou `deviceMemory < 4`.
   - `initScroll(env: Env): { onProgress(cb: (p: number) => void): () => void; destroy(): void }` — écrit `--bg/--ink/--accent/--surface/--progress` sur `:root` et le texte de `#countdown` à chaque frame de scroll ; Lenis seulement si `finePointer && !reducedMotion`.
 
-- [ ] **Step 1: Tests qui échouent** — `env.test.ts` : `shouldUse3D` faux pour chacun des quatre motifs, vrai pour `{reducedMotion:false, finePointer:true, webgl:true, saveData:false, deviceMemory:8}`. `scroll.spec.ts` : en haut, `#countdown` = `02:00:00` et `--bg` = `#f6f1e7` ; tout en bas = `00:00:00` et `--bg` = `#fbeee9` ; à 78 % = `#22203a` ; après redimensionnement 1280→375 en bas de page, toujours `00:00:00` ; avec `reducedMotion: 'reduce'` (contexte Playwright), aucune classe `lenis` sur `<html>`.
+- [ ] **Step 1: Tests qui échouent** — `env.test.ts` : `shouldUse3D` faux pour chacun des quatre motifs, vrai pour `{reducedMotion:false, finePointer:true, webgl:true, saveData:false, deviceMemory:8}`. `scroll.spec.ts` : en haut, `#countdown` = `08:00:00` et `--bg` = `#f6f1e7` ; tout en bas = `00:00:00` et `--bg` = `#fbeee9` ; à 78 % = `#22203a` ; après redimensionnement 1280→375 en bas de page, toujours `00:00:00` ; avec `reducedMotion: 'reduce'` (contexte Playwright), aucune classe `lenis` sur `<html>`.
 - [ ] **Step 2: Lancer** → FAIL.
 - [ ] **Step 3: Implémenter.** La progression = `scrollY / (scrollHeight − innerHeight)`, recalculée par ScrollTrigger (`refresh` au resize). Les transitions CSS de couleur ne sont actives qu'en reduced-motion (fondu de 600 ms entre états discrets jour/nuit/aube).
 - [ ] **Step 4: Lancer** unitaires + e2e → PASS.
@@ -205,7 +205,7 @@ expect(nightFactor(0.08)).toBe(0); expect(nightFactor(0.75)).toBe(1);
 
 **Interfaces:**
 - Produces:
-  - `SHARE_URL = 'https://chronoflore.cardormedia.com/'`, `SHARE_TEXT = 'ChronoFlore — deux heures de sommeil, toute une flore à capturer.'`
+  - `SHARE_URL = 'https://chronoflore.cardormedia.com/'`, `SHARE_TEXT = 'ChronoFlore — huit heures de sommeil, toute une flore à capturer.'`
   - `shareLinks(url, text): { bluesky: string; x: string; facebook: string }` — `https://bsky.app/intent/compose?text=`, `https://x.com/intent/post?text=&url=`, `https://www.facebook.com/sharer/sharer.php?u=` (paramètres encodés).
   - `sharePage(nav: Pick<Navigator,'share'|'clipboard'>, url, text): Promise<'shared'|'copied'|'manual'|'cancelled'>`.
 

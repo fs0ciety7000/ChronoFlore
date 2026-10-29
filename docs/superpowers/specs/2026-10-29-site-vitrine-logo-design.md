@@ -1,12 +1,12 @@
 # Site vitrine et logo ChronoFlore — design
 
-Date : 2026-10-29 · Statut : à valider. Le plan d'implémentation prévoit un point de contrôle visuel (logo + page statique) avant le gros du travail 3D.
+Date : 2026-10-29 · Statut : validé. Révision : la nuit dure 8 h (compte à rebours 08:00:00), décision utilisateur. Le plan d'implémentation prévoit un point de contrôle visuel (logo + page statique) avant le gros du travail 3D.
 
 ## Intention
 
 Présenter ChronoFlore avant que le jeu n'existe visuellement, et donner envie de **découvrir et partager** l'univers. Le visiteur n'a rien à acheter ni à laisser : il comprend le rêve, la chasseuse, les plantes-émotions, et repart avec un lien à faire circuler.
 
-Le site doit paraître **premium** : ouverture cinématique en 3D et micro-interactions soignées. La DA du site raconte la nuit : on arrive de jour (l'endormissement), le scroll fait tomber la nuit au rythme du compte à rebours `02:00:00`, et le bas de page s'éclaire au réveil.
+Le site doit paraître **premium** : ouverture cinématique en 3D et micro-interactions soignées. La DA du site raconte la nuit : on arrive de jour (l'endormissement), le scroll fait tomber la nuit au rythme du compte à rebours `08:00:00`, et le bas de page s'éclaire au réveil.
 
 ## Objectifs
 
@@ -60,8 +60,8 @@ Une seule page, sections dans cet ordre :
 
 | # | Section | Heure de la scène | Contenu |
 |---|---|---|---|
-| 0 | Ouverture | jour (`setTime 0`) | Logo, titre « Deux heures de sommeil. Toute une flore à capturer. », phrase d'accroche, boutons « Partager le rêve » et « Découvrir l'histoire ». Diorama plein écran derrière. |
-| 1 | Compte à rebours | jour → doré | Bandeau `02:00:00` dont l'heure avance avec le scroll jusqu'à `00:00:00` en bas de page. |
+| 0 | Ouverture | jour (`setTime 0`) | Logo, titre « Huit heures de sommeil. Toute une flore à capturer. », phrase d'accroche, boutons « Partager le rêve » et « Découvrir l'histoire ». Diorama plein écran derrière. |
+| 1 | Compte à rebours | jour → doré | Bandeau `08:00:00` dont l'heure avance avec le scroll jusqu'à `00:00:00` en bas de page. |
 | 2 | Le rêve | doré → crépuscule | Deux paragraphes ; la caméra plonge vers l'île. |
 | 3 | La chasseuse | crépuscule | Emplacement réservé héroïne + texte (tresses, lunettes roses, haut rayé, besace d'herboriste). |
 | 4 | Les outils | crépuscule → nuit | Filet, harpon, fusil tranquillisant, chacun avec une icône animée au survol. |

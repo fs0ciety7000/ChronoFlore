@@ -6,7 +6,7 @@ Règles communes à tous les agents de code (Claude Code, Codex, Cursor, etc.). 
 
 - **Nom** : ChronoFlore
 - **Type** : `gamedev-godot` (`game/`) + `web-frontend` (`site/`)
-- **Résumé en une phrase** : jeu d'action-arcade isométrique kawaï et mélancolique où une rêveuse lucide, botaniste-chasseuse, capture au filet, au harpon et au fusil tranquillisant les plantes nées de ses émotions avant de se réveiller (~2 h de sommeil = une run chronométrée).
+- **Résumé en une phrase** : jeu d'action-arcade isométrique kawaï et mélancolique où une rêveuse lucide, botaniste-chasseuse, capture au filet, au harpon et au fusil tranquillisant les plantes nées de ses émotions avant de se réveiller (~8 h de sommeil = une run chronométrée).
 
 ### Direction artistique (référence pour tout asset)
 
