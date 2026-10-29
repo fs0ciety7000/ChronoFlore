@@ -17,7 +17,7 @@ Source de vérité du routage : **type de projet → skills à charger**. Claude
 | `slideshow` | heygen-com/hyperframes | Diaporamas/vidéos de présentation |
 | `golang-database` | samber/cc-skills-golang | Accès base de données en Go |
 | `rust-backend` | windmill-labs/windmill | Backend Rust |
-| `godot-skill-judge` | thedivergentai/gd-agentic-skills | Évaluer la qualité de skills/code Godot |
+| `godot-skill-judge` | vendorisé (`.agents/skills/`, retiré en amont) | Évaluer la qualité de skills/code Godot |
 | Superpowers (plugin) | obra/superpowers | Workflow : brainstorming, plans, TDD, revue |
 
 ## Table de routage
