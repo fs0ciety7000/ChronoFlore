@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" uid="uid://ba0qprg4dv8u1" path="res://scenes/heroine/heroine_visual.gd" id="1_vis"]
+[ext_resource type="PackedScene" uid="uid://q8lcsouudidx" path="res://assets/custom/heroine/heroine.glb" id="2_model"]
+[ext_resource type="PackedScene" path="res://scenes/heroine/hand_tools.tscn" id="3_tools"]
+
+[node name="HeroineVisual" type="Node3D"]
+script = ExtResource("1_vis")
+
+[node name="Model" parent="." instance=ExtResource("2_model")]
+
+[node name="HandR" type="BoneAttachment3D" parent="Model/Heroine/Skeleton3D"]
+bone_name = "hand.R"
+bone_idx = 14
+
+[node name="HandTools" parent="Model/Heroine/Skeleton3D/HandR" instance=ExtResource("3_tools")]

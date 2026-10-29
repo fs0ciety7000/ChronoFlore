@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/env/night_lighting.gd" id="1_light"]
+
+[sub_resource type="Environment" id="Environment_night"]
+resource_local_to_scene = true
+background_mode = 1
+background_color = Color(0.964706, 0.937255, 0.878431, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.992157, 0.964706, 0.917647, 1)
+ambient_light_energy = 0.36
+tonemap_mode = 0
+fog_sky_affect = 0.0
+adjustment_enabled = true
+adjustment_brightness = 1.05
+adjustment_contrast = 0.92
+
+[node name="NightLighting" type="Node3D"]
+script = ExtResource("1_light")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, 0.40558, -0.29249, 0, 0.584958, 0.811064, 0.5, -0.702486, 0.506606, 0, 20, 0)
+light_color = Color(1, 0.956863, 0.878431, 1)
+shadow_enabled = true
+shadow_blur = 1.5
+shadow_opacity = 0.65
+directional_shadow_max_distance = 80.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_night")

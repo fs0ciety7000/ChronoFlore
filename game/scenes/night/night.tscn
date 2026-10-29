@@ -1,0 +1,37 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scenes/night/night_session.gd" id="1_session"]
+[ext_resource type="PackedScene" path="res://scenes/island/island.tscn" id="2_island"]
+[ext_resource type="PackedScene" path="res://scenes/env/night_lighting.tscn" id="3_lighting"]
+[ext_resource type="PackedScene" path="res://scenes/heroine/heroine.tscn" id="4_heroine"]
+[ext_resource type="PackedScene" path="res://scenes/camera/iso_camera.tscn" id="5_camera"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="6_hud"]
+
+[node name="Night" type="Node3D"]
+script = ExtResource("1_session")
+
+[node name="NightLighting" parent="." instance=ExtResource("3_lighting")]
+
+[node name="Island" parent="." instance=ExtResource("2_island")]
+
+[node name="Plants" type="Node3D" parent="."]
+
+[node name="Heroine" parent="." instance=ExtResource("4_heroine")]
+
+[node name="IsoCamera" parent="." instance=ExtResource("5_camera")]
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Hud" parent="HUD" instance=ExtResource("6_hud")]
+
+[node name="Fade" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="ColorRect" type="ColorRect" parent="Fade"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)

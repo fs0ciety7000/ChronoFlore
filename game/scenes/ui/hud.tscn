@@ -1,0 +1,86 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/hud.gd" id="1_hud"]
+[ext_resource type="Theme" path="res://scenes/ui/theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scenes/ui/clock_flower.gd" id="3_flower"]
+
+[node name="Hud" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_hud")
+
+[node name="TopLeft" type="MarginContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+
+[node name="Panel" type="PanelContainer" parent="TopLeft"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Flower" type="Control" parent="TopLeft/Panel"]
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("3_flower")
+
+[node name="ToolPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -64.0
+offset_right = 56.0
+offset_bottom = -16.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="ToolLabel" type="Label" parent="ToolPanel"]
+layout_mode = 2
+text = "—"
+
+[node name="ToolPanel2" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -56.0
+offset_top = -64.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="ToolLabel2" type="Label" parent="ToolPanel2"]
+layout_mode = 2
+text = "—"
+horizontal_alignment = 2
+
+[node name="ToastPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 24.0
+offset_right = 120.0
+offset_bottom = 72.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="ToastLabel" type="Label" parent="ToastPanel"]
+layout_mode = 2
+horizontal_alignment = 1

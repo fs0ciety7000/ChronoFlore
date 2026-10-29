@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/plants/visuals/souffloine.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"souffloine"
+display_name = "Souffloine"
+emotion = "insouciance"
+rarity = 1
+capturable = true
+base_speed = 4.3
+min_hour = 1.0
+visual_scene = ExtResource("2")
+behavior = 5
+panic_after = 8.0
+fragment = "(provisoire) Une après-midi sans montre, où l'on soufflait sur les pissenlits pour voir jusqu'où le vent irait. Elle bondit sans regarder où elle retombe. Personne ne l'attrape en plein vol."
+details = PackedStringArray("(provisoire) Chaque bond sème quelques aigrettes, qui retombent comme des rires.", "(provisoire) Elle ne se pose que le temps de reprendre son élan.")

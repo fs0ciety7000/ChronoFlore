@@ -1,0 +1,184 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scenes/island/island.gd" id="1_island"]
+[ext_resource type="Resource" path="res://data/island_shape.tres" id="2_shape"]
+[ext_resource type="PackedScene" path="res://assets/custom/island/island.glb" id="3_island"]
+[ext_resource type="PackedScene" path="res://assets/custom/island/tree_blossom.glb" id="4_tree_blossom"]
+[ext_resource type="PackedScene" path="res://assets/custom/island/tree_peach.glb" id="5_tree_peach"]
+[ext_resource type="PackedScene" path="res://assets/custom/island/bush.glb" id="6_bush"]
+[ext_resource type="PackedScene" path="res://assets/custom/island/giant_flower.glb" id="7_giant_flower"]
+[ext_resource type="PackedScene" path="res://assets/custom/island/giant_mushroom.glb" id="8_giant_mushroom"]
+
+[sub_resource type="BoxShape3D" id="Box_ground"]
+size = Vector3(46, 0.5, 46)
+
+[sub_resource type="CylinderShape3D" id="Cylinder_pond"]
+height = 1.0
+radius = 3
+
+[sub_resource type="CylinderShape3D" id="Cylinder_tree_blossom"]
+height = 3
+radius = 0.3
+
+[sub_resource type="CylinderShape3D" id="Cylinder_tree_peach"]
+height = 2.6
+radius = 0.3
+
+[sub_resource type="CylinderShape3D" id="Cylinder_bush"]
+height = 1.2
+radius = 0.85
+
+[sub_resource type="CylinderShape3D" id="Cylinder_giant_flower"]
+height = 3.2
+radius = 0.25
+
+[sub_resource type="CylinderShape3D" id="Cylinder_giant_mushroom"]
+height = 2
+radius = 0.45
+
+[node name="Island" type="Node3D" groups=["island"]]
+script = ExtResource("1_island")
+shape = ExtResource("2_shape")
+
+[node name="Model" parent="." instance=ExtResource("3_island")]
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("Box_ground")
+
+[node name="Pond" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Pond"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Cylinder_pond")
+
+[node name="Decor" type="Node3D" parent="."]
+
+[node name="BlossomWest" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, 0.9848, -17.5082, 0, -3.7215)
+
+[node name="Model" parent="Decor/BlossomWest" instance=ExtResource("4_tree_blossom")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/BlossomWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("Cylinder_tree_blossom")
+
+[node name="GiantFlowerNorthWest" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.7482, 0, -10.6223)
+
+[node name="Model" parent="Decor/GiantFlowerNorthWest" instance=ExtResource("7_giant_flower")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/GiantFlowerNorthWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+shape = SubResource("Cylinder_giant_flower")
+
+[node name="PeachNorthWest" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, -11.1324, 0, -15.3224)
+
+[node name="Model" parent="Decor/PeachNorthWest" instance=ExtResource("5_tree_peach")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/PeachNorthWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Cylinder_tree_peach")
+
+[node name="BlossomNorth" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, -4.5388, 0, -18.2042)
+
+[node name="Model" parent="Decor/BlossomNorth" instance=ExtResource("4_tree_blossom")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/BlossomNorth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("Cylinder_tree_blossom")
+
+[node name="MushroomNorth" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.4234, 0, -19.4153)
+
+[node name="Model" parent="Decor/MushroomNorth" instance=ExtResource("8_giant_mushroom")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/MushroomNorth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("Cylinder_giant_mushroom")
+
+[node name="PeachNorthEast" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, 0.342, 10.432, 0, -15.466)
+
+[node name="Model" parent="Decor/PeachNorthEast" instance=ExtResource("5_tree_peach")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/PeachNorthEast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Cylinder_tree_peach")
+
+[node name="BushNorthEast" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, 15.2866, 0, -9.5521)
+
+[node name="Model" parent="Decor/BushNorthEast" instance=ExtResource("6_bush")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/BushNorthEast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Cylinder_bush")
+
+[node name="BlossomEast" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, 19.9244, 0, -2.8002)
+
+[node name="Model" parent="Decor/BlossomEast" instance=ExtResource("4_tree_blossom")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/BlossomEast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("Cylinder_tree_blossom")
+
+[node name="BushEast" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 19.9676, 0, 6.4879)
+
+[node name="Model" parent="Decor/BushEast" instance=ExtResource("6_bush")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/BushEast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Cylinder_bush")
+
+[node name="BushSouthEast" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 9.7974, 0, 15.6791)
+
+[node name="Model" parent="Decor/BushSouthEast" instance=ExtResource("6_bush")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/BushSouthEast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Cylinder_bush")
+
+[node name="BushSouth" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, -1.8771, 0, 17.8591)
+
+[node name="Model" parent="Decor/BushSouth" instance=ExtResource("6_bush")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/BushSouth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Cylinder_bush")
+
+[node name="MushroomSouthWest" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, -13.8424, 0, 15.3735)
+
+[node name="Model" parent="Decor/MushroomSouthWest" instance=ExtResource("8_giant_mushroom")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/MushroomSouthWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("Cylinder_giant_mushroom")
+
+[node name="PeachWest" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, -19.2297, 0, 7.7693)
+
+[node name="Model" parent="Decor/PeachWest" instance=ExtResource("5_tree_peach")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/PeachWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Cylinder_tree_peach")
+
+[node name="BushWest" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -19.0072, 0, 1.3291)
+
+[node name="Model" parent="Decor/BushWest" instance=ExtResource("6_bush")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/BushWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Cylinder_bush")

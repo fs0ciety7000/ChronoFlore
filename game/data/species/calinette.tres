@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/plants/visuals/calinette.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"calinette"
+display_name = "Câlinette"
+emotion = "tendresse"
+rarity = 0
+capturable = true
+base_speed = 3.0
+min_hour = 0.0
+visual_scene = ExtResource("2")
+behavior = 4
+panic_after = 12.0
+fragment = "(provisoire) Une tendresse qui n'ose pas tout à fait. Elle vient se blottir tout près, puis recule d'un bond, effrayée par sa propre audace. Il faut la cueillir au moment où elle s'avance."
+details = PackedStringArray("(provisoire) Sa mousse garde la tiédeur d'une main posée sur l'épaule.", "(provisoire) Elle recule toujours d'un bond, mais jamais sans se retourner pour regarder.")

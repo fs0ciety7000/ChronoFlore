@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/plants/visuals/ortie_regret.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"ortie_regret"
+display_name = "Ortie-Regret"
+emotion = "regret"
+rarity = 2
+capturable = true
+hostile = true
+base_speed = 0.0
+min_hour = 4.0
+visual_scene = ExtResource("2")
+behavior = 10
+fragment = "(provisoire) Une ortie aux feuilles tombantes, plantée là où l'on aurait dû dire quelque chose. Elle ne bouge pas : elle renvoie de loin, en arc, les petites épines des choses qu'on n'a pas faites. On voit toujours leur ombre arriver."
+details = PackedStringArray("(provisoire) Ses épines ne piquent que ceux qui restent immobiles à ressasser.", "(provisoire) Endormie, ses feuilles se relèvent un peu, comme soulagées.")
