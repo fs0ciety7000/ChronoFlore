@@ -886,7 +886,7 @@ def build_actions(arm):
     # Readable from the iso camera: head stays up, torso only twists a little, and the
     # arm sweeps the net at shoulder height from her right-back (wind-up) to front-right
     # (strike) to front-left (follow-through). The hoop stays ~0.7 m up and out of the
-    # head's silhouette, plane kept near horizontal (the Net prop in heroine_visual.tscn
+    # head's silhouette, plane kept near horizontal (the Net prop in hand_tools.tscn
     # is rolled to match), so it reads as a ring whether she faces the camera or not.
     # upper_arm X raises the arm forward, then Y yaws it (+ = to her right).
     # Arm/hand keys were solved numerically for those hoop targets, then rounded.
