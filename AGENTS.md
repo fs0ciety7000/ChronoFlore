@@ -16,6 +16,13 @@ Règles communes à tous les agents de code (Claude Code, Codex, Cursor, etc.). 
 - **Rendu** (réf. vidéo pêche) : 3D stylisée vue de dessus/iso, eau turquoise translucide aux caustiques, écume blanche, ombres franches et douces, HUD minimal en cartouches crème arrondies.
 - **Ton** : mélancolique mais kawaï ; les plantes sont des émotions, des souvenirs et des pensées.
 
+### Assets 3D
+
+- **Source unique** : catalogue Polyfork (MCP `polyfork`) ou modèles faits maison. Aucune autre banque d'assets.
+- **Polyfork → Godot** : télécharge le GLB (pas le module `.mjs`, prévu pour three.js), range-le dans `game/assets/polyfork/<asset-id>/`. Tailles en mètres réels, origine au sol : choisis la bonne taille au lieu de rescaler.
+- **Fait maison** : l'héroïne et les plantes-émotions capturables (aucun équivalent au catalogue). Sources dans `game/assets/custom/`.
+- Kits Polyfork pertinents : `salvage-commons-d0be9f` (îles flottantes), `nature-forest-kit-f29d6a`, `insect-world-e44b9f` (plantes géantes).
+
 ## Commandes
 
 ```bash
