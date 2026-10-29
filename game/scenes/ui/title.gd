@@ -13,7 +13,7 @@ func _ready() -> void:
 	quit_button.visible = not OS.has_feature("web")
 	flower.show_label = false
 	flower.custom_minimum_size.y = 150.0
-	flower.set_state(0.12, 5, 5)
+	flower.set_state(0.12, Lucidity.MAX_PETALS, Lucidity.MAX_PETALS)
 	start_button.pressed.connect(func() -> void: get_tree().change_scene_to_file(SELECT_SCENE))
 	herbarium_button.pressed.connect(func() -> void: get_tree().change_scene_to_file(HERBARIUM_SCENE))
 	quit_button.pressed.connect(func() -> void: get_tree().quit())

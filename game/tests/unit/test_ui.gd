@@ -123,6 +123,12 @@ func test_hud_toast_and_tool() -> void:
 	assert_true(hud.toast_label.text.contains("Nouvelle page !"), "new page toast")
 	hud.show_capture(rev, false)
 	assert_false(hud.toast_label.text.contains("Nouvelle page"), "no new page toast")
+	if OS.is_debug_build(): # the toast shows the minutes the clock really gains
+		var saved := GameState.debug_minutes_multiplier
+		GameState.debug_minutes_multiplier = 3
+		hud.show_capture(rev, false)
+		assert_true(hud.toast_label.text.contains("+60 min"), "toast follows capture_minutes (x3)")
+		GameState.debug_minutes_multiplier = saved
 	hud.set_tool(GameState.catalog.tool_by_id(&"net"))
 	assert_true(hud.tool_label.text.length() > 0, "tool shown")
 	hud.free()

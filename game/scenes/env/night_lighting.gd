@@ -9,8 +9,8 @@ const EASE_RATE: float = 1.5
 const GLOW_EPSILON: float = 0.01
 ## Fixed sun heading; only the pitch follows the palette.
 const SUN_YAW_DEG: float = -30.0
-## Camera-to-scene distance the palette tint is calibrated for (IsoCamera.DISTANCE).
-const TINT_REFERENCE_DISTANCE: float = 40.0
+## Camera-to-scene distance the palette tint is calibrated for.
+const TINT_REFERENCE_DISTANCE: float = IsoCamera.DISTANCE
 
 ## Night progress to reach (0 = 0 h, 1 = 8 h).
 @export var target_progress: float = 0.0

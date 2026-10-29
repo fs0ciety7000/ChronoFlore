@@ -313,7 +313,7 @@ func spawn_tick() -> void:
 	if nightmare_species.is_empty():
 		return
 	for i in range(nightmares, CoopRules.nightmares(SpawnRules.nightmare_count(hour), is_coop())):
-		add_plant(nightmare_species[_rng.randi_range(0, nightmare_species.size() - 1)], spawn_point())
+		add_plant(SpawnRules.pick(nightmare_species, _rng), spawn_point()) # rarity-weighted
 
 ## Random island point at least SPAWN_MIN_DISTANCE from every player, else the farthest tried
 ## (from its nearest player).

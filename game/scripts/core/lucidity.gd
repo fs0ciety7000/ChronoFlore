@@ -3,6 +3,8 @@ extends RefCounted
 ## Player's lucidity: a number of petals lost to escapes and nightmare hits,
 ## regrown by capture streaks.
 
+## Petals of a fresh night (the clock-flower draws this many).
+const MAX_PETALS := 5
 const STREAK_FOR_REGROW := 3
 const HIT_INVULNERABILITY := 1.5
 
@@ -16,7 +18,7 @@ var streak: int = 0
 
 var _last_hit_times: Dictionary = {} ## player index -> time of their last accepted hit
 
-func _init(p_max_petals: int = 5) -> void:
+func _init(p_max_petals: int = MAX_PETALS) -> void:
 	max_petals = p_max_petals
 	petals = p_max_petals
 

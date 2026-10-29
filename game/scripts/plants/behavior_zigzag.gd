@@ -5,7 +5,7 @@ extends PlantBehavior
 const FLIP_TIME := 0.6
 const CONE_HALF_ANGLE_DEG := 45.0
 const CONE_RANGE := 30.0
-const NEAR_DISTANCE := 4.0
+const NEAR_DISTANCE := Plant.ALERT_RADIUS
 
 var _t: float = 0.0
 

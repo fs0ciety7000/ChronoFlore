@@ -184,3 +184,24 @@ func test_plant_rim_variant_on_from_the_start() -> void:
 		assert_true(mat.rim_enabled, "rim on at 0 h (no recompile at 2 h)")
 		assert_near(mat.rim, 0.0, 1e-6, "but no rim by day")
 	_end(s)
+
+## M6: nightmare spawns honour rarity (Ronce common x6, Ortie/Champi rare x1).
+func test_nightmare_spawns_follow_rarity() -> void:
+	var s: NightSession = await _session()
+	s.clock.add_minutes(5 * 60)
+	var counts := {}
+	for _round in 150:
+		for p in s.live_plants():
+			if p.species.hostile:
+				s.plants_root.remove_child(p)
+				p.free()
+		s.spawn_tick()
+		for p in s.live_plants():
+			if p.species.hostile:
+				counts[p.species.id] = int(counts.get(p.species.id, 0)) + 1
+	var ronce := int(counts.get(&"ronce_angoisse", 0))
+	var champi := int(counts.get(&"champi_panique", 0))
+	var ortie := int(counts.get(&"ortie_regret", 0))
+	assert_true(ronce > 1.5 * (champi + ortie), "common Ronce outnumbers both rare ones together (uniform: half) %s" % counts)
+	assert_true(champi + ortie > 0, "rare ones still spawn (%s)" % counts)
+	_end(s)

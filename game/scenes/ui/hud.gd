@@ -50,7 +50,7 @@ func set_tool_2(tool: ToolData) -> void:
 
 ## Toast "+20 min · Rêvette", plus "Nouvelle page !" on a discovery.
 func show_capture(species: PlantSpecies, new_page: bool) -> void:
-	var text := "+%d min · %s" % [species.minutes_reward(), species.display_name]
+	var text := "+%d min · %s" % [GameState.capture_minutes(species), species.display_name]
 	if new_page:
 		text += "\nNouvelle page !"
 	toast_label.text = text
@@ -65,6 +65,6 @@ func _refresh_flower() -> void:
 	if flower == null:
 		return
 	if _clock == null or _lucidity == null:
-		flower.set_state(0.0, 5, 5)
+		flower.set_state(0.0, Lucidity.MAX_PETALS, Lucidity.MAX_PETALS)
 		return
 	flower.set_state(_clock.progress(), _lucidity.petals, _lucidity.max_petals)
