@@ -5,7 +5,8 @@ extends "res://tests/test_case.gd"
 const PLANT_SCENE := "res://scenes/plants/plant.tscn"
 const HEROINE_SCENE := preload("res://scenes/heroine/heroine.tscn")
 const DT := 1.0 / 60.0
-const HOSTILE_IDS: Array[String] = ["ronce_angoisse", "croque_colere", "lierre_jalousie", "ortie_regret"]
+const HOSTILE_IDS: Array[String] = ["ronce_angoisse", "croque_colere", "lierre_jalousie", "ortie_regret",
+	"champi_panique"]
 
 var _root: Node3D
 
@@ -134,6 +135,9 @@ func test_eligible_hostiles_by_hour() -> void:
 		"3 h: + Lierre")
 	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 4.0)).back(), &"ortie_regret", "4 h: + Ortie")
 	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 3.99)).has(&"ortie_regret"), false, "Ortie not before 4 h")
+	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 5.0)), [&"ronce_angoisse", &"croque_colere", &"lierre_jalousie",
+		&"ortie_regret", &"champi_panique"], "5 h: all five")
+	assert_false(ids.call(SpawnRules.eligible_hostiles(c, 4.99)).has(&"champi_panique"), "Champi not before 5 h")
 	for s in SpawnRules.eligible_capturables(c, 8.0):
 		assert_false(s.hostile, "%s: gentle list has no hostile" % s.id)
 
@@ -276,4 +280,51 @@ func test_spitter_range_and_rhythm() -> void:
 	assert_eq(count[0], 3, "one thorn every 3 s within range (%d)" % count[0])
 	assert_near(BehaviorSpitter.RANGE, 7.0, 1e-6, "range 7 m")
 	assert_near(BehaviorSpitter.COOLDOWN, 3.0, 1e-6, "every 3 s")
+	_cleanup()
+
+# --- Champi-Panique (SPORE) --------------------------------------------------------------------
+
+func test_spore_slows_no_petal() -> void:
+	var champi := _species("champi_panique")
+	assert_eq(champi.behavior, PlantSpecies.Behavior.SPORE, "champi bursts")
+	var heroine := await _heroine(Vector2(14, 10))
+	var plant := _spawn("champi_panique", Vector2(10, 10))
+	var clouds: Array[Hazard] = []
+	plant.hazard_spawned.connect(func(h: Hazard) -> void: clouds.append(h))
+	var t := 0.0
+	while clouds.is_empty() and t < 5.0:
+		plant.set_threat(_xz(heroine), Vector2(-1, 0))
+		plant.step(DT)
+		t += DT
+	assert_eq(clouds.size(), 1, "swells into a spore cloud")
+	if clouds.is_empty():
+		_cleanup()
+		return
+	var cloud := clouds[0]
+	assert_true(cloud is SporeCloud, "it is a spore cloud")
+	assert_true(plant.is_telegraphing(), "swells (telegraph) before bursting")
+	assert_near(cloud.radius, 2.5, 1e-6, "cloud radius 2.5 m")
+	assert_true(cloud.telegraph_time >= Hazard.MIN_TELEGRAPH, "swelling announced >= 0.6 s")
+	var pos := _xz(plant)
+	while cloud.is_telegraphing():
+		plant.set_threat(_xz(heroine), Vector2(-1, 0))
+		plant.step(DT)
+		cloud.tick(DT)
+	assert_true(_xz(plant).distance_to(pos) < 1e-4, "stands still while swelling")
+	assert_true(heroine.is_slowed(), "the heroine is slowed in the cloud")
+	assert_near(heroine.move_speed(), Heroine.SPEED * SporeCloud.SLOW_FACTOR, 1e-4, "to 50 %")
+	assert_near(heroine.slowed_left(), SporeCloud.SLOW_TIME, 1e-4, "for 2 s")
+	assert_eq(heroine.lucidity.petals, 5, "spores cost no petal")
+	for i in 30:
+		heroine.tick_status(DT)
+		cloud.tick(DT)
+	assert_near(heroine.slowed_left(), SporeCloud.SLOW_TIME, 1e-4, "staying in the cloud refreshes, never stacks")
+	_cleanup()
+
+func test_champi_contact_costs_petal() -> void:
+	var heroine := await _heroine(Vector2(10.5, 10))
+	var plant := _spawn("champi_panique", Vector2(10, 10))
+	plant.set_threat(_xz(heroine), Vector2(-1, 0))
+	plant.step(DT)
+	assert_eq(heroine.lucidity.petals, 4, "direct contact costs a petal")
 	_cleanup()

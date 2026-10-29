@@ -152,3 +152,53 @@ func test_vine_ring_immobilizes_once_per_window() -> void:
 	_ticks(outside, 0.65)
 	assert_eq(struck[0], 0, "a ring 3 m away misses")
 	_cleanup()
+
+# --- Spore cloud, stacking (Review Focus 2) ----------------------------------------------------
+
+func test_spore_cloud_slows_while_inside() -> void:
+	var h := await _heroine()
+	var cloud := _add_hazard(SporeCloud.new(), Vector2(1.0, 0.0), 1.0) as SporeCloud
+	_ticks(cloud, 1.05)
+	assert_true(h.is_slowed(), "slowed in the cloud")
+	assert_eq(h.lucidity.petals, 5, "no petal")
+	h.global_position = Vector3(6, 0, 0)
+	h.tick_status(2.1)
+	_ticks(cloud, 0.5)
+	assert_false(h.is_slowed(), "out of the cloud, the slow wears off")
+	_cleanup()
+
+func test_stacked_hazards_one_petal_and_no_cc_stacking() -> void:
+	var h := await _heroine()
+	var hits: Array[int] = [0]
+	h.nightmare_hit.connect(func() -> void: hits[0] += 1)
+	var all: Array[Hazard] = [
+		_add_hazard(ThornProjectile.new(), Vector2(0.2, 0.0), 0.6),
+		_add_hazard(VineRing.new(), Vector2(0.0, 0.3), 0.6),
+		_add_hazard(SporeCloud.new(), Vector2(-0.5, 0.0), 0.6),
+	]
+	for i in int(0.7 / DT):
+		for hz in all:
+			if is_instance_valid(hz) and not hz.is_queued_for_deletion():
+				hz.tick(DT)
+	assert_eq(h.lucidity.petals, 4, "three hazards at once: one petal")
+	assert_eq(hits[0], 1, "one accepted hit")
+	assert_true(h.immobilized_left() <= VineRing.HOLD_TIME + 1e-4, "hold not stacked")
+	assert_true(h.slowed_left() <= SporeCloud.SLOW_TIME + 1e-4, "slow not stacked")
+	h.tick_status(0.4)
+	var more: Array[Hazard] = [
+		_add_hazard(VineRing.new(), Vector2.ZERO, 0.6),
+		_add_hazard(ThornProjectile.new(), Vector2.ZERO, 0.6),
+		_add_hazard(SporeCloud.new(), Vector2.ZERO, 0.6),
+		_add_hazard(SporeCloud.new(), Vector2.ZERO, 0.6),
+	]
+	var held := h.immobilized_left()
+	for i in int(0.65 / DT):
+		for hz in more:
+			if is_instance_valid(hz) and not hz.is_queued_for_deletion():
+				hz.tick(DT)
+	assert_eq(h.lucidity.petals, 4, "still one petal within the invulnerability window")
+	assert_near(h.immobilized_left(), held, 1e-4, "no new hold within the window")
+	assert_near(h.slowed_left(), SporeCloud.SLOW_TIME, 1e-4, "slow refreshed to the longest, not summed")
+	assert_near(h.move_speed(), 0.0 if h.is_immobilized() else Heroine.SPEED * SporeCloud.SLOW_FACTOR, 1e-6,
+		"held beats slowed, slows never multiply")
+	_cleanup()
