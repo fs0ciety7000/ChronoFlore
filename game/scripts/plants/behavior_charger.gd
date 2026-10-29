@@ -24,6 +24,7 @@ var _cooldown: float = FIRST_COOLDOWN
 var _dir: Vector2 = Vector2.ZERO
 var _travelled: float = 0.0
 var _lane: GroundMark
+var _disabled: bool = false ## asleep or pinned on the last tick
 
 func reset() -> void:
 	_end_attack()
@@ -46,7 +47,11 @@ func faces_threat() -> bool:
 func desired_velocity(plant: Plant, delta: float) -> Vector2:
 	if not plant.can_attack():
 		_end_attack()
+		_disabled = true
 		return Vector2.ZERO
+	if _disabled: # just woke up (or freed from the harpoon): no instant wind-up
+		_disabled = false
+		_cooldown = maxf(_cooldown, FIRST_COOLDOWN)
 	_cooldown -= delta
 	match _phase:
 		Phase.WINDUP:

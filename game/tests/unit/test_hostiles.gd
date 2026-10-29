@@ -233,6 +233,26 @@ func test_charger_asleep_never_charges() -> void:
 	assert_true(_xz(plant).distance_to(Vector2(10, 10)) < 1e-4, "and does not move")
 	_cleanup()
 
+func test_charger_first_cooldown_after_waking() -> void:
+	var plant := _spawn("croque_colere", Vector2(5, 5))
+	for i in int(2.0 / DT): # heroine far away: the first cooldown runs out while stalking
+		plant.set_threat(Vector2(28, 28), Vector2(-1, 0))
+		plant.step(DT)
+	assert_true(_lane(plant) == null, "no wind-up beyond 6 m")
+	_sleep(plant)
+	while plant.torpor.is_asleep():
+		plant.set_threat(Vector2(28, 28), Vector2(-1, 0))
+		plant.step(DT)
+	assert_false(plant.torpor.is_asleep(), "awake again")
+	var t := DT # it woke during the last tick above
+	while _lane(plant) == null and t < 3.0:
+		plant.set_threat(_xz(plant) + Vector2(4, 0), Vector2(-1, 0))
+		plant.step(DT)
+		t += DT
+	assert_true(_lane(plant) != null, "winds up once awake")
+	assert_true(t >= BehaviorCharger.FIRST_COOLDOWN - 1e-4, "waits the first cooldown after waking (%.2f s)" % t)
+	_cleanup()
+
 # --- Lierre-Jalousie (ROOT_TRAP) ---------------------------------------------------------------
 
 func test_root_trap_casts_vine_ring_under_heroine() -> void:
