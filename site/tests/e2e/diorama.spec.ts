@@ -53,6 +53,23 @@ async function pixel(page: Page, x: number, y: number): Promise<number[]> {
   }, png.toString('base64'));
 }
 
+/** Resolves once #diorama[data-island] has not changed for 1 s (fails after 30 s). */
+async function settle(page: Page) {
+  const read = () => page.evaluate(() => document.getElementById('diorama')!.dataset.island ?? '');
+  let last = await read();
+  let since = Date.now();
+  const deadline = Date.now() + 30_000;
+  while (Date.now() - since < 1000) {
+    if (Date.now() > deadline) throw new Error(`island did not settle (${last})`);
+    await page.waitForTimeout(200);
+    const now = await read();
+    if (now !== last) {
+      last = now;
+      since = Date.now();
+    }
+  }
+}
+
 const hexRgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 test.describe('with WebGL', () => {
@@ -79,13 +96,16 @@ test.describe('with WebGL', () => {
   });
 
   test('keeps the copy clear of the island, which really renders there', async () => {
+    test.setTimeout(120_000);
     await withPage(WEBGL_ARGS, async (page) => {
       await page.goto('/');
       await expect(page.locator('#diorama')).toHaveAttribute('data-state', 'live', { timeout: 10_000 });
       for (const f of [0, 0.4, 0.78, 1]) {
         await scrollToFraction(page, f);
-        // Wait until the island has finished gliding (scene smoothing).
-        await page.waitForTimeout(2500);
+        // Wait until the island has finished gliding (scene smoothing): its
+        // published framing stays put for 1 s. Software WebGL can run at a few
+        // frames per second, so a fixed delay is not enough.
+        await settle(page);
         const { island, bg, overlaps } = await page.evaluate(() => {
           const [x, y, r] = document.getElementById('diorama')!.dataset.island!.split(',').map(Number);
           const texts = [...document.querySelectorAll('main h1, main h2, main h3, main p, footer p')];
