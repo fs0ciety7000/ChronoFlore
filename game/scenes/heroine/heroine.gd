@@ -27,6 +27,12 @@ const EDGE_MARGIN := 0.4
 
 var aim_dir: Vector2 = Vector2(0, 1) ## unit XZ, never zero
 var aim_source: AimAssist.Source = AimAssist.Source.MOVE
+## Keyboard-half players (shared keyboard, unplugged pad) aim AUTO: their walk, fully assisted.
+var auto_aim: bool = false
+## Only the keyboard-mouse player reads the mouse (P1 by default; NightSession sets it).
+var uses_mouse: bool = true
+## The pad this player listens to (DeviceAssignment: ALL_PADS, NO_PAD or a device id).
+var pad_device: int = DeviceAssignment.ALL_PADS
 var lucidity: Lucidity ## injected by NightSession
 var island: IslandShape ## injected by NightSession; clamps knockbacks
 
@@ -89,9 +95,18 @@ static func screen_to_world(v: Vector2) -> Vector2:
 func facing() -> Vector2:
 	return aim_dir
 
+## True while this player's pad (any pad for ALL_PADS) is connected.
+func has_pad() -> bool:
+	var pads := Input.get_connected_joypads()
+	if pad_device == DeviceAssignment.NO_PAD:
+		return false
+	if pad_device == DeviceAssignment.ALL_PADS:
+		return not pads.is_empty()
+	return pads.has(pad_device)
+
 func _input(event: InputEvent) -> void:
 	# The mouse belongs to P1 (keyboard-mouse); P2 aims with a stick or by walking.
-	if player_index == 0 and event is InputEventMouseMotion:
+	if player_index == 0 and uses_mouse and event is InputEventMouseMotion:
 		_mouse_moved = true
 
 func _physics_process(_delta: float) -> void:
@@ -106,14 +121,17 @@ func _physics_process(_delta: float) -> void:
 		velocity = Vector3.ZERO
 		move_and_collide(_knockback_velocity * dt) # input ignored during the slide
 	move_and_slide()
-	update_aim(_mouse_moved, _mouse_ground_point(), stick, move, not Input.get_connected_joypads().is_empty())
+	update_aim(_mouse_moved, _mouse_ground_point(), stick, move, has_pad())
 	_mouse_moved = false
 	if _visual != null and _visual.has_method("set_walking"):
 		_visual.call("set_walking", move.length() > 0.1 and move_speed() > 0.0)
 
 ## Per-frame aim update from already-sampled inputs. mouse_ground is a Vector3 or null.
 func update_aim(mouse_moved: bool, mouse_ground: Variant, stick: Vector2, move: Vector2, pad_active: bool) -> void:
-	aim_source = AimAssist.pick_source(aim_source, mouse_moved, stick, move, pad_active)
+	if auto_aim:
+		aim_source = AimAssist.Source.AUTO
+	else:
+		aim_source = AimAssist.pick_source(aim_source, mouse_moved, stick, move, pad_active)
 	var dir := Vector2.ZERO
 	match aim_source:
 		AimAssist.Source.MOUSE:
@@ -122,7 +140,7 @@ func update_aim(mouse_moved: bool, mouse_ground: Variant, stick: Vector2, move: 
 				dir = Vector2(p.x - global_position.x, p.z - global_position.z)
 		AimAssist.Source.STICK:
 			dir = screen_to_world(stick)
-		AimAssist.Source.MOVE:
+		AimAssist.Source.MOVE, AimAssist.Source.AUTO:
 			dir = screen_to_world(move)
 	if dir.length_squared() > 1e-4:
 		aim_dir = dir.normalized()
@@ -133,7 +151,7 @@ func update_aim(mouse_moved: bool, mouse_ground: Variant, stick: Vector2, move: 
 func take_nightmare_hit(from_xz: Variant = null) -> bool:
 	if lucidity == null:
 		return false
-	if not lucidity.take_hit(Time.get_ticks_msec() / 1000.0):
+	if not lucidity.take_hit_for(player_index, Time.get_ticks_msec() / 1000.0):
 		return false
 	nightmare_hit.emit()
 	if _visual != null and _visual.has_method("blink_hurt"):

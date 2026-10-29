@@ -38,9 +38,7 @@ func _strike(target: Node3D) -> bool:
 	return true
 
 func _linger_tick(_delta: float) -> void:
-	var target := target_in_radius()
-	if target != null and _strike(target):
-		struck.emit(target)
+	_strike_all()
 
 func _update_visual(progress: float) -> void:
 	super._update_visual(progress)

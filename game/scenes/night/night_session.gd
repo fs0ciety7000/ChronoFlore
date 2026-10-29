@@ -42,6 +42,8 @@ var ended: bool = false
 var pause_menu: PauseMenu
 ## Playable characters: [the Heroine node] in solo, [P1, P2] in co-op. players[0] is `heroine`.
 var players: Array[Heroine] = []
+## Devices per player (DeviceAssignment), reapplied on every pad (un)plug.
+var assignments: Array[Dictionary] = []
 
 @onready var island: Island = $Island
 @onready var heroine: Heroine = $Heroine
@@ -57,6 +59,7 @@ var _rng := RandomNumberGenerator.new()
 var _spawn_timer: float = 0.0
 var _plant_glow: float = 0.0
 var _flash_tween: Tween
+var _last_xz: PackedVector2Array = PackedVector2Array() ## players' XZ at the last leash check
 
 func _ready() -> void:
 	_rng.randomize()
@@ -68,6 +71,7 @@ func _ready() -> void:
 	lucidity.depleted.connect(end_night.bind(false))
 
 	setup_players(GameState.mode)
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	hud.bind(self, _belt)
 
 	night_lighting.target_progress = 0.0
@@ -75,7 +79,6 @@ func _ready() -> void:
 	_plant_glow = float(NightPalette.sample(0.0)["plant_glow"])
 	night_lighting.glow_changed.connect(_on_glow_changed)
 
-	camera.set_target(heroine)
 	camera.bounds = _outline_rect(island.shape)
 	camera.snap_to_target()
 
@@ -90,9 +93,8 @@ func _physics_process(delta: float) -> void:
 		var clamped := island.shape.clamp_inside(p, Heroine.EDGE_MARGIN)
 		if clamped != p:
 			player.global_position = Vector3(clamped.x, player.global_position.y, clamped.y)
-	var h := _heroine_xz()
-	for plant in live_plants():
-		plant.set_threat(h, heroine.aim_dir)
+	apply_leash()
+	feed_threats()
 	for player in players:
 		var belt := _belt_of(player)
 		belt.tick(delta)
@@ -145,6 +147,82 @@ func setup_players(p_mode: GameState.Mode) -> void:
 	for i in players.size():
 		var at := start + P2_START_OFFSET * i
 		players[i].global_position = Vector3(at.x, island.ground_height(), at.y)
+	_last_xz = player_points()
+	assignments.clear()
+	apply_devices(Input.get_connected_joypads())
+	var targets: Array[Node3D] = []
+	for player in players:
+		targets.append(player)
+	camera.set_targets(targets)
+
+func is_coop() -> bool:
+	return players.size() > 1
+
+## Players' XZ positions, in player order.
+func player_points() -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for player in players:
+		out.append(Vector2(player.global_position.x, player.global_position.z))
+	return out
+
+## Every plant reacts to its nearest player: position, aim, and who its contact hits.
+func feed_threats() -> void:
+	var points := player_points()
+	for plant in live_plants():
+		var i := CoopRules.nearest(plant.xz(), points)
+		if i >= 0:
+			plant.set_threat(points[i], players[i].aim_dir, players[i])
+
+## Co-op leash: beyond LEASH_DISTANCE the players are pulled back together, each by the share
+## of the gap they walked away since the last check (whoever wanders off is the one held).
+func apply_leash() -> void:
+	var points := player_points()
+	if points.size() == 2 and _last_xz.size() == 2:
+		var a := points[0]
+		var b := points[1]
+		if a.distance_to(b) > CoopRules.LEASH_DISTANCE:
+			var sep := (b - a).normalized()
+			var out_a := maxf((a - _last_xz[0]).dot(-sep), 0.0)
+			var out_b := maxf((b - _last_xz[1]).dot(sep), 0.0)
+			if out_a <= 1e-6 and out_b > 1e-6:
+				b = CoopRules.leash(b, a)
+			elif out_b <= 1e-6 and out_a > 1e-6:
+				a = CoopRules.leash(a, b)
+			else:
+				var share_b := 0.5 if out_a + out_b <= 1e-6 else out_b / (out_a + out_b)
+				var excess := a.distance_to(b) - CoopRules.LEASH_DISTANCE
+				b -= sep * excess * share_b
+				a += sep * excess * (1.0 - share_b)
+			_place_player(players[0], a)
+			_place_player(players[1], b)
+			points = player_points()
+	_last_xz = points
+
+func _place_player(player: Heroine, p: Vector2) -> void:
+	player.global_position = Vector3(p.x, player.global_position.y, p.y)
+
+## Reassigns devices for the connected pads (DeviceAssignment rules) and rebuilds the bindings;
+## keyboard halves aim AUTO, only the keyboard-mouse player reads the mouse.
+func apply_devices(pad_ids: Array[int]) -> void:
+	assignments = DeviceAssignment.reassign(assignments, pad_ids, is_coop())
+	DeviceAssignment.apply(assignments)
+	for i in players.size():
+		var player := players[i]
+		var kind := DeviceAssignment.Kind.KEYBOARD_MOUSE
+		var device := DeviceAssignment.ALL_PADS
+		if i < assignments.size():
+			kind = int(assignments[i]["kind"]) as DeviceAssignment.Kind
+			device = int(assignments[i]["device"])
+		player.auto_aim = DeviceAssignment.auto_aim(kind)
+		player.uses_mouse = DeviceAssignment.uses_mouse(kind)
+		player.pad_device = device
+		if not player.auto_aim and player.aim_source == AimAssist.Source.AUTO:
+			player.aim_source = AimAssist.Source.MOVE
+		if not player.uses_mouse and player.aim_source == AimAssist.Source.MOUSE:
+			player.aim_source = AimAssist.Source.MOVE
+
+func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
+	apply_devices(Input.get_connected_joypads())
 
 func _add_player(player: Heroine) -> void:
 	players.append(player)
@@ -180,7 +258,7 @@ func spawn_tick() -> void:
 		else:
 			gentle += 1
 	var eligible := SpawnRules.eligible_capturables(GameState.catalog, hour)
-	for i in range(gentle, SpawnRules.target_population(hour)):
+	for i in range(gentle, CoopRules.population(SpawnRules.target_population(hour), is_coop())):
 		var species := SpawnRules.pick(eligible, _rng)
 		if species == null:
 			break
@@ -188,17 +266,20 @@ func spawn_tick() -> void:
 	var nightmare_species := SpawnRules.eligible_hostiles(GameState.catalog, hour)
 	if nightmare_species.is_empty():
 		return
-	for i in range(nightmares, SpawnRules.nightmare_count(hour)):
+	for i in range(nightmares, CoopRules.nightmares(SpawnRules.nightmare_count(hour), is_coop())):
 		add_plant(nightmare_species[_rng.randi_range(0, nightmare_species.size() - 1)], spawn_point())
 
-## Random island point at least SPAWN_MIN_DISTANCE from the heroine, else the farthest tried.
+## Random island point at least SPAWN_MIN_DISTANCE from every player, else the farthest tried
+## (from its nearest player).
 func spawn_point() -> Vector2:
-	var h := _heroine_xz()
+	var points := player_points()
 	var best := Vector2.ZERO
 	var best_d := -1.0
 	for i in SPAWN_TRIES:
 		var p := island.shape.random_point(_rng, SPAWN_MARGIN)
-		var d := p.distance_to(h)
+		var d := INF
+		for h in points:
+			d = minf(d, p.distance_to(h))
 		if d >= SPAWN_MIN_DISTANCE:
 			return p
 		if d > best_d:
@@ -291,9 +372,6 @@ func _available_tools() -> Array[ToolData]:
 			result.append(tool)
 	return result
 
-func _heroine_xz() -> Vector2:
-	return Vector2(heroine.global_position.x, heroine.global_position.z)
-
 static func _outline_rect(shape: IslandShape) -> Rect2:
 	if shape.outline.is_empty():
 		return Rect2()
@@ -315,5 +393,6 @@ func open_pause() -> void:
 	_hud_layer.add_child(pause_menu)
 
 func _exit_tree() -> void:
+	DeviceAssignment.restore() # the project's (solo) bindings back for menus and the next night
 	if pause_menu != null and is_inside_tree():
 		get_tree().paused = false

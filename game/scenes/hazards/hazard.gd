@@ -1,7 +1,8 @@
 class_name Hazard
 extends Node3D
 ## A hostile attack on the ground: a soft sign first (telegraph, at least MIN_TELEGRAPH), then
-## the impact, which strikes the heroine if she is still within `radius`, then a short linger.
+## the impact, which strikes every player (group "heroine") still within `radius`, then a short
+## linger.
 ## Subclasses set the colours, add their own visuals and decide what a strike does (_strike).
 ## Lives next to the plants (NightSession's Plants root), so a frozen night freezes it too.
 
@@ -58,9 +59,7 @@ func tick(delta: float) -> void:
 		if elapsed >= telegraph_time - 1e-6:
 			_impacted = true
 			_on_impact()
-			var target := target_in_radius()
-			if target != null and _strike(target):
-				struck.emit(target)
+			_strike_all()
 		_update_visual(clampf(elapsed / telegraph_time, 0.0, 1.0))
 		return
 	_linger_tick(delta)
@@ -84,15 +83,30 @@ func center_xz() -> Vector2:
 	var p := global_position if is_inside_tree() else position
 	return Vector2(p.x, p.z)
 
-## The heroine if she stands within `radius`, else null.
-func target_in_radius() -> Node3D:
+## Every player (group "heroine") standing within `radius`, in group order.
+func targets_in_radius() -> Array[Node3D]:
+	var out: Array[Node3D] = []
 	if not is_inside_tree():
-		return null
-	var heroine := get_tree().get_first_node_in_group("heroine") as Node3D
-	if heroine == null:
-		return null
-	var h := Vector2(heroine.global_position.x, heroine.global_position.z)
-	return heroine if h.distance_to(center_xz()) <= radius else null
+		return out
+	for node in get_tree().get_nodes_in_group("heroine"):
+		var player := node as Node3D
+		if player == null:
+			continue
+		var h := Vector2(player.global_position.x, player.global_position.z)
+		if h.distance_to(center_xz()) <= radius:
+			out.append(player)
+	return out
+
+## The first player within `radius`, else null.
+func target_in_radius() -> Node3D:
+	var targets := targets_in_radius()
+	return targets[0] if not targets.is_empty() else null
+
+## Strikes every player within `radius` (each on their own invulnerability window).
+func _strike_all() -> void:
+	for target in targets_in_radius():
+		if _strike(target):
+			struck.emit(target)
 
 ## What the impact does to the target; true when it counts as a strike.
 func _strike(_target: Node3D) -> bool:
@@ -102,7 +116,7 @@ func _strike(_target: Node3D) -> bool:
 func _on_impact() -> void:
 	pass
 
-## Called every tick after the impact (lingering clouds keep affecting the heroine).
+## Called every tick after the impact (lingering clouds keep affecting the players).
 func _linger_tick(_delta: float) -> void:
 	pass
 
