@@ -2,7 +2,7 @@ class_name BehaviorCharger
 extends PlantBehavior
 ## Croque-Colère: stalks the heroine; once she is within TRIGGER_DISTANCE it crouches for
 ## WINDUP_TIME over a lane drawn on the ground (the telegraph), then charges in a straight line
-## locked at the start of the wind-up. A side-step dodges it.
+## locked at the start of the wind-up. A side-step dodges it. Only the charge hurts on contact.
 
 const TRIGGER_DISTANCE := 6.0
 const WINDUP_TIME := 0.8
@@ -36,6 +36,9 @@ func is_charging() -> bool:
 
 func telegraph_mark() -> GroundMark:
 	return _lane
+
+func contact_hurts() -> bool:
+	return _phase == Phase.CHARGE
 
 func faces_threat() -> bool:
 	return _phase == Phase.STALK

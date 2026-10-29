@@ -73,6 +73,10 @@ func is_charging() -> bool:
 func telegraph_mark() -> GroundMark:
 	return null
 
+## Hostiles: true while touching the heroine costs her a petal (Croque: only its charge).
+func contact_hurts() -> bool:
+	return true
+
 ## False for a rooted hostile (Ortie-Regret): no wandering without a threat.
 func wanders() -> bool:
 	return true

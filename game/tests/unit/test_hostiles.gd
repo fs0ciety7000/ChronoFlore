@@ -50,6 +50,13 @@ func _cleanup() -> void:
 		_root.free()
 		_root = null
 
+## Croque's charge lane while it is shown (wind-up and charge), or null.
+func _lane(plant: Plant) -> GroundMark:
+	for child in plant.get_children():
+		if child is GroundMark and String(child.name).begins_with("ChargeLane") and not child.is_queued_for_deletion():
+			return child
+	return null
+
 func _sleep(plant: Plant) -> void:
 	for i in Torpor.SLEEP_CHARGES:
 		plant.hit_by_tool(ToolData.Effect.TORPOR)
@@ -192,6 +199,28 @@ func test_charger_hit_stops_charge() -> void:
 	assert_true(plant.is_stunned(), "croque stunned after its hit")
 	assert_false(plant.is_charging(), "the charge stops on the hit")
 	assert_false(plant.is_telegraphing(), "no wind-up while stunned")
+	_cleanup()
+
+func test_charger_contact_hurts_only_during_charge() -> void:
+	# Ruling: Ronce and Champi hurt on contact (spec); Croque only through its telegraphed charge.
+	var heroine := await _heroine(Vector2(10.6, 10))
+	var plant := _spawn("croque_colere", Vector2(10, 10))
+	var t := 0.0
+	var lost_at := -1.0
+	var lane_at := -1.0
+	while t < 3.0 and lost_at < 0.0:
+		plant.set_threat(_xz(heroine), Vector2(-1, 0))
+		plant.step(DT)
+		t += DT
+		if lane_at < 0.0 and _lane(plant) != null:
+			lane_at = t
+		if heroine.lucidity.petals < 5:
+			lost_at = t
+	assert_true(lane_at > 0.0, "winds up next to the heroine")
+	assert_true(lost_at > 0.0, "the charge hits")
+	assert_true(lost_at - lane_at >= BehaviorCharger.WINDUP_TIME - 1e-4,
+		"no petal before the wind-up is over (lane %.2f s, hit %.2f s)" % [lane_at, lost_at])
+	assert_eq(heroine.lucidity.petals, 4, "one petal")
 	_cleanup()
 
 func test_charger_asleep_never_charges() -> void:

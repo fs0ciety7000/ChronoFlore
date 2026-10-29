@@ -270,8 +270,11 @@ func step(delta: float) -> void:
 				if _stun_left > 0.0:
 					_stun_left -= delta
 				elif _has_threat:
+					# Read before the tick: the last charge frame still hurts, a wind-up never does.
+					var hurts := _behavior.contact_hurts()
 					dir = _behavior.desired_velocity(self, delta)
-					_check_contact(dist)
+					if hurts:
+						_check_contact(dist)
 				elif _behavior.wanders():
 					dir = _wander(delta)
 			else:
