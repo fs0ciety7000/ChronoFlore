@@ -304,3 +304,23 @@ func test_startle_only_while_fleeing() -> void:
 	_steps(plant, 20)
 	assert_false(plant.is_startled(), "startle ends after 0.8 s")
 	_cleanup()
+
+func test_glow_set_before_setup_is_applied() -> void:
+	_root = Node3D.new()
+	tree.root.add_child(_root)
+	var plant := (load(PLANT_SCENE) as PackedScene).instantiate() as Plant
+	_root.add_child(plant)
+	plant.set_glow(0.5)
+	plant.setup(load("res://data/species/revette.tres") as PlantSpecies, _square(), 1.0)
+	var lit := 0
+	var total := 0
+	for node in plant.get_node("Visual").find_children("*", "MeshInstance3D", true, false):
+		var mat := (node as MeshInstance3D).get_active_material(0) as StandardMaterial3D
+		if mat == null:
+			continue
+		total += 1
+		if mat.emission_enabled and is_equal_approx(mat.emission_energy_multiplier, 0.5 * Plant.GLOW_ENERGY):
+			lit += 1
+	assert_true(total > 0, "visual has materials")
+	assert_eq(lit, total, "glow stored before setup is reapplied to the built visual")
+	_cleanup()

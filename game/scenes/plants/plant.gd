@@ -55,6 +55,7 @@ var island: IslandShape
 var _behavior: PlantBehavior
 var _rng := RandomNumberGenerator.new()
 var _materials: Array[StandardMaterial3D] = []
+var _glow: float = 0.0 ## last plant_glow, reapplied whenever the visual is rebuilt
 
 var _has_threat: bool = false
 var _threat: Vector2 = Vector2.ZERO
@@ -148,6 +149,11 @@ func flee_direction() -> Vector2:
 
 ## Pastel emission driven by the night palette's plant_glow (0..1).
 func set_glow(value: float) -> void:
+	_glow = value
+	_apply_glow()
+
+func _apply_glow() -> void:
+	var value := _glow
 	for mat in _materials:
 		mat.emission_enabled = value > 0.001
 		mat.emission = mat.albedo_color
@@ -349,6 +355,7 @@ func _build_visual() -> void:
 		var copy := mat.duplicate() as StandardMaterial3D
 		mi.material_override = copy
 		_materials.append(copy)
+	_apply_glow()
 
 func _animate_visual(delta: float) -> void:
 	var visual := get_node_or_null("Visual") as Node3D
