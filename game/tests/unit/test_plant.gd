@@ -85,18 +85,6 @@ func test_pin_then_net() -> void:
 	assert_true(plant.hit_by_tool(ToolData.Effect.CAPTURE), "net captures a pinned plant")
 	_cleanup()
 
-func test_ronce_never_captured() -> void:
-	var plant := _spawn("ronce_angoisse")
-	var slept: Array[int] = [0]
-	plant.fell_asleep.connect(func(_p: Plant) -> void: slept[0] += 1)
-	for i in 3:
-		plant.hit_by_tool(ToolData.Effect.TORPOR)
-	assert_true(plant.torpor.is_asleep(), "ronce asleep")
-	assert_eq(slept[0], 1, "fell_asleep relayed")
-	assert_false(plant.hit_by_tool(ToolData.Effect.CAPTURE), "ronce never captured")
-	assert_true(plant.state != Plant.State.CAPTURED, "ronce not CAPTURED")
-	_cleanup()
-
 func test_emerging_timidelle_capturable() -> void:
 	var plant := _spawn("timidelle")
 	plant.state = Plant.State.EMERGING

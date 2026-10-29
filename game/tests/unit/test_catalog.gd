@@ -17,7 +17,7 @@ func test_species_values() -> void:
 		[&"revette", "Rêvette", "joie légère", PlantSpecies.Rarity.COMMON, true, 4.5, 0.0, PlantSpecies.Behavior.DARTER],
 		[&"nostalgerbe", "Nostalgerbe", "nostalgie", PlantSpecies.Rarity.COMMON, true, 3.5, 0.0, PlantSpecies.Behavior.ZIGZAG],
 		[&"timidelle", "Timidelle", "timidité", PlantSpecies.Rarity.UNCOMMON, true, 3.0, 2.0, PlantSpecies.Behavior.BURROWER],
-		[&"ronce_angoisse", "Ronce-Angoisse", "angoisse", PlantSpecies.Rarity.COMMON, false, 1.2, 0.0, PlantSpecies.Behavior.STALKER],
+		[&"ronce_angoisse", "Ronce-Angoisse", "angoisse", PlantSpecies.Rarity.COMMON, true, 1.2, 0.0, PlantSpecies.Behavior.STALKER],
 		[&"calinette", "Câlinette", "tendresse", PlantSpecies.Rarity.COMMON, true, 3.0, 0.0, PlantSpecies.Behavior.SHY_APPROACH],
 		[&"souffloine", "Souffloine", "insouciance", PlantSpecies.Rarity.UNCOMMON, true, 4.3, 1.0, PlantSpecies.Behavior.HOPPER],
 		[&"melancolys", "Mélancolys", "mélancolie", PlantSpecies.Rarity.UNCOMMON, true, 2.2, 3.0, PlantSpecies.Behavior.POND_SEEKER],
@@ -37,7 +37,7 @@ func test_species_values() -> void:
 		assert_eq(s.behavior, r[7], "%s behavior" % r[0])
 	assert_eq(c.species_by_id(&"revette").minutes_reward(), 20, "revette reward")
 	assert_eq(c.species_by_id(&"timidelle").minutes_reward(), 40, "timidelle reward")
-	assert_eq(c.species_by_id(&"ronce_angoisse").minutes_reward(), 0, "ronce reward")
+	assert_eq(c.species_by_id(&"ronce_angoisse").minutes_reward(), 40, "ronce reward (captured asleep)")
 	var net := c.tool_by_id(&"net")
 	assert_eq(net.effect, ToolData.Effect.CAPTURE, "net effect")
 	assert_near(net.max_range, 2.0, 0.0001, "net range")

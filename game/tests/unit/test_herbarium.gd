@@ -28,16 +28,16 @@ func test_detail_thresholds() -> void:
 	assert_eq(h.revealed_details(&"revette"), 2, "2 details after 15")
 	assert_eq(h.record(rev)["new_detail"], -1, "16th none")
 
-func test_ronce_counts_but_not_toward_milestone() -> void:
+func test_captured_ronce_counts_toward_milestone() -> void:
+	# Since Task B3 a hostile page comes only from a capture (asleep), so it counts.
 	var c := _catalog()
 	var h := Herbarium.new()
 	h.record(_sp(&"revette"))
 	h.record(_sp(&"nostalgerbe"))
+	assert_eq(h.apply_milestones(c), [] as Array[StringName], "no unlock yet")
 	var r := h.record(_sp(&"ronce_angoisse"))
 	assert_true(r["new_species"], "ronce page discovered")
-	assert_eq(h.discovered_capturable_count(c), 2, "2 capturable")
-	assert_eq(h.apply_milestones(c), [] as Array[StringName], "no unlock yet")
-	h.record(_sp(&"timidelle"))
+	assert_eq(h.discovered_capturable_count(c), 3, "3 captured species, one hostile")
 	assert_eq(h.apply_milestones(c), [&"harpoon"] as Array[StringName], "harpoon unlocked")
 	assert_eq(h.apply_milestones(c), [] as Array[StringName], "only once")
 

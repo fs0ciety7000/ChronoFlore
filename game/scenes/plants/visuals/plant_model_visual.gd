@@ -10,6 +10,10 @@ extends Node3D
 const LIGHT_LIFT := 0.2
 const BLEND := 0.15
 const ONE_SHOTS: Array[StringName] = [&"Attack"]
+## The Attack clip strikes (lunge, snap, burst) at this fraction of its length (build_plants.py).
+const ATTACK_STRIKE_FRACTION := 20.0 / 36.0
+const ATTACK_MIN_SPEED := 0.25
+const ATTACK_MAX_SPEED := 4.0
 ## Materials named Glow* (Lumiole's bulb, fireflies) keep their own emission as the floor.
 const OWN_GLOW_PREFIX := "Glow"
 ## Lights carried by a model (Lumiole) shine at this fraction of their energy by day.
@@ -63,15 +67,19 @@ func play_state(state: Plant.State, asleep: bool) -> void:
 		return # back to _wanted when the one-shot ends
 	_play(anim_name)
 
-## Hostile strike (no-op on models without an Attack animation).
-func play_attack() -> void:
+## Hostile strike (no-op on models without an Attack animation). With impact_in > 0 the clip is
+## time-stretched so its strike key (ATTACK_STRIKE_FRACTION of the clip) lands then: the
+## wind-up reads as the telegraph.
+func play_attack(impact_in: float = 0.0) -> void:
 	_setup()
 	if _anim == null or not _anim.has_animation(&"Attack") or not _anim.is_inside_tree():
 		return
-	if _anim.current_animation == "Attack":
-		_anim.seek(0.0, true)
-	else:
-		_anim.play(&"Attack", BLEND)
+	var speed := 1.0
+	if impact_in > 0.0:
+		var strike := _anim.get_animation(&"Attack").length * ATTACK_STRIKE_FRACTION
+		speed = clampf(strike / impact_in, ATTACK_MIN_SPEED, ATTACK_MAX_SPEED)
+	_anim.play(&"Attack", BLEND, speed)
+	_anim.seek(0.0, true)
 
 ## Night palette plant_glow (0..1); the light lift is the floor of the emission.
 func set_glow(value: float) -> void:

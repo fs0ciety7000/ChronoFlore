@@ -8,7 +8,9 @@ enum State { WANDER, ALERT, FLEE, PANIC, BURROWED, EMERGING, CAPTURED, ESCAPED }
 
 signal captured(plant: Plant)
 signal escaped(plant: Plant)
-signal fell_asleep(plant: Plant) ## relays Torpor.fell_asleep (herbarium page for Ronce)
+signal fell_asleep(plant: Plant) ## relays Torpor.fell_asleep
+## A hostile launched a telegraphed attack (thorn, vine ring, spore cloud).
+signal hazard_spawned(hazard: Hazard)
 
 ## Heroine closer than this alerts a wandering plant: a careful approach to ~4 m is possible.
 const ALERT_RADIUS := 4.0
@@ -31,9 +33,9 @@ const BURROW_DURATION := 1.2
 const EMERGE_DURATION := 1.0
 const EMERGE_MIN_DISTANCE := 4.0
 const EMERGE_MAX_DISTANCE := 6.0
-## Stalker contact radius with the heroine.
+## Hostile contact radius with the heroine.
 const CONTACT_DISTANCE := 0.9
-## After an accepted contact hit the stalker stays still this long, so contact cannot chain.
+## After an accepted contact hit the hostile stays still this long, so contact cannot chain.
 const CONTACT_STUN_DURATION := 1.0
 ## Wander and emerge targets keep this distance to island obstacles (the pond).
 const OBSTACLE_MARGIN := 0.4
@@ -113,6 +115,7 @@ func set_threat(position_xz: Vector2, aim_dir: Vector2) -> void:
 
 ## TORPOR -> dart, PIN -> pin, CAPTURE -> net. Returns true only on a capture.
 ## A hidden plant ignores every tool; an airborne one dodges the net (darts still hit).
+## A hostile is netted only if it is asleep at the moment of the hit (never "on waking").
 func hit_by_tool(effect: ToolData.Effect) -> bool:
 	if state == State.BURROWED or state == State.CAPTURED or state == State.ESCAPED or is_hidden():
 		return false
@@ -126,11 +129,11 @@ func hit_by_tool(effect: ToolData.Effect) -> bool:
 		ToolData.Effect.CAPTURE:
 			if is_airborne():
 				return false
-			if species.capturable and torpor.net_can_capture(can_net_without_torpor()):
+			if _can_net():
 				_capture()
 				return true
 			_alert_from_hit()
-			if not _is_stalker():
+			if not is_hostile():
 				startle()
 	return false
 
@@ -205,7 +208,27 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	_animate_visual(delta)
 
-## True while a stalker rests after an accepted contact hit.
+func is_hostile() -> bool:
+	return species != null and species.hostile
+
+## A hostile attacks only while awake and free (not asleep, not pinned by the harpoon).
+func can_attack() -> bool:
+	return not torpor.is_asleep() and not torpor.is_pinned()
+
+## Adds a hazard next to the plant (same parent: NightSession's Plants root) and starts it.
+func spawn_hazard(hazard: Hazard, at: Vector3, telegraph: float) -> Hazard:
+	var parent := get_parent() if get_parent() != null else self
+	parent.add_child(hazard)
+	hazard.setup(at, telegraph)
+	hazard_spawned.emit(hazard)
+	return hazard
+
+## Plays the model's Attack so that its strike lands `impact_in` seconds from now (0: at once).
+func play_attack(impact_in: float = 0.0) -> void:
+	if _model != null:
+		_model.play_attack(impact_in)
+
+## True while a hostile rests after an accepted contact hit.
 func is_stunned() -> bool:
 	return _stun_left > 0.0
 
@@ -227,12 +250,14 @@ func step(delta: float) -> void:
 	var dir := Vector2.ZERO
 	match state:
 		State.WANDER:
-			if _is_stalker():
+			if is_hostile():
 				if _stun_left > 0.0:
 					_stun_left -= delta
-				else:
-					dir = _behavior.desired_velocity(self, delta) if _has_threat else _wander(delta)
+				elif _has_threat:
+					dir = _behavior.desired_velocity(self, delta)
 					_check_contact(dist)
+				elif _behavior.wanders():
+					dir = _wander(delta)
 			else:
 				dir = _wander(delta)
 				if dist < ALERT_RADIUS:
@@ -262,7 +287,7 @@ func step(delta: float) -> void:
 			if _state_time >= EMERGE_DURATION:
 				state = State.FLEE
 	var speed := species.base_speed * speed_multiplier * torpor.speed_factor()
-	if state == State.WANDER and not (_is_stalker() and _has_threat):
+	if state == State.WANDER and not (is_hostile() and _has_threat):
 		speed *= WANDER_SPEED_SCALE
 	if _startle_left > 0.0:
 		_startle_left -= delta
@@ -271,8 +296,12 @@ func step(delta: float) -> void:
 	_keep_on_island()
 	_update_hidden()
 
-func _is_stalker() -> bool:
-	return species.behavior == PlantSpecies.Behavior.STALKER
+func _can_net() -> bool:
+	if not species.capturable:
+		return false
+	if is_hostile():
+		return torpor.is_asleep()
+	return torpor.net_can_capture(can_net_without_torpor())
 
 func _set_state(value: State) -> void:
 	if value == state:
@@ -311,7 +340,7 @@ func _sync_animation() -> void:
 		_model.play_state(State.WANDER if is_hidden() else state, torpor.is_asleep())
 
 func _alert_from_hit() -> void:
-	if not _is_stalker() and (state == State.WANDER or state == State.ALERT):
+	if not is_hostile() and (state == State.WANDER or state == State.ALERT):
 		state = State.FLEE
 
 func _capture() -> void:
@@ -366,6 +395,7 @@ func _check_contact(dist: float) -> void:
 	if heroine != null and heroine.has_method("take_nightmare_hit"):
 		if heroine.call("take_nightmare_hit", xz()) == true:
 			_stun_left = CONTACT_STUN_DURATION
+			_behavior.reset() # a charge or a wind-up never outlives the hit
 			if _model != null:
 				_model.play_attack()
 

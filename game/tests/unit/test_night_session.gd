@@ -29,10 +29,10 @@ func _remove_file() -> void:
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(p)
 
-func _count(s: NightSession, capturable: bool) -> int:
+func _count(s: NightSession, gentle: bool) -> int:
 	var n := 0
 	for p in s.live_plants():
-		if p.species.capturable == capturable:
+		if p.species.hostile != gentle:
 			n += 1
 	return n
 
@@ -98,13 +98,18 @@ func test_capture_advances_clock() -> void:
 	assert_false(s.live_plants().has(plant), "captured plant removed from play")
 	_end(s)
 
-func test_sleeping_ronce_is_recorded() -> void:
+func test_sleeping_hostile_is_recorded_only_when_captured() -> void:
 	var s: NightSession = await _session()
 	var ronce := GameState.catalog.species_by_id(&"ronce_angoisse")
 	var plant := s.add_plant(ronce, s.island.shape.centroid())
-	plant.fell_asleep.emit(plant)
-	assert_true(GameState.herbarium.is_discovered(&"ronce_angoisse"), "ronce page from sleep")
+	for i in Torpor.SLEEP_CHARGES:
+		plant.hit_by_tool(ToolData.Effect.TORPOR)
+	assert_true(plant.torpor.is_asleep(), "ronce asleep")
+	assert_false(GameState.herbarium.is_discovered(&"ronce_angoisse"), "no page from a mere sleep")
 	assert_eq(s.clock.minutes, 0, "sleep gives no minutes")
+	assert_true(plant.hit_by_tool(ToolData.Effect.CAPTURE), "netted while asleep")
+	assert_true(GameState.herbarium.is_discovered(&"ronce_angoisse"), "ronce page from the capture")
+	assert_eq(s.clock.minutes, 40, "a captured hostile adds 40 min")
 	_end(s)
 
 func test_escape_loses_petal() -> void:

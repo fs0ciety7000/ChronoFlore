@@ -123,25 +123,25 @@ func live_plants() -> Array[Plant]:
 			result.append(plant)
 	return result
 
-## Tops up capturable plants and nightmares (counted separately) to the SpawnRules targets.
+## Tops up gentle plants and nightmares (hostiles, counted separately) to the SpawnRules targets.
 func spawn_tick() -> void:
 	if ended:
 		return
 	var hour := clock.hour()
-	var capturable := 0
+	var gentle := 0
 	var nightmares := 0
 	for plant in live_plants():
-		if plant.species.capturable:
-			capturable += 1
-		else:
+		if plant.species.hostile:
 			nightmares += 1
+		else:
+			gentle += 1
 	var eligible := SpawnRules.eligible_capturables(GameState.catalog, hour)
-	for i in range(capturable, SpawnRules.target_population(hour)):
+	for i in range(gentle, SpawnRules.target_population(hour)):
 		var species := SpawnRules.pick(eligible, _rng)
 		if species == null:
 			break
 		add_plant(species, spawn_point())
-	var nightmare_species := _eligible_nightmares(hour)
+	var nightmare_species := SpawnRules.eligible_hostiles(GameState.catalog, hour)
 	if nightmare_species.is_empty():
 		return
 	for i in range(nightmares, SpawnRules.nightmare_count(hour)):
@@ -170,7 +170,6 @@ func add_plant(species: PlantSpecies, at: Vector2) -> Plant:
 	plant.set_glow(_plant_glow)
 	plant.captured.connect(_on_plant_captured)
 	plant.escaped.connect(_on_plant_escaped)
-	plant.fell_asleep.connect(_on_plant_fell_asleep)
 	return plant
 
 ## Freezes the night, saves the result, then fades (dawn pink or wake-up white) to the wake screen.
@@ -209,10 +208,6 @@ func _on_plant_escaped(_plant: Plant) -> void:
 	if not ended:
 		lucidity.lose_petal()
 
-func _on_plant_fell_asleep(plant: Plant) -> void:
-	if not ended and not plant.species.capturable:
-		GameState.record(plant.species) # Ronce page and details come from sleeps
-
 ## Visual feedback only: Lucidity.take_hit already removed the petal.
 func _on_nightmare_hit() -> void:
 	if ended:
@@ -250,13 +245,6 @@ func _available_tools() -> Array[ToolData]:
 		var tool := GameState.catalog.tool_by_id(id)
 		if tool != null:
 			result.append(tool)
-	return result
-
-func _eligible_nightmares(hour: float) -> Array[PlantSpecies]:
-	var result: Array[PlantSpecies] = []
-	for s in GameState.catalog.species:
-		if not s.capturable and s.min_hour <= hour:
-			result.append(s)
 	return result
 
 func _heroine_xz() -> Vector2:

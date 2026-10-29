@@ -53,6 +53,10 @@ func net_window(_plant: Plant) -> bool:
 func hover_height(_plant: Plant) -> float:
 	return 0.0
 
+## False for a rooted hostile (Ortie-Regret): no wandering without a threat.
+func wanders() -> bool:
+	return true
+
 ## True when the model keeps looking at the heroine instead of its motion.
 func faces_threat() -> bool:
 	return false

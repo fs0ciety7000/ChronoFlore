@@ -8,11 +8,19 @@ const RARITY_WEIGHTS := {
 	PlantSpecies.Rarity.RARE: 1,
 }
 
-## Capturable species whose min_hour has been reached, in catalog order.
+## Gentle capturable species whose min_hour has been reached, in catalog order.
 static func eligible_capturables(catalog: GameCatalog, hour: float) -> Array[PlantSpecies]:
 	var result: Array[PlantSpecies] = []
 	for s in catalog.species:
-		if s.capturable and s.min_hour <= hour:
+		if s.capturable and not s.hostile and s.min_hour <= hour:
+			result.append(s)
+	return result
+
+## Hostile species (the nightmares) whose min_hour has been reached, in catalog order.
+static func eligible_hostiles(catalog: GameCatalog, hour: float) -> Array[PlantSpecies]:
+	var result: Array[PlantSpecies] = []
+	for s in catalog.species:
+		if s.hostile and s.min_hour <= hour:
 			result.append(s)
 	return result
 
