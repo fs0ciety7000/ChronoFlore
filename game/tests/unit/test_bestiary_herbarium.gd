@@ -85,9 +85,10 @@ func test_harpoon_milestone_counts_captured_hostiles() -> void:
 	var h := Herbarium.new()
 	h.record(c.species_by_id(&"revette"))
 	h.record(c.species_by_id(&"calinette"))
-	assert_eq(h.apply_milestones(c), [] as Array[StringName], "2 species: no harpoon")
+	h.record(c.species_by_id(&"nostalgerbe"))
+	assert_eq(h.apply_milestones(c), [] as Array[StringName], "the 3 commons of 0 h: no harpoon yet")
 	h.record(c.species_by_id(&"croque_colere")) # a hostile, captured asleep
-	assert_eq(h.apply_milestones(c), [&"harpoon"] as Array[StringName], "3 captured species unlock the harpoon")
+	assert_eq(h.apply_milestones(c), [&"harpoon"] as Array[StringName], "4 captured species unlock the harpoon")
 	assert_true(h.available_tools(c).has(&"harpoon"), "harpoon available")
 
 func test_hostile_page_counts_captures() -> void:

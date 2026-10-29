@@ -80,7 +80,7 @@ Notez pour chaque point : OK / problème (avec l'heure en jeu et une capture).
 - [ ] **Nuit complète jusqu'à l'aube**, sans le multiplicateur : durée réelle, nombre de captures (cible ≈ 20 pour 8 h), fondu rose de l'aube, souvenir d'aube révélé, record mis à jour.
 - [ ] Palette : pastel en début de nuit, **indigo vers 4 h** avec plantes lumineuses, retour vers l'aube. Faire une capture d'écran à chaque étape.
 - [ ] **Réveil en sursaut** : perdre les 5 pétales (fuites, coups des hostiles), fondu blanc, écran de réveil cohérent.
-- [ ] **Harpon débloqué** à 3 espèces capturables découvertes (Timidelle comprise) : message sur l'écran de réveil, harpon présent à la nuit suivante, il cloue 3 s, recharge 2,5 s.
+- [ ] **Harpon débloqué** à 4 espèces capturables découvertes (les 3 communes de 0 h ne suffisent plus ; compter 1 à 2 h de jeu) : message sur l'écran de réveil, harpon présent à la nuit suivante, il cloue 3 s, recharge 2,5 s.
 - [ ] **Herbier persistant après rechargement** de l'onglet (F5) : en fin de nuit, et aussi en fermant l'onglet en pleine nuit juste après une découverte.
 - [ ] Navigation privée ou stockage bloqué : le jeu démarre quand même (sans persistance) et le titre affiche la note crème « Sauvegarde indisponible dans ce navigateur ».
 - [ ] **Passage souris ↔ manette** en pleine nuit, dans les deux sens ; débrancher la manette en jeu : la visée suit le dernier périphérique et ne se fige pas.

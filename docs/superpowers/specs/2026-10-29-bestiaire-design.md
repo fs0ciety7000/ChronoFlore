@@ -53,7 +53,7 @@ L'utilisateur veut des plantes **modélisées maison dans Blender**, plus varié
 - **Scènes de danger :** `thorn_projectile`, `vine_ring`, `spore_cloud`. Chacune annonce l'attaque au sol avant l'impact (lisibilité, anti-objectif : ne jamais piéger sans prévenir).
 - **Héroïne :** un état « immobilisée » (lianes) et un état « ralentie » (spores).
 - **Herbier :** 12 pages, chacune avec son fragment de souvenir et ses deux détails (textes provisoires).
-- **Palier du harpon :** il reste à « 3 espèces capturables découvertes ». Les hostiles comptent une fois capturées.
+- **Palier du harpon :** « 4 espèces capturables découvertes » (et non plus 3 : avec 3 communes dès 0 h, Rêvette, Nostalgerbe et Câlinette, le harpon tombait après n'importe quelle première nuit ; à 4, il demande 1 à 2 h de jeu). Les hostiles comptent une fois capturées.
 
 ## 6. Ordre proposé
 1. Les modèles Blender des 4 espèces existantes, pour remplacer les primitives.

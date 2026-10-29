@@ -52,7 +52,7 @@ func test_species_values() -> void:
 	var t := c.tool_by_id(&"tranquilizer")
 	assert_eq(t.effect, ToolData.Effect.TORPOR, "tranq effect")
 	assert_near(t.projectile_speed, 18.0, 0.0001, "tranq speed")
-	assert_eq(c.milestones[0].capturable_species_required, 3, "milestone count")
+	assert_eq(c.milestones[0].capturable_species_required, 4, "milestone count")
 	assert_eq(c.milestones[0].reward_tool_id, &"harpoon", "milestone tool")
 
 func test_each_species_has_texts() -> void:

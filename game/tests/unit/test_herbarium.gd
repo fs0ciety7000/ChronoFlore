@@ -34,21 +34,22 @@ func test_captured_ronce_counts_toward_milestone() -> void:
 	var h := Herbarium.new()
 	h.record(_sp(&"revette"))
 	h.record(_sp(&"nostalgerbe"))
-	assert_eq(h.apply_milestones(c), [] as Array[StringName], "no unlock yet")
+	h.record(_sp(&"timidelle"))
+	assert_eq(h.apply_milestones(c), [] as Array[StringName], "3 species: no unlock yet")
 	var r := h.record(_sp(&"ronce_angoisse"))
 	assert_true(r["new_species"], "ronce page discovered")
-	assert_eq(h.discovered_capturable_count(c), 3, "3 captured species, one hostile")
+	assert_eq(h.discovered_capturable_count(c), 4, "4 captured species, one hostile")
 	assert_eq(h.apply_milestones(c), [&"harpoon"] as Array[StringName], "harpoon unlocked")
 	assert_eq(h.apply_milestones(c), [] as Array[StringName], "only once")
 
 func test_old_save_slept_ronce_counts_as_captured() -> void:
 	# Before Task B3 Ronce was not capturable and its count meant "put to sleep". Accepted: an
 	# old save's Ronce now counts as a captured capturable species (milestones included).
-	var old := {"version": Herbarium.SAVE_VERSION, "counts": {"revette": 1, "nostalgerbe": 1, "ronce_angoisse": 2},
+	var old := {"version": Herbarium.SAVE_VERSION, "counts": {"revette": 1, "nostalgerbe": 1, "timidelle": 1, "ronce_angoisse": 2},
 		"unlocked_tools": [], "best_minutes": 0, "full_nights": 0, "next_dawn_memory": 0}
 	var h := Herbarium.from_dict(old)
 	assert_true(h != null, "old save loads")
-	assert_eq(h.discovered_capturable_count(_catalog()), 3, "slept-only Ronce counts as captured")
+	assert_eq(h.discovered_capturable_count(_catalog()), 4, "slept-only Ronce counts as captured")
 	assert_eq(h.apply_milestones(_catalog()), [&"harpoon"] as Array[StringName], "and towards the milestone")
 
 func test_available_tools() -> void:

@@ -45,7 +45,7 @@ func test_record_does_not_save_without_news() -> void:
 
 func test_finish_night_unlocks_harpoon() -> void:
 	_begin()
-	for id: StringName in [&"revette", &"nostalgerbe", &"timidelle"]:
+	for id: StringName in [&"revette", &"nostalgerbe", &"calinette", &"timidelle"]:
 		GameState.herbarium.record(_species(id))
 	var captures: Array[StringName] = []
 	var r := GameState.finish_night(200, false, captures)
