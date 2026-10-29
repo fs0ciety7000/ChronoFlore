@@ -74,9 +74,12 @@ export async function compileGently(
   object.traverse((o) => {
     if ((o as THREE.Mesh).isMesh) meshes.push(o);
   });
+  // Checked with has(): compileAsync's own lookup warns when it is missing.
+  const parallel = renderer.extensions.has('KHR_parallel_shader_compile');
   for (const mesh of meshes) {
     if (cancelled()) return;
-    await renderer.compileAsync(mesh, camera, scene);
+    if (parallel) await renderer.compileAsync(mesh, camera, scene);
+    else renderer.compile(mesh, camera, scene);
     await new Promise((r) => setTimeout(r, 0));
   }
 }
