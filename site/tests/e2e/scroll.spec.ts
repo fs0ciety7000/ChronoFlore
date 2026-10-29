@@ -11,31 +11,62 @@ async function scrollToFraction(page: Page, f: number) {
   }, f);
 }
 
-/** WCAG contrast of an element's computed text colour against the live --bg. */
-async function textContrast(page: Page, selector: string): Promise<number> {
-  return page.evaluate((sel) => {
-    const rgb = (css: string): [number, number, number] => {
-      // A 1x1 canvas resolves any CSS colour syntax (color-mix, oklab...) to sRGB.
-      const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
+/**
+ * Walks every visible text node in main, the footer and the docked clock and
+ * returns those under 4.5:1 against the nearest ancestor with an opaque
+ * background (else the page's --bg on <html>).
+ */
+async function lowContrastText(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    // A 1x1 canvas resolves any CSS colour syntax (color-mix, oklab...) to sRGB.
+    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
+    const rgba = (css: string): [number, number, number, number] => {
       ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = '#000';
       ctx.fillStyle = css;
       ctx.fillRect(0, 0, 1, 1);
       const d = ctx.getImageData(0, 0, 1, 1).data;
-      return [d[0], d[1], d[2]];
+      return [d[0], d[1], d[2], d[3]];
     };
-    const lum = ([r, g, b]: [number, number, number]) => {
+    const lum = ([r, g, b]: number[]) => {
       const c = [r, g, b].map((v) => {
         const x = v / 255;
         return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
       });
       return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
     };
-    const el = document.querySelector(sel)!;
-    const fg = lum(rgb(getComputedStyle(el).color));
-    const bg = lum(rgb(getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()));
-    const [hi, lo] = fg > bg ? [fg, bg] : [bg, fg];
-    return (hi + 0.05) / (lo + 0.05);
-  }, selector);
+    const ratio = (a: number[], b: number[]) => {
+      const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    const backgroundOf = (el: Element | null): number[] => {
+      for (let e = el; e; e = e.parentElement) {
+        const bg = getComputedStyle(e).backgroundColor;
+        const c = rgba(bg);
+        if (bg !== 'transparent' && c[3] === 255) return c;
+      }
+      return rgba(getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
+    };
+    const roots = [...document.querySelectorAll('main, footer, [data-sleep-dock]')];
+    const failures: string[] = [];
+    for (const root of roots) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        const text = n.textContent!.trim();
+        const el = n.parentElement;
+        if (!text || !el) continue;
+        const style = getComputedStyle(el);
+        if (style.visibility !== 'visible') continue;
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        const rect = range.getBoundingClientRect();
+        if (rect.width < 2 || rect.height < 2) continue; // display:none, sr-only
+        const r = ratio(rgba(style.color), backgroundOf(el));
+        if (r < 4.5) failures.push(`${r.toFixed(2)} ${el.tagName.toLowerCase()}.${el.className} "${text.slice(0, 40)}"`);
+      }
+    }
+    return failures;
+  });
 }
 
 test.describe('scroll drives palette and sleep clock', () => {
@@ -71,15 +102,14 @@ test.describe('scroll drives palette and sleep clock', () => {
     expect(await bgOf(page)).toBe('#fbeee9');
   });
 
-  test('keeps text and muted captions at >= 4.5:1 mid-crossover and at the bottom', async ({ page }) => {
+  test('keeps every visible text node at >= 4.5:1 on its rendered background', async ({ page }) => {
+    test.setTimeout(60_000);
     await page.goto('/');
-    for (const f of [0, 0.3, 0.4, 0.5, 0.6, 0.78, 0.9, 1]) {
+    for (const f of [0, 0.25, 0.4, 0.5, 0.546, 0.6, 0.68, 0.78, 0.86, 1]) {
       await scrollToFraction(page, f);
       await page.waitForTimeout(100);
-      for (const sel of ['.dream__text p', '.plate-heading__caption']) {
-        const ratio = await textContrast(page, sel);
-        expect(ratio, `${sel} at ${f}`).toBeGreaterThanOrEqual(4.5);
-      }
+      const failures = await lowContrastText(page);
+      expect(failures, `text under 4.5:1 at ${f}`).toEqual([]);
     }
   });
 });
