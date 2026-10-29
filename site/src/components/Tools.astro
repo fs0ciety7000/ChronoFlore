@@ -5,30 +5,37 @@ import PlateHeading from './PlateHeading.astro';
 <section id="outils" class="tools wrap section" data-scene="outils" aria-labelledby="outils-title">
   <PlateHeading plate="III" id="outils-title">Trois outils</PlateHeading>
   <ul class="tools__list">
-    <li class="tool" data-tool="filet">
+    <li class="tool" data-tool="filet" data-reveal>
       <svg class="tool__mark" viewBox="0 0 24 24" fill="none" stroke="var(--rose-deep)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-        <circle cx="10" cy="10" r="6"></circle>
-        <path d="M14.5 14.5 L21 21"></path>
-        <path d="M7 6 L7 14 M10 4 L10 16 M13 6 L13 14 M6 7 L14 7 M4 10 L16 10 M6 13 L14 13"></path>
+        <g class="tool__net" data-gesture-lead>
+          <circle cx="10" cy="10" r="6"></circle>
+          <path d="M14.5 14.5 L21 21"></path>
+          <path d="M7 6 L7 14 M10 4 L10 16 M13 6 L13 14 M6 7 L14 7 M4 10 L16 10 M6 13 L14 13"></path>
+        </g>
       </svg>
       <h3>Le filet</h3>
       <p>Pour les petites pousses timides. Approche lente, geste doux.</p>
     </li>
-    <li class="tool" data-tool="harpon">
+    <li class="tool" data-tool="harpon" data-reveal>
       <svg class="tool__mark" viewBox="0 0 24 24" fill="none" stroke="var(--fern)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 21 L18 6"></path>
-        <path d="M14 4 L20 4 L20 10"></path>
+        <g class="tool__harpoon" data-gesture-lead>
+          <path d="M3 21 L18 6"></path>
+          <path d="M14 4 L20 4 L20 10"></path>
+        </g>
         <path d="M6 15 Q3 15 3 18"></path>
       </svg>
       <h3>Le harpon</h3>
       <p>Pour les plantes qui filent sur l'eau ou entre les îles.</p>
     </li>
-    <li class="tool" data-tool="fusil">
+    <li class="tool" data-tool="fusil" data-reveal>
       <svg class="tool__mark" viewBox="0 0 24 24" fill="none" stroke="var(--iris)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 12 L17 12"></path>
-        <path d="M17 9 L21 12 L17 15"></path>
-        <path d="M6 12 L6 17"></path>
-        <circle cx="12" cy="7" r="2"></circle>
+        <path class="tool__dart" data-gesture-lead d="M18 12 L22 12 M18 10.6 L19.2 12 L18 13.4" stroke-width="1.4"></path>
+        <g class="tool__gun">
+          <path d="M3 12 L17 12"></path>
+          <path d="M17 9 L21 12 L17 15"></path>
+          <path d="M6 12 L6 17"></path>
+          <circle cx="12" cy="7" r="2"></circle>
+        </g>
       </svg>
       <h3>Le fusil tranquillisant</h3>
       <p>Pour les grandes émotions qui ne veulent pas dormir.</p>
@@ -63,6 +70,86 @@ import PlateHeading from './PlateHeading.astro';
     width: 3rem;
     height: 3rem;
     margin: -0.25rem 0 0.75rem -0.25rem;
+    overflow: visible; /* the harpoon and the dart leave the 24x24 box */
+  }
+
+  /*
+   * Hover gestures, one per tool, played once per pointer entry (script below
+   * adds .is-gesturing and removes it when the [data-gesture-lead] animation
+   * ends, so a pass of the pointer never cuts a gesture short). Transform and
+   * opacity only; pivots are in viewBox units.
+   */
+  .tool__net {
+    transform-box: view-box;
+    transform-origin: 21px 21px; /* the grip */
+  }
+  .tool__harpoon,
+  .tool__gun,
+  .tool__dart {
+    transform-box: view-box;
+  }
+  .tool__dart {
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tool.is-gesturing .tool__net {
+      animation: tool-sweep 720ms var(--ease-in-out);
+    }
+    .tool.is-gesturing .tool__harpoon {
+      animation: tool-launch 900ms var(--ease-out);
+    }
+    .tool.is-gesturing .tool__gun {
+      animation: tool-recoil 420ms var(--ease-out);
+    }
+    .tool.is-gesturing .tool__dart {
+      animation: tool-dart 640ms var(--ease-out);
+    }
+  }
+  /* The net scoops: back, through, settle. */
+  @keyframes tool-sweep {
+    40% {
+      transform: rotate(-16deg);
+    }
+    75% {
+      transform: rotate(6deg);
+    }
+  }
+  /* The harpoon draws back, flies off along its shaft, then is back in hand. */
+  @keyframes tool-launch {
+    18% {
+      transform: translate(-1px, 1px);
+    }
+    55% {
+      transform: translate(6px, -6px);
+      opacity: 0;
+    }
+    56% {
+      transform: translate(-3px, 3px);
+      opacity: 0;
+    }
+    100% {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes tool-recoil {
+    25% {
+      transform: translateX(-1.5px);
+    }
+  }
+  /* The dart leaves the muzzle and fades out in flight. */
+  @keyframes tool-dart {
+    0% {
+      opacity: 0;
+      transform: none;
+    }
+    12% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(9px);
+    }
   }
   h3 {
     margin: 0;
@@ -76,3 +163,18 @@ import PlateHeading from './PlateHeading.astro';
     text-wrap: pretty;
   }
 </style>
+
+<script>
+  // Play a tool's gesture once per mouse entry. Reduced motion: the CSS
+  // animations are not declared, so the class is never added.
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  for (const card of document.querySelectorAll<HTMLElement>('.tool')) {
+    card.addEventListener('pointerenter', (e) => {
+      if (e.pointerType !== 'mouse' || still.matches) return;
+      card.classList.add('is-gesturing');
+    });
+    card.addEventListener('animationend', (e) => {
+      if ((e.target as Element).matches('[data-gesture-lead]')) card.classList.remove('is-gesturing');
+    });
+  }
+</script>

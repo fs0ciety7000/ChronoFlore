@@ -90,7 +90,7 @@ const drawings: Record<string, string> = {
   <ol class="herbarium__plates">
     {
       specimens.map((s) => (
-        <li class="plate" data-specimen style={`--plate: ${s.tint}`}>
+        <li class="plate" data-specimen data-reveal style={`--plate: ${s.tint}`}>
           <p class="plate__number">N° {s.n}</p>
           <svg class="plate__drawing" viewBox="0 0 120 140" aria-hidden="true">
             <Fragment set:html={drawings[s.drawing]} />

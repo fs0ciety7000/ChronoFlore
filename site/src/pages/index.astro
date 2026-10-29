@@ -33,9 +33,15 @@ import Footer from '../components/Footer.astro';
   import { initScroll } from '../scripts/scroll';
   import { initShare } from '../scripts/share';
   import { mountDiorama } from '../scripts/diorama/loader';
+  import { initClockHand } from '../scripts/clock-hand';
+  import { initReveal } from '../scripts/reveal';
+  import { initCursor } from '../scripts/cursor';
 
   const env = readEnv();
   const scroll = initScroll(env);
   initShare();
+  initClockHand(scroll);
+  initReveal(env);
+  initCursor(env);
   mountDiorama(env, scroll);
 </script>

@@ -191,3 +191,81 @@ html.lenis body {
     padding-right: var(--lane-pad);
   }
 }
+
+/*
+ * Scroll reveals (scripts/reveal.ts): titles and cards rise 16px and fade in
+ * once, 500ms, 60ms cascade. Hidden only under html.reveal-on, which the script
+ * adds (never with reduced motion), so no-JS visitors see everything.
+ */
+.reveal-on [data-reveal]:not(.is-revealed) {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.reveal-on [data-reveal].is-revealed {
+  transition:
+    opacity 500ms var(--ease-out),
+    transform 500ms var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on [data-reveal]:not(.is-revealed) {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Net cursor (scripts/cursor.ts): fine pointer, no reduced motion. The system
+ * cursor is hidden only while the net is shown (html.has-cursor-net) and comes
+ * back over text fields. !important: component rules such as .btn set cursor
+ * with higher specificity.
+ */
+.has-cursor-net,
+.has-cursor-net * {
+  cursor: none !important;
+}
+.has-cursor-net :is(input, textarea, [contenteditable='']),
+.has-cursor-net :is(input, textarea, [contenteditable='true']) * {
+  cursor: auto !important;
+}
+.cursor-net {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.cursor-net.is-visible {
+  opacity: 1;
+}
+.cursor-net.is-over-text {
+  opacity: 0;
+}
+.cursor-net svg {
+  display: block;
+}
+.cursor-net__body {
+  transform-origin: 12px 12px; /* hoop centre = hotspot */
+  transition: transform 160ms var(--ease-out);
+}
+/* Over a link or button the net tips forward, ready to scoop. */
+.cursor-net.is-over-action .cursor-net__body {
+  transform: rotate(-24deg) scale(1.15);
+}
+.cursor-net.is-pressed .cursor-net__body {
+  transform: scale(0.9);
+}
+.cursor-net.is-over-action.is-pressed .cursor-net__body {
+  transform: rotate(-24deg) scale(1.02);
+}
+.cursor-net__halo {
+  stroke: var(--bg);
+  opacity: 0.85;
+}
+.cursor-net__line {
+  stroke: var(--ink);
+}
+.cursor-net__dot {
+  fill: var(--ink);
+}
