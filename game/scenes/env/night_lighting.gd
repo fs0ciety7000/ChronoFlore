@@ -41,6 +41,7 @@ func _apply() -> void:
 	var sun := $Sun as DirectionalLight3D
 	env.background_color = p["background"]
 	env.ambient_light_color = p["ambient_color"]
+	env.ambient_light_energy = p["ambient_energy"]
 	env.adjustment_saturation = p["saturation"]
 	# Uniform fog (the ortho camera sees everything at ~the same depth) tints the whole diorama.
 	var tint: float = clampf(float(p["tint"]), 0.0, 0.95)

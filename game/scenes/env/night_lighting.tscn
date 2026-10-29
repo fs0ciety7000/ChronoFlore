@@ -14,7 +14,6 @@ fog_sky_affect = 0.0
 adjustment_enabled = true
 adjustment_brightness = 1.05
 adjustment_contrast = 0.92
-adjustment_saturation = 0.8
 
 [node name="NightLighting" type="Node3D"]
 script = ExtResource("1_light")

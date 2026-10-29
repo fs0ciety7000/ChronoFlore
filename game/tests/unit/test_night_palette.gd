@@ -13,7 +13,10 @@ func test_keyframes() -> void:
 	assert_near(NightPalette.sample(0.0)["sun_pitch_deg"], -55.0, 0.0001, "pitch 0")
 	assert_near(NightPalette.sample(1.0)["sun_energy"], 0.17, 0.0001, "energy 1")
 	assert_near(NightPalette.sample(0.0)["saturation"], 0.85, 0.0001, "pastel saturation by day")
-	assert_near(NightPalette.sample(0.5)["saturation"], 1.15, 0.0001, "richer saturation at night")
+	assert_near(NightPalette.sample(0.5)["saturation"], 1.0, 0.0001, "pastel saturation at night")
+	assert_near(NightPalette.sample(1.0)["saturation"], 1.0, 0.0001, "pastel saturation at dawn")
+	assert_near(NightPalette.sample(1.0)["ambient_energy"], 0.48, 0.0001, "brighter dawn ambient")
+	_close(NightPalette.sample(0.3125)["background"], Color("c9b6e0"), "lavender dusk key at 2 h 30")
 	assert_near(NightPalette.sample(0.0)["tint"], 0.0, 0.0001, "no tint by day")
 	assert_near(NightPalette.sample(0.5)["tint"], 0.22, 0.0001, "indigo tint at night")
 

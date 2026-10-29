@@ -3,13 +3,16 @@ extends RefCounted
 ## Sky/light colours as a function of night progress (0 = 0 h, 1 = 8 h), linearly interpolated.
 
 # Each key: [progress, background, sun_color, sun_energy, ambient_color, sun_pitch_deg, plant_glow,
-#             saturation (Environment adjustment), tint (0..1 mix towards ambient_color via fog)]
+#             saturation (Environment adjustment), tint (0..1 mix towards ambient_color via fog),
+#             ambient_energy]
+# Compatibility adds the shadowed sun pass in sRGB: keep the sun weak against the ambient.
 const KEYS := [
-	[0.0, "f6efe0", "fff7ea", 0.15, "f3efe9", -55.0, 0.0, 0.85, 0.0],
-	[0.25, "f6ece0", "ffe8d2", 0.14, "f5e9e2", -40.0, 0.0, 0.85, 0.0],
-	[0.375, "3b3d78", "c0b2ff", 0.1, "aea2ff", -60.0, 1.0, 1.15, 0.22],
-	[0.75, "3b3d78", "c0b2ff", 0.1, "aea2ff", -60.0, 1.0, 1.15, 0.22],
-	[1.0, "f7c9d4", "ffc9bd", 0.17, "ffc4dc", -20.0, 0.3, 1.05, 0.2],
+	[0.0, "f6efe0", "fff7ea", 0.15, "f3efe9", -55.0, 0.0, 0.85, 0.0, 0.36],
+	[0.25, "f6ece0", "ffe8d2", 0.14, "f5e9e2", -40.0, 0.0, 0.85, 0.0, 0.36],
+	[0.3125, "c9b6e0", "f3c6e6", 0.12, "d8bff8", -50.0, 0.5, 1.0, 0.28, 0.38],
+	[0.375, "3b3d78", "c0b2ff", 0.1, "aea2ff", -60.0, 1.0, 1.0, 0.22, 0.36],
+	[0.75, "3b3d78", "c0b2ff", 0.1, "aea2ff", -60.0, 1.0, 1.0, 0.22, 0.36],
+	[1.0, "f7c9d4", "ffd0d8", 0.17, "ffbedc", -20.0, 0.3, 1.0, 0.32, 0.48],
 ]
 
 static func sample(progress: float) -> Dictionary:
@@ -30,4 +33,5 @@ static func sample(progress: float) -> Dictionary:
 		"plant_glow": lerpf(float(a[6]), float(b[6]), k),
 		"saturation": lerpf(float(a[7]), float(b[7]), k),
 		"tint": lerpf(float(a[8]), float(b[8]), k),
+		"ambient_energy": lerpf(float(a[9]), float(b[9]), k),
 	}
