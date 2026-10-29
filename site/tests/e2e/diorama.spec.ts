@@ -53,19 +53,30 @@ async function pixel(page: Page, x: number, y: number): Promise<number[]> {
   }, png.toString('base64'));
 }
 
-/** Resolves once #diorama[data-island] has not changed for 1 s (fails after 30 s). */
+/**
+ * Resolves once the live island's framing (#diorama[data-island]) has not
+ * changed for 1 s while the render loop kept running (data-frame advanced),
+ * so a stalled loop never counts as settled. Fails after 30 s.
+ */
 async function settle(page: Page) {
-  const read = () => page.evaluate(() => document.getElementById('diorama')!.dataset.island ?? '');
+  const read = () =>
+    page.evaluate(() => {
+      const d = document.getElementById('diorama')!.dataset;
+      return { state: d.state ?? '', island: d.island ?? '', frame: Number(d.frame ?? 0) };
+    });
   let last = await read();
   let since = Date.now();
   const deadline = Date.now() + 30_000;
-  while (Date.now() - since < 1000) {
-    if (Date.now() > deadline) throw new Error(`island did not settle (${last})`);
+  for (;;) {
+    if (Date.now() > deadline) throw new Error(`island did not settle (${JSON.stringify(last)})`);
     await page.waitForTimeout(200);
     const now = await read();
-    if (now !== last) {
+    expect(now.state, 'diorama still live').toBe('live');
+    if (now.island !== last.island) {
       last = now;
       since = Date.now();
+    } else if (Date.now() - since >= 1000 && now.frame > last.frame) {
+      return;
     }
   }
 }

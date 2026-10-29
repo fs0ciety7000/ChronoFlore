@@ -119,7 +119,8 @@ async function withPage(args: string[], fn: (page: Page) => Promise<void>, optio
 function collectErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('console', (msg) => {
-    if (msg.type() === 'error') errors.push(msg.text());
+    // The browser logs its own line for each aborted request; that is not ours.
+    if (msg.type() === 'error' && !/Failed to load resource/.test(msg.text())) errors.push(msg.text());
   });
   page.on('pageerror', (err) => errors.push(err.message));
   return errors;
@@ -193,6 +194,7 @@ test.describe('characters with WebGL', () => {
   test('falls back to the still images when the portrait context is lost', async () => {
     test.setTimeout(60_000);
     await withPage(WEBGL_ARGS, async (page) => {
+      const errors = collectErrors(page);
       await page.goto('/');
       await page.locator('#chasseuse').scrollIntoViewIfNeeded();
       await expect(heroine(page)).toHaveAttribute('data-state', 'live', { timeout: 20_000 });
@@ -206,6 +208,34 @@ test.describe('characters with WebGL', () => {
       await expect(heroine(page).locator('canvas')).toHaveCount(0);
       await expect(heroine(page).locator('img')).toBeVisible();
       await expect(heroine(page)).not.toHaveAttribute('tabindex', /.*/);
+      await expect(companion(page)).toHaveAttribute('data-state', 'still');
+      // Only the diorama's context is left.
+      await expect.poll(() => liveContexts(page)).toBe(1);
+      expect(errors).toEqual([]);
+    });
+  });
+
+  test('keeps the stills and an island without the duo when the character models fail', async () => {
+    test.setTimeout(60_000);
+    await withPage(WEBGL_ARGS, async (page) => {
+      const errors = collectErrors(page);
+      await page.route('**/models/custom/*.glb', (route) => route.abort());
+      await page.goto('/');
+      const diorama = page.locator('#diorama');
+      await expect(diorama).toHaveAttribute('data-state', 'live', { timeout: 20_000 });
+      await expect(diorama).toHaveAttribute('data-duo', '0', { timeout: 20_000 });
+      await page.locator('#chasseuse').scrollIntoViewIfNeeded();
+      // The portraits' renderer is created, then released when the load fails.
+      await expect.poll(() => page.evaluate(() => (window as unknown as { __gl: unknown[] }).__gl.length), { timeout: 20_000 }).toBe(3);
+      await expect.poll(() => liveContexts(page), { timeout: 10_000 }).toBe(1);
+      for (const card of [heroine(page), companion(page)]) {
+        await expect(card).toHaveAttribute('data-state', 'still');
+        await expect(card.locator('canvas')).toHaveCount(0);
+        await expect(card).not.toHaveAttribute('tabindex', /.*/);
+      }
+      await expect(heroine(page).locator('img')).toBeVisible();
+      await expect(diorama).toHaveAttribute('data-state', 'live');
+      expect(errors).toEqual([]);
     });
   });
 });
@@ -214,9 +244,10 @@ test.describe('characters without 3D', () => {
   test('without WebGL: still images, no canvas, no errors', async () => {
     await withPage(NO_WEBGL_ARGS, async (page) => {
       const errors = collectErrors(page);
-      await page.goto('/');
+      await page.goto('/', { waitUntil: 'networkidle' });
       await page.locator('#compagnon').scrollIntoViewIfNeeded();
-      await page.waitForTimeout(2500);
+      await page.waitForLoadState('networkidle');
+      await expect.poll(() => liveContexts(page), { timeout: 5000 }).toBe(0);
       for (const card of [heroine(page), companion(page)]) {
         await expect(card).toHaveAttribute('data-state', 'still');
         await expect(card.locator('canvas')).toHaveCount(0);
@@ -231,9 +262,10 @@ test.describe('characters without 3D', () => {
     await withPage(
       WEBGL_ARGS,
       async (page) => {
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'networkidle' });
         await page.locator('#chasseuse').scrollIntoViewIfNeeded();
-        await page.waitForTimeout(2500);
+        await page.waitForLoadState('networkidle');
+        await expect.poll(() => liveContexts(page), { timeout: 5000 }).toBe(0);
         await expect(page.locator('canvas')).toHaveCount(0);
         await expect(heroine(page)).toHaveAttribute('data-state', 'still');
         await expect(heroine(page).locator('img')).toBeVisible();
