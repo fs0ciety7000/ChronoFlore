@@ -2,12 +2,16 @@ extends Node3D
 ## Hand-made character visual (heroine.glb by default, ~1.1 m, faces +Z) holding the current
 ## tool in hand.R (HandTools: Net, DartGun, Harpoon). Plays Idle/Walk by movement, Swing when a
 ## tool is used and Hurt + a white blink on hits. Reused by hero2_visual.tscn with another model.
-## Between uses the net and the harpoon rest on the right shoulder (copies under a chest
-## BoneAttachment3D "Carry", so they bob with the walk); a Swing or a harpoon shot takes the
-## hand prop off the shoulder for the move, then it goes back. The dart gun stays lowered in hand.
+## Between uses the right hand holds the net (or harpoon) over the right shoulder: the Idle and
+## Walk actions key a shoulder-carry arm and the prop takes its carry transform in hand. A Swing
+## (or a harpoon shot) blends the prop to its swing transform in CARRY_BLEND, then back.
 
 const LOCOMOTION_BLEND := 0.15
-const ONE_SHOT_BLEND := 0.05
+## Swing blend from the carry: the arm and the prop's in-between take the same time.
+const ONE_SHOT_BLEND := 0.08
+const CARRY_BLEND := 0.08
+## Grip point along the hand bone (wrist -> fingers), m.
+const PALM_OFFSET := 0.03
 ## The 0.6 s Walk cycle is sped up to keep pace with the 5 m/s arcade movement.
 const WALK_SPEED := 1.5
 const ONE_SHOTS: Array[StringName] = [&"Swing", &"Hurt"]
@@ -15,13 +19,12 @@ const FLASH_ALPHA := 0.85
 ## Dart gun / harpoon shot: the prop kicks back this far (hand space, m) and settles.
 const RECOIL_DISTANCE := 0.12
 const RECOIL_TIME := 0.18
-## Props carried on the shoulder between uses (the dart gun stays in hand).
+## Props carried on the shoulder between uses (the dart gun keeps its in-hand transform).
 const CARRIED: Array[StringName] = [&"Net", &"Harpoon"]
-const CARRY_BONE := "chest"
-## Shoulder carry in the visual's space (faces +Z, her right is -X): the handle starts by the
-## right hand, rests diagonally over the right shoulder, the hoop up behind the head.
-const CARRY_GRIP := Vector3(-0.18, 0.30, 0.12)
-const CARRY_DIR := Vector3(-0.12, 0.85, -0.5)
+## Shoulder carry in the visual's space (faces +Z, her right is -X): from the grip by the right
+## collarbone the handle runs up and back over the right shoulder, the hoop behind the head.
+const CARRY_GRIP := Vector3(-0.16, 0.50, 0.085)
+const CARRY_DIR := Vector3(-0.2, 0.85, -0.5)
 ## After a harpoon shot the harpoon stays in hand this long before going back on the shoulder.
 const SHOT_HOLD := 0.35
 ## Hand prop shown for each tool effect; the net is the default.
@@ -43,7 +46,10 @@ var _recoil: Tween
 var _shots: int = 0
 var _shown: StringName = &"Net"
 var _hand_hold_left: float = 0.0
-var _carry_tools: Node3D
+var _carry_xf: Dictionary = {} ## prop name -> carry transform (hand space)
+var _swing_xf: Dictionary = {} ## prop name -> authored (swing) transform
+var _carried_now: bool = false
+var _carry_blend: Tween
 @onready var _anim: AnimationPlayer = $Model/AnimationPlayer
 @onready var _mesh: MeshInstance3D = get_node(body_mesh_path)
 @onready var _hand_tools: Node3D = get_node_or_null(hand_tools_path)
@@ -65,61 +71,79 @@ func _process(delta: float) -> void:
 	_update_props()
 
 ## Carry pose of a prop whose handle runs along its local +Y (net, harpoon), in the visual's
-## space; the ring / tip faces up-forward so the iso camera sees it.
-static func carry_transform() -> Transform3D:
+## space, gripped at `grip`; the ring / tip faces up-forward so the iso camera sees it.
+static func carry_transform(grip: Vector3 = CARRY_GRIP) -> Transform3D:
 	var y := CARRY_DIR.normalized()
 	var x := (Vector3.RIGHT - y * y.dot(Vector3.RIGHT)).normalized()
 	var z := x.cross(y)
-	return Transform3D(Basis(x, y, z), CARRY_GRIP)
+	return Transform3D(Basis(x, y, z), grip)
 
-## Copies the carried props under a chest BoneAttachment3D, placed at carry_transform().
+## The net and harpoon stay on hand.R. Their carry transform (hand space) is solved from the
+## hand's pose at the start of Idle (the right arm's shoulder carry, keyed in the .glb): grip in
+## the palm, handle over the right shoulder. Their authored transform is the swing one.
 func _build_carry() -> void:
 	if _hand_tools == null:
 		return
 	var skeleton := _hand_tools.get_parent().get_parent() as Skeleton3D
-	if skeleton == null:
+	var attach := _hand_tools.get_parent() as BoneAttachment3D
+	if skeleton == null or attach == null:
 		return
-	var bone := skeleton.find_bone(CARRY_BONE)
+	var bone := skeleton.find_bone(attach.bone_name)
 	if bone < 0:
 		return
-	var attach := BoneAttachment3D.new()
-	attach.name = "Carry"
-	attach.bone_name = CARRY_BONE
-	skeleton.add_child(attach)
-	_carry_tools = Node3D.new()
-	_carry_tools.name = "CarryTools"
-	attach.add_child(_carry_tools)
-	# The attachment follows the chest's pose; place the props from the chest's rest frame.
+	_anim.seek(0.0, true) # apply the Idle carry pose now
 	var skel_in_visual := global_transform.affine_inverse() * skeleton.global_transform
-	var chest := skel_in_visual * skeleton.get_bone_global_rest(bone)
-	var local := chest.affine_inverse() * carry_transform()
+	var hand := skel_in_visual * skeleton.get_bone_global_pose(bone)
+	var grip := hand * (Vector3.UP * PALM_OFFSET)
+	var local := hand.affine_inverse() * carry_transform(grip)
 	for prop_name in CARRIED:
-		var src := _hand_tools.get_node_or_null(NodePath(prop_name)) as Node3D
-		if src == null:
+		var prop := _hand_tools.get_node_or_null(NodePath(prop_name)) as Node3D
+		if prop == null:
 			continue
-		var copy := src.duplicate() as Node3D
-		copy.transform = local
-		copy.visible = false
-		_carry_tools.add_child(copy)
+		_swing_xf[prop_name] = prop.transform
+		_carry_xf[prop_name] = local
+		prop.transform = local
+	_carried_now = true
 
 ## True while the shown prop rests on the shoulder (no swing, no harpoon shot under way).
 func is_carrying() -> bool:
-	return _carry_tools != null and _shown in CARRIED and _hand_hold_left <= 0.0 \
+	return not _carry_xf.is_empty() and _shown in CARRIED and _hand_hold_left <= 0.0 \
 			and not (_anim.is_playing() and _anim.current_animation == &"Swing")
 
-## The shoulder copy of a carried prop ("Net", "Harpoon"), or null.
+## The carried prop ("Net", "Harpoon") in hand.R, or null.
 func carried_prop(prop_name: StringName) -> Node3D:
-	return _carry_tools.get_node_or_null(NodePath(prop_name)) as Node3D if _carry_tools != null else null
+	return _hand_tools.get_node_or_null(NodePath(prop_name)) as Node3D if _carry_xf.has(prop_name) else null
+
+## Carry (hand space) and swing transforms of a carried prop (tests).
+func carry_local(prop_name: StringName) -> Transform3D:
+	return _carry_xf.get(prop_name, Transform3D())
+
+func swing_local(prop_name: StringName) -> Transform3D:
+	return _swing_xf.get(prop_name, Transform3D())
 
 func _update_props() -> void:
 	if _hand_tools == null:
 		return
-	var carrying := is_carrying()
 	for prop in _hand_tools.get_children():
-		(prop as Node3D).visible = StringName(prop.name) == _shown and not carrying
-	if _carry_tools != null:
-		for prop in _carry_tools.get_children():
-			(prop as Node3D).visible = StringName(prop.name) == _shown and carrying
+		(prop as Node3D).visible = StringName(prop.name) == _shown
+	var carrying := is_carrying()
+	if carrying != _carried_now and not _carry_xf.is_empty():
+		_carried_now = carrying
+		_blend_props(_carry_xf if carrying else _swing_xf)
+
+## Short in-between (CARRY_BLEND) from the props' current transforms to `target`.
+func _blend_props(target: Dictionary) -> void:
+	if _carry_blend != null:
+		_carry_blend.kill()
+	var from := {}
+	for prop_name in target:
+		from[prop_name] = (_hand_tools.get_node(NodePath(prop_name)) as Node3D).transform
+	_carry_blend = create_tween()
+	_carry_blend.tween_method(func(t: float) -> void:
+		for prop_name in target:
+			var a: Transform3D = from[prop_name]
+			(_hand_tools.get_node(NodePath(prop_name)) as Node3D).transform = a.interpolate_with(target[prop_name], t),
+		0.0, 1.0, CARRY_BLEND)
 
 func animation_player() -> AnimationPlayer:
 	return _anim
