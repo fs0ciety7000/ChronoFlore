@@ -8,12 +8,15 @@ signal tool_used(tool: ToolData)
 const PROJECTILE_SCENE := preload("res://scenes/tools/projectile.tscn")
 const NET_SWING_SCENE := preload("res://scenes/tools/net_swing.tscn")
 const NET_HALF_ANGLE := 60.0
-const SWING_FADE := 0.2
+## Dart / harpoon puff, this far along the shot from the tool origin (in front of the hands).
+const MUZZLE_OFFSET := 0.5
 
 var tools: Array[ToolData] = []
 var index: int = 0
 ## Used when the parent is not a Heroine (which supplies its own aim_source).
 var aim_source: AimAssist.Source = AimAssist.Source.MOVE
+## Direction of the last use (XZ, unit): the net's aim or the assisted shot. Zero before any.
+var last_use_dir: Vector2 = Vector2.ZERO
 
 var _cooldowns: Dictionary = {} ## tool id -> seconds left
 
@@ -54,10 +57,11 @@ func try_use(origin: Vector3, aim_dir: Vector2) -> bool:
 		return false
 	var dir := aim_dir.normalized() if aim_dir.length_squared() > 1e-8 else Vector2(0, 1)
 	_cooldowns[tool.id] = tool.cooldown
+	last_use_dir = dir
 	if tool.effect == ToolData.Effect.CAPTURE:
 		_use_net(tool, origin, dir)
 	else:
-		_fire(tool, origin, dir)
+		last_use_dir = _fire(tool, origin, dir)
 	tool_used.emit(tool)
 	return true
 
@@ -79,12 +83,13 @@ func _use_net(tool: ToolData, origin: Vector3, dir: Vector2) -> void:
 			in_reach.append(plant)
 	in_reach.sort_custom(func(a: Plant, b: Plant) -> bool:
 		return a.xz().distance_squared_to(o2) < b.xz().distance_squared_to(o2))
-	_spawn_swing(origin, dir)
+	_spawn_swing(origin, dir, tool.max_range)
 	for plant in in_reach:
 		if plant.hit_by_tool(tool.effect):
 			return
 
-func _fire(tool: ToolData, origin: Vector3, dir: Vector2) -> void:
+## Launches the projectile along the assisted direction, which it returns.
+func _fire(tool: ToolData, origin: Vector3, dir: Vector2) -> Vector2:
 	var o2 := Vector2(origin.x, origin.z)
 	var targets := PackedVector2Array()
 	for plant in _live_plants():
@@ -94,26 +99,31 @@ func _fire(tool: ToolData, origin: Vector3, dir: Vector2) -> void:
 	if parent is Heroine:
 		source = (parent as Heroine).aim_source
 	var shot := AimAssist.assisted_direction(o2, dir, targets, tool.max_range, source)
-	var proj := PROJECTILE_SCENE.instantiate() as Projectile
 	var host := _spawn_parent()
 	if host == null:
-		proj.free()
-		return
+		return shot
+	var proj := PROJECTILE_SCENE.instantiate() as Projectile
 	host.add_child(proj)
 	proj.launch(tool, origin, shot)
+	var puff := MuzzlePuff.new()
+	host.add_child(puff)
+	puff.position = origin + Vector3(shot.x, 0.0, shot.y) * MUZZLE_OFFSET
+	puff.play()
+	return shot
 
-func _spawn_swing(origin: Vector3, dir: Vector2) -> void:
+## Curved swoosh sweeping the capture cone (NET_HALF_ANGLE either side) out to the net's reach.
+func _spawn_swing(origin: Vector3, dir: Vector2, reach: float) -> void:
 	var host := _spawn_parent()
 	if host == null:
 		return
-	var swing := NET_SWING_SCENE.instantiate() as Node3D
+	var swing := NET_SWING_SCENE.instantiate() as NetSwing
+	swing.half_angle = NET_HALF_ANGLE
+	swing.radius = reach
 	host.add_child(swing)
 	swing.position = origin
 	swing.rotation.y = atan2(dir.x, dir.y)
 	swing.reset_physics_interpolation()
-	var tween := swing.create_tween()
-	tween.tween_property(swing, "scale", Vector3(1.0, 1.0, 0.1), SWING_FADE)
-	tween.tween_callback(swing.queue_free)
+	swing.play()
 
 func _spawn_parent() -> Node:
 	if not is_inside_tree():

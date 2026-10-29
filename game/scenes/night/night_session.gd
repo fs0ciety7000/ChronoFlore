@@ -33,6 +33,7 @@ const HURT_FLASH_DURATION := 0.25
 ## Shader pre-warm at night start (Web: no shader cache, long WebGL compiles): a disc and a lane
 ## ground sign at zero opacity plus a black omni light (the Lumiole's light pass) are drawn
 ## on screen for this many frames, then freed, so the first hazard or night light never stalls.
+## The net swoosh and the muzzle puff are pre-warmed the same way (first swing, first shot).
 const PREWARM_FRAMES := 3
 const PREWARM_LIGHT_RANGE := 30.0
 
@@ -119,7 +120,16 @@ func _start_prewarm() -> void:
 	disc.name = "PrewarmDisc"
 	lane.name = "PrewarmLane"
 	light.name = "PrewarmLight"
-	for node: Node3D in [disc, lane, light]:
+	var swoosh := ToolBelt.NET_SWING_SCENE.instantiate() as NetSwing
+	swoosh.set_opacity(0.0)
+	swoosh.set_progress(0.5)
+	swoosh.name = "PrewarmSwoosh"
+	swoosh.position = Vector3.UP * TOOL_ORIGIN_HEIGHT
+	var puff := MuzzlePuff.new()
+	puff.set_opacity(0.0)
+	puff.name = "PrewarmPuff"
+	puff.position = Vector3.UP * TOOL_ORIGIN_HEIGHT
+	for node: Node3D in [disc, lane, light, swoosh, puff]:
 		add_child(node)
 		node.global_position += at
 		_prewarm.append(node)

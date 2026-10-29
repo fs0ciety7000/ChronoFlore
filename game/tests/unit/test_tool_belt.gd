@@ -33,7 +33,7 @@ func _find_projectile() -> Projectile:
 
 func _cleanup() -> void:
 	for c in tree.root.get_children():
-		if c is Projectile or c is Node3D and c.name.begins_with("NetSwing"):
+		if c is Projectile or c is NetSwing or c is MuzzlePuff:
 			c.free()
 	if _root != null:
 		_root.free()
@@ -138,4 +138,69 @@ func test_projectile_ignores_burrowed_plant() -> void:
 		proj.step(1.0 / 60.0)
 	assert_eq(plant.torpor.charges, 0, "burrowed plant untouched")
 	assert_false(proj.is_queued_for_deletion(), "projectile flies on")
+	_cleanup()
+
+func _children_of_type(script: Script) -> Array[Node]:
+	var out: Array[Node] = []
+	for c in tree.root.get_children():
+		if is_instance_of(c, script):
+			out.append(c)
+	return out
+
+func test_net_use_spawns_a_curved_swoosh() -> void:
+	var belt := _belt()
+	belt.set_tools([_tool(&"net")] as Array[ToolData])
+	var dir := Vector2(1, 0)
+	assert_true(belt.try_use(Vector3(1, 0.5, 2), dir), "net used")
+	var swooshes := _children_of_type(NetSwing)
+	assert_eq(swooshes.size(), 1, "one swoosh spawned")
+	assert_eq(_children_of_type(MuzzlePuff).size(), 0, "no muzzle puff for the net")
+	if swooshes.size() == 1:
+		var sw := swooshes[0] as NetSwing
+		assert_near(sw.half_angle, ToolBelt.NET_HALF_ANGLE, 1e-6, "sweeps the capture cone")
+		assert_near(sw.radius, _tool(&"net").max_range, 1e-6, "out to the net's reach")
+		assert_near(sw.rotation.y, atan2(dir.x, dir.y), 1e-4, "centred on the aim")
+		assert_true(sw.position.is_equal_approx(Vector3(1, 0.5, 2)), "at the tool origin")
+		var aabb := sw.mesh.get_aabb()
+		assert_true(aabb.size.x > 2.0 * sw.radius * 0.8, "an arc, wide across the cone")
+		assert_true(aabb.size.z > sw.radius * 0.4, "curved: deep along the aim (not a straight bar)")
+		assert_true(sw.material().shader != null, "trail shader")
+	assert_eq(belt.last_use_dir, dir, "net use direction kept")
+	_cleanup()
+
+func test_swoosh_frees_itself_after_the_sweep() -> void:
+	var belt := _belt()
+	belt.set_tools([_tool(&"net")] as Array[ToolData])
+	belt.try_use(Vector3.ZERO, Vector2(0, 1))
+	var sw := _children_of_type(NetSwing)[0] as NetSwing
+	var progress := []
+	for i in 40:
+		if not is_instance_valid(sw):
+			break
+		progress.append(float(sw.material().get_shader_parameter("progress")))
+		await tree.process_frame
+	assert_true(progress.size() >= 2 and progress[-1] > progress[0], "the head sweeps forward")
+	assert_false(is_instance_valid(sw) and not sw.is_queued_for_deletion(), "freed after ~0.25 s")
+	_cleanup()
+
+func test_dart_shot_spawns_a_muzzle_puff_not_a_swoosh() -> void:
+	var belt := _belt()
+	belt.set_tools([_tool(&"tranquilizer")] as Array[ToolData])
+	assert_true(belt.try_use(Vector3(0, 0.5, 0), Vector2(0, 1)), "dart fired")
+	assert_eq(_children_of_type(NetSwing).size(), 0, "no net swoosh for a shot")
+	var puffs := _children_of_type(MuzzlePuff)
+	assert_eq(puffs.size(), 1, "one muzzle puff")
+	if puffs.size() == 1:
+		var p := (puffs[0] as Node3D).position
+		assert_near(p.z, ToolBelt.MUZZLE_OFFSET, 1e-4, "puff in front along the shot")
+	assert_near(belt.last_use_dir.length(), 1.0, 1e-4, "shot direction kept")
+	_cleanup()
+
+func test_shot_direction_is_the_assisted_one() -> void:
+	var belt := _belt()
+	belt.set_tools([_tool(&"tranquilizer")] as Array[ToolData])
+	var plant := _plant_at(1.0, 5.0) # ~11 deg off the aim: inside the assist cone
+	belt.try_use(Vector3(0, 0.5, 0), Vector2(0, 1))
+	assert_true(belt.last_use_dir.x > 0.01, "nudged toward the plant")
+	plant.free()
 	_cleanup()

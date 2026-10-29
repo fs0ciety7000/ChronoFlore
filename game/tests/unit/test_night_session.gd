@@ -159,10 +159,18 @@ func test_end_night_freezes_after_the_frame() -> void:
 func test_night_start_prewarms_shaders() -> void:
 	var s: NightSession = await _session()
 	var nodes := s.prewarm_nodes()
-	assert_eq(nodes.size(), 3, "a disc, a lane and a light")
+	assert_eq(nodes.size(), 5, "a disc, a lane, a light, a net swoosh and a muzzle puff")
 	var marks := 0
+	var tools := 0
 	for node in nodes:
-		if node is GroundMark:
+		if node is NetSwing:
+			tools += 1
+			assert_near(float((node as NetSwing).material().get_shader_parameter("opacity")), 0.0, 1e-6, "invisible swoosh")
+			assert_true(node.visible, "swoosh drawn")
+		elif node is MuzzlePuff:
+			tools += 1
+			assert_true(node.visible, "puff drawn")
+		elif node is GroundMark:
 			marks += 1
 			assert_near(float((node as GroundMark).material().get_shader_parameter("opacity")), 0.0, 1e-6, "invisible sign")
 			assert_true(node.visible, "drawn (a hidden node compiles nothing)")
@@ -170,6 +178,7 @@ func test_night_start_prewarms_shaders() -> void:
 			assert_eq((node as OmniLight3D).light_color, Color.BLACK, "black light: adds nothing")
 			assert_true(node.visible, "light on")
 	assert_eq(marks, 2, "disc and lane")
+	assert_eq(tools, 2, "swoosh and puff")
 	for i in NightSession.PREWARM_FRAMES + 1:
 		await tree.process_frame
 	assert_eq(s.prewarm_nodes().size(), 0, "freed after a few frames")
