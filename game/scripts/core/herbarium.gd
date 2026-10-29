@@ -5,14 +5,16 @@ extends RefCounted
 const SAVE_VERSION := 1
 const DETAIL_THRESHOLDS := [5, 15]
 
-## StringName -> int (captures, or sleeps for non-capturable species).
+## StringName -> int: captures per species (every species is capturable since Task B3; a hostile
+## counts only when netted asleep). Saves from before B3 counted a Ronce that was only put to
+## sleep: on load such a count stays and now reads as a captured capturable species (accepted).
 var counts: Dictionary = {}
 var unlocked_tools: Array[StringName] = []
 var best_minutes: int = 0
 var full_nights: int = 0
 var next_dawn_memory: int = 0
 
-## Counts one capture (or sleep). new_detail is the detail index (0 or 1) revealed by
+## Counts one capture. new_detail is the detail index (0 or 1) revealed by
 ## this count, or -1.
 func record(species: PlantSpecies) -> Dictionary:
 	var n: int = int(counts.get(species.id, 0)) + 1
