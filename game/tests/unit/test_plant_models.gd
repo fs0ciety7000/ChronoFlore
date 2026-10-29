@@ -158,3 +158,23 @@ func test_lumiole_glow_parts_keep_their_light() -> void:
 		v.set_glow(1.0)
 		assert_true((lights[0] as OmniLight3D).light_energy > day, "its light grows at night")
 	v.free()
+
+func test_night_glow_keeps_hue_and_adds_rim() -> void:
+	# Night readability: the glow is a deeper tint of the albedo (not a wash towards white) and a
+	# soft rim outlines the model; by day the materials are untouched.
+	var v := _species("revette").visual_scene.instantiate() as PlantModelVisual
+	tree.root.add_child(v)
+	v.set_glow(0.0)
+	for mat in v.materials():
+		assert_true(mat.emission.is_equal_approx(mat.albedo_color), "%s day emission is the albedo" % mat.resource_name)
+		assert_false(mat.rim_enabled, "%s no rim by day" % mat.resource_name)
+	v.set_glow(1.0)
+	var deeper := 0
+	for mat in v.materials():
+		assert_true(mat.rim_enabled and mat.rim > 0.0, "%s rim at night" % mat.resource_name)
+		if mat.albedo_color.s > 0.1:
+			assert_near(mat.emission.h, mat.albedo_color.h, 0.02, "%s keeps its hue" % mat.resource_name)
+			if mat.emission.s > mat.albedo_color.s + 0.05:
+				deeper += 1
+	assert_true(deeper >= 4, "night glow is a deeper tint (%d materials)" % deeper)
+	v.free()

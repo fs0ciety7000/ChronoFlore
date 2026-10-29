@@ -3,6 +3,8 @@ extends Node3D
 ## Hand-made plant model (GLB from assets/custom/plants/build_plants.py) under a "Model" child.
 ## Plays Idle/Move/Sleep/Caught (+ Attack for hostiles) from the plant state and drives the
 ## night glow on per-instance material copies, never below the 0.2 light lift every model has.
+## At night the glow is a deeper tint of each colour plus a soft rim, so the pastel models stay
+## readable against the lavender night instead of washing out to white.
 
 ## Own light lift, same as the heroine's materials.
 const LIGHT_LIFT := 0.2
@@ -12,6 +14,16 @@ const ONE_SHOTS: Array[StringName] = [&"Attack"]
 const OWN_GLOW_PREFIX := "Glow"
 ## Lights carried by a model (Lumiole) shine at this fraction of their energy by day.
 const LIGHT_DAY_FACTOR := 0.0
+## Night readability: at full glow the emission is a deeper tint of the albedo (saturation
+## scaled and lifted, value lowered) instead of a wash towards white...
+const NIGHT_SATURATION_SCALE := 2.3
+const NIGHT_SATURATION_LIFT := 0.08
+const NIGHT_VALUE_SCALE := 0.85
+## ...and a soft rim (StandardMaterial3D rim, tinted by the albedo) outlines the model.
+const NIGHT_RIM := 1.0
+const NIGHT_RIM_TINT := 0.5
+## Light sources (Glow*) take only part of that tint: they stay warm white.
+const OWN_GLOW_TINT := 0.4
 
 var _anim: AnimationPlayer
 var _materials: Array[StandardMaterial3D] = []
@@ -69,8 +81,12 @@ func set_glow(value: float) -> void:
 	for i in _materials.size():
 		var mat := _materials[i]
 		mat.emission_enabled = true
-		mat.emission = mat.albedo_color
+		var tint := night * (OWN_GLOW_TINT if mat.resource_name.begins_with(OWN_GLOW_PREFIX) else 1.0)
+		mat.emission = mat.albedo_color.lerp(_night_tint(mat.albedo_color), tint)
 		mat.emission_energy_multiplier = maxf(_floors[i], value * Plant.GLOW_ENERGY)
+		mat.rim_enabled = night > 0.0
+		mat.rim = NIGHT_RIM * night
+		mat.rim_tint = NIGHT_RIM_TINT
 	for i in _lights.size():
 		_lights[i].light_energy = _light_energy[i] * lerpf(LIGHT_DAY_FACTOR, 1.0, night)
 		_lights[i].visible = _lights[i].light_energy > 0.001
@@ -86,6 +102,13 @@ static func _own_emission(mat: StandardMaterial3D) -> float:
 	if a_max < 1e-4:
 		return mat.emission_energy_multiplier
 	return mat.emission_energy_multiplier * maxf(e.r, maxf(e.g, e.b)) / a_max
+
+## Deeper, same-hue version of a pastel albedo.
+static func _night_tint(c: Color) -> Color:
+	if c.s < 0.02:
+		return c # whites and greys stay neutral
+	return Color.from_hsv(c.h, minf(c.s * NIGHT_SATURATION_SCALE + NIGHT_SATURATION_LIFT, 1.0),
+		c.v * NIGHT_VALUE_SCALE, c.a)
 
 func _setup() -> void:
 	if _anim != null:
