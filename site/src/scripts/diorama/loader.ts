@@ -63,8 +63,18 @@ export function mountDiorama(env: Env, scroll?: Progress): void {
 
     const d = diorama;
     // Glide: 0 at the top, 1 once most of the hero has scrolled past.
+    // The hero height is cached (re-measured on resize) so the scroll callback
+    // never forces a layout right after scroll.ts writes its CSS variables.
     const hero = document.getElementById('top');
-    const glide = () => (hero ? Math.min(1, Math.max(0, window.scrollY / (hero.offsetHeight * 0.85))) : 1);
+    let heroHeight = hero?.offsetHeight ?? 0;
+    if (hero && 'ResizeObserver' in window) {
+      const ro = new ResizeObserver(() => {
+        heroHeight = hero.offsetHeight;
+      });
+      ro.observe(hero);
+      cleanups.push(() => ro.disconnect());
+    }
+    const glide = () => (hero && heroHeight ? Math.min(1, Math.max(0, window.scrollY / (heroHeight * 0.85))) : 1);
     if (scroll) {
       cleanups.push(
         scroll.onProgress((p) => {
