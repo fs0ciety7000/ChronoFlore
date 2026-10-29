@@ -18,10 +18,9 @@ Règles communes à tous les agents de code (Claude Code, Codex, Cursor, etc.). 
 
 ### Assets 3D
 
-- **Source unique** : catalogue Polyfork (MCP `polyfork`) ou modèles faits maison. Aucune autre banque d'assets.
-- **Polyfork → Godot** : télécharge le GLB (pas le module `.mjs`, prévu pour three.js), range-le dans `game/assets/polyfork/<asset-id>/`. Tailles en mètres réels, origine au sol : choisis la bonne taille au lieu de rescaler.
-- **Fait maison** : l'héroïne et les plantes-émotions capturables (aucun équivalent au catalogue). Sources dans `game/assets/custom/`.
-- Kits Polyfork pertinents : `salvage-commons-d0be9f` (îles flottantes), `nature-forest-kit-f29d6a`, `insect-world-e44b9f` (plantes géantes).
+- **Source** : modèles faits maison (Blender `bpy` par script) ou catalogue Polyfork (MCP `polyfork`). Aucune autre banque d'assets.
+- **Fait maison (choix actuel du jeu)** : héroïne, héros, île, décor et les 12 plantes. Chaque GLB est généré par un script commité à côté de lui dans `game/assets/custom/<sujet>/` (ex. `build_heroine.py`, `build_island.py`, `build_plants.py`) ; régénère avec le Python de `bpy` au lieu d'éditer le GLB. Matériaux nommés avec couleur de base (pas de vertex colors).
+- **Polyfork → Godot** (si besoin) : télécharge le GLB (pas le `.mjs`), range-le dans `game/assets/polyfork/<asset-id>/`. Tailles en mètres réels, origine au sol : choisis la bonne taille au lieu de rescaler. Ses couleurs de sommets s'importent avec `vertex_color_use_as_albedo = false`.
 
 ## Commandes
 

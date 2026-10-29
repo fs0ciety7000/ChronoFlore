@@ -125,8 +125,8 @@ Tout passe par l'InputMap (actions nommées) pour ajouter le tactile sans touche
 ### 5.7 Caméra et île
 
 - Caméra orthographique iso fixe qui suit l'héroïne avec lissage et reste bornée à l'île.
-- Île d'environ 40 × 45 m. Les bords en coupe de terre sont la limite : l'héroïne ne peut pas tomber, les plantes oui (c'est leur fuite).
-- Décor Polyfork. Piste d'île principale : `steampunk-farm-terrain-98cb8a` (« Sky Town Terrain », 46 × 50,5 m, bords d'île en coupe de terre, couleurs réglables via ses knobs, 25 k triangles). Végétation et décor de rêve tirés de `nature-forest-kit-f29d6a` et `insect-world-e44b9f` : ce dernier est à l'échelle ×100, donc ses pâquerettes de 8 m et ses champignons de 7 m deviennent des plantes géantes oniriques autour d'une héroïne de taille réelle. Pas de bâtiments steampunk.
+- Île **faite maison dans Blender** (décision de l'utilisateur, le terrain Polyfork a été jugé laid) : diorama flottant pastel, prairie plate jouable d'environ 37 × 34 m, tranches de terre en couches, étang turquoise (obstacle), chemin crème, arbres ronds rose pêche et buissons en bordure. Générateur : `game/assets/custom/island/build_island.py`. Les bords sont la limite : l'héroïne ne peut pas tomber, les plantes oui (c'est leur fuite ; elles courent jusqu'à la falaise visible puis tombent).
+- Caméra : taille orthographique 10 (≈ 75 px pour l'héroïne en 720p) ; jusqu'à ×1,5 en coop pour cadrer les deux joueurs.
 
 ### 5.8 Écrans
 
