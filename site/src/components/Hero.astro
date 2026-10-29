@@ -1,10 +1,13 @@
 ---
-// Opening. #diorama starts as the poster; Task 7 swaps in the live 3D scene
-// (data-state="live") inside the same box, so keep its aspect ratio.
+// Opening. #diorama is a full-bleed stage behind the page: it starts as the
+// poster (absolute, at the top of the page) and, when the live 3D scene is
+// ready (src/scripts/diorama/loader.ts), becomes a fixed backdrop that stays
+// behind every section (data-state="live"). Text sits on .veil patches of the
+// page colour, so its contrast never depends on the scene.
 ---
 
 <section id="top" class="hero wrap" data-scene="opening" aria-labelledby="hero-title">
-  <div class="hero__text">
+  <div class="hero__text veil">
     <p class="hero__kicker">Jeu d'action-arcade · en développement</p>
     <h1 id="hero-title">Huit heures de sommeil. Toute une flore à capturer.</h1>
     <p class="hero__lead">
@@ -16,7 +19,7 @@
       <a class="btn btn--quiet" href="#reve">Découvrir l'histoire</a>
     </div>
   </div>
-  <div id="diorama" class="hero__diorama" data-state="poster">
+  <div id="diorama" class="stage" data-state="poster">
     <img
       src="/poster.webp"
       alt=""
@@ -30,15 +33,28 @@
 
 <style>
   .hero {
+    /* Island placement, shared by the poster and scene.ts (focusRect). */
+    --focus-size: min(98vw, 52lvh);
+    --focus-x: 50vw;
+    --focus-y: 30lvh;
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: center;
-    gap: 2rem 3rem;
+    align-content: center;
+    min-height: calc(100svh - 5.5rem);
     padding-block: clamp(1.5rem, 1rem + 2vw, 3rem) clamp(3rem, 2rem + 4vw, 5.5rem);
   }
   @media (min-width: 56rem) {
     .hero {
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      --focus-size: min(52vw, 95lvh);
+      --focus-x: 70vw;
+      --focus-y: 54lvh;
+    }
+  }
+  /* Small screens: the island floats above the copy. */
+  @media (max-width: 55.99rem) {
+    .hero {
+      align-content: end;
+      padding-top: calc(var(--focus-y) + var(--focus-size) * 0.32 - 4.5rem);
+      min-height: 0;
     }
   }
   .hero__text {
@@ -46,6 +62,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 1.5rem;
+    max-width: 36rem;
   }
   .hero__kicker {
     margin: 0;
@@ -75,17 +92,47 @@
   .actions {
     padding-top: 0.5rem;
   }
-  .hero__diorama {
-    position: relative;
+
+  /*
+   * The stage. --focus-* place the island; scene.ts (focusRect) frames the 3D
+   * camera on the same point so the poster and the live scene line up.
+   * No ancestor of #diorama is positioned, so in the poster state it is laid
+   * out against the initial containing block: the first screen of the page.
+   */
+  .stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -2; /* below the .veil patches (-1) */
     width: 100%;
-    max-width: 42rem;
-    justify-self: center;
-    aspect-ratio: 520 / 440;
+    height: 100lvh;
+    overflow: hidden;
+    pointer-events: none;
   }
-  .hero__diorama img {
-    display: block;
+  .stage[data-state='live'] {
+    position: fixed;
+  }
+  .stage img {
+    position: absolute;
+    left: calc(var(--focus-x) - var(--focus-size) / 2);
+    top: calc(var(--focus-y) - var(--focus-size) / 2);
+    width: var(--focus-size);
+    height: var(--focus-size);
+    object-fit: contain;
+    transition: opacity 600ms ease;
+  }
+  .stage :global(canvas) {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    opacity: 0;
+    transition: opacity 600ms ease;
+  }
+  .stage[data-state='live'] img {
+    opacity: 0;
+  }
+  .stage[data-state='live'] :global(canvas) {
+    opacity: 1;
   }
 </style>

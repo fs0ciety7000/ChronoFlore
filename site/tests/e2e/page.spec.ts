@@ -20,8 +20,11 @@ test.describe('static one-page layout', () => {
     await expect(page.locator('#chasseuse [data-heroine]')).toHaveText(HEROINE_PLACEHOLDER);
 
     await expect(page.locator('output#countdown')).toHaveText('00:00:00');
+    // Served as the poster; the live 3D scene may already have replaced it.
+    const html = await (await page.request.get('/')).text();
+    expect(html).toMatch(/<div id="diorama"[^>]*data-state="poster"/);
     const diorama = page.locator('div#diorama');
-    await expect(diorama).toHaveAttribute('data-state', 'poster');
+    await expect(diorama).toHaveAttribute('data-state', /^(poster|live)$/);
     await expect(diorama.locator('img[src="/poster.webp"]')).toHaveAttribute('alt', '');
   });
 

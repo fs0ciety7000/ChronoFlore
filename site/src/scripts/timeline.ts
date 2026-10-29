@@ -31,8 +31,11 @@ export function dawnFactor(p: number): number {
 }
 
 export function paletteAt(p: number): Palette {
-  const n = nightFactor(p);
-  const d = dawnFactor(p);
+  return paletteFor(nightFactor(p), dawnFactor(p));
+}
+
+/** Palette for a night factor `n` and a dawn factor `d` (both 0..1). */
+export function paletteFor(n: number, d: number): Palette {
   const { day, night, dawn } = PALETTES;
   const mix = (key: keyof Palette) => mixHex(mixHex(day[key], night[key], n), dawn[key], d);
   const bg = mix('bg');

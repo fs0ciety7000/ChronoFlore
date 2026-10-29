@@ -24,3 +24,6 @@ target/
 # Playwright
 test-results/
 playwright-report/
+
+# Polyfork models: downloaded at build time (npm run fetch:models), never committed
+site/public/models/polyfork/

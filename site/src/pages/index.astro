@@ -32,7 +32,10 @@ import Footer from '../components/Footer.astro';
   import { readEnv } from '../scripts/env';
   import { initScroll } from '../scripts/scroll';
   import { initShare } from '../scripts/share';
+  import { mountDiorama } from '../scripts/diorama/loader';
 
-  initScroll(readEnv());
+  const env = readEnv();
+  const scroll = initScroll(env);
   initShare();
+  mountDiorama(env, scroll);
 </script>

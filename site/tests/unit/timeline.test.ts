@@ -8,6 +8,7 @@ import {
   mutedTones,
   nightFactor,
   paletteAt,
+  paletteFor,
   surfaceTones,
 } from '../../src/scripts/timeline';
 
@@ -89,5 +90,19 @@ describe('surfaceTones', () => {
   it('is the plain surface/ink pairing at the design endpoints', () => {
     expect(surfaceTones(PALETTES.day)).toMatchObject({ onInk: PALETTES.day.surface, onSurface: PALETTES.day.ink });
     expect(surfaceTones(PALETTES.night)).toMatchObject({ onInk: PALETTES.night.surface, onSurface: PALETTES.night.ink });
+  });
+});
+
+describe('paletteFor', () => {
+  it('is what paletteAt uses for the night and dawn factors', () => {
+    for (const p of [0, 0.1, 0.3, 0.42, 0.5, 0.75, 0.85, 0.9, 1]) {
+      expect(paletteFor(nightFactor(p), dawnFactor(p))).toEqual(paletteAt(p));
+    }
+  });
+
+  it('gives the three reference palettes at the extremes', () => {
+    expect(paletteFor(0, 0).bg).toBe(PALETTES.day.bg);
+    expect(paletteFor(1, 0).bg).toBe(PALETTES.night.bg);
+    expect(paletteFor(1, 1).bg).toBe(PALETTES.dawn.bg);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shouldUse3D, type Env } from '../../src/scripts/env';
+import { probeWebGL, shouldUse3D, type Env } from '../../src/scripts/env';
 
 const capable: Env = {
   reducedMotion: false,
@@ -25,5 +25,48 @@ describe('shouldUse3D', () => {
     ['low deviceMemory', { deviceMemory: 2 }],
   ])('is false for %s', (_name, patch) => {
     expect(shouldUse3D({ ...capable, ...patch })).toBe(false);
+  });
+});
+
+describe('shouldUse3D probes WebGL lazily', () => {
+  it('does not read webgl when another rule already says no', () => {
+    let probed = 0;
+    const env = {
+      ...capable,
+      reducedMotion: true,
+      get webgl() {
+        probed++;
+        return true;
+      },
+    };
+    expect(shouldUse3D(env)).toBe(false);
+    expect(probed).toBe(0);
+  });
+});
+
+describe('probeWebGL', () => {
+  const fakeDoc = (ctx: unknown) => {
+    const calls: string[] = [];
+    const doc = {
+      createElement: () => ({
+        getContext: (kind: string) => {
+          calls.push(`getContext:${kind}`);
+          return ctx;
+        },
+      }),
+    };
+    return { doc: doc as unknown as Document, calls };
+  };
+
+  it('releases the probe context', () => {
+    let lost = 0;
+    const ctx = { getExtension: (name: string) => (name === 'WEBGL_lose_context' ? { loseContext: () => lost++ } : null) };
+    const { doc } = fakeDoc(ctx);
+    expect(probeWebGL(doc)).toBe(true);
+    expect(lost).toBe(1);
+  });
+
+  it('is false without a context', () => {
+    expect(probeWebGL(fakeDoc(null).doc)).toBe(false);
   });
 });

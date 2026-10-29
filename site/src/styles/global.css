@@ -173,3 +173,26 @@ html.lenis body {
       fill 600ms ease;
   }
 }
+
+/*
+ * Veil: text that sits over the live diorama (fixed behind the page) gets a
+ * feathered patch of the page colour, so it is always read on exactly --bg
+ * (the scene's sky is the same colour, so the patch only shows where it hides
+ * the island or a cloud). The patch is a ::before at z-index -1 of the root
+ * stacking context: above the stage (-2), below every piece of text, so one
+ * veil's halo never covers a neighbour's content.
+ */
+.veil {
+  position: relative;
+}
+.veil::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 1.5rem;
+  background: var(--bg);
+  /* Spread 2.4x the blur sigma: ~99% cover at the box edge, so no visible step. */
+  box-shadow: 0 0 2.5rem 3rem var(--bg);
+  pointer-events: none;
+}
