@@ -184,3 +184,59 @@ test('starts Lenis with a fine pointer', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('html')).toHaveClass(/lenis/);
 });
+
+test.describe('docked sleep clock', () => {
+  const dock = (page: Page) => page.locator('[data-sleep-dock]');
+
+  /** Rects of the dock and of everything it must never cover at rest. */
+  const overlaps = (page: Page) =>
+    page.evaluate(() => {
+      const d = document.querySelector('[data-sleep-dock]')!.getBoundingClientRect();
+      const hit = (r: DOMRect) => r.left < d.right && r.right > d.left && r.top < d.bottom && r.bottom > d.top;
+      return [...document.querySelectorAll('#partager .btn, #partager input, footer p')]
+        .filter((el) => el.getClientRects().length && hit(el.getBoundingClientRect()))
+        .map((el) => el.textContent!.trim() || el.tagName);
+    });
+
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    test(`hidden at the top, shown mid-page, 08:00:00 at the bottom (${viewport.width}px)`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await page.goto('/');
+      await expect(dock(page)).toHaveAttribute('aria-hidden', 'true');
+      await expect(dock(page)).toBeHidden();
+
+      await scrollToFraction(page, 0.5);
+      await expect(dock(page)).toBeVisible();
+      await expect(dock(page)).toContainText('04:00:00');
+      const box = (await dock(page).boundingBox())!;
+      expect(box.x, 'left side').toBeLessThan(viewport.width / 2);
+      expect(box.y + box.height, 'bottom edge').toBeLessThanOrEqual(viewport.height);
+
+      await scrollToFraction(page, 1);
+      await expect(dock(page)).toBeVisible();
+      await expect(dock(page)).toContainText('08:00:00');
+      await page.waitForTimeout(400);
+      expect(await overlaps(page), 'covered by the dock at the bottom').toEqual([]);
+    });
+  }
+
+  test('turns its leaf-hand with the page', async ({ page }) => {
+    await page.goto('/');
+    await scrollToFraction(page, 0.5);
+    await expect(dock(page).locator('[data-logo-hand]')).toHaveCSS('transform', /^matrix\(-1, [^,]+, [^,]+, -1, 0, 0\)$/);
+  });
+
+  test('reduced motion: appears without moving', async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto('/');
+    await expect(dock(page)).toBeHidden();
+    await scrollToFraction(page, 0.5);
+    await expect(dock(page)).toBeVisible();
+    await expect(dock(page)).toHaveCSS('transform', 'none');
+    await context.close();
+  });
+});
