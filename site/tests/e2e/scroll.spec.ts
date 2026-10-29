@@ -121,6 +121,10 @@ test('keeps .btn--primary and surface-card text at >= 4.5:1 across the crossover
     expect(btn, `.btn--primary at ${f}`).toBeGreaterThanOrEqual(4.5);
     const card = await contrastOn(page, '.tool p', '.tool');
     expect(card, `.tool p at ${f}`).toBeGreaterThanOrEqual(4.5);
+    const soft = await contrastOn(page, '.btn--soft', '.btn--soft');
+    expect(soft, `.btn--soft at ${f}`).toBeGreaterThanOrEqual(4.5);
+    const quiet = await contrastOn(page, '.btn--quiet', '.btn--quiet');
+    expect(quiet, `.btn--quiet at ${f}`).toBeGreaterThanOrEqual(4.5);
     const share = await contrastOn(page, '.share__card p', '.share__card');
     expect(share, `.share__card p at ${f}`).toBeGreaterThanOrEqual(4.5);
   }

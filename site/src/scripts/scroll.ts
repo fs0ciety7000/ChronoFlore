@@ -38,6 +38,7 @@ export function initScroll(env: Env): ScrollHandle {
     const fills = surfaceTones(palette);
     root.style.setProperty('--on-ink', fills.onInk);
     root.style.setProperty('--on-surface', fills.onSurface);
+    root.style.setProperty('--on-field', fills.onField);
     root.style.setProperty('--progress', String(+p.toFixed(4)));
     const clock = countdownAt(p);
     if (countdown && clock !== lastClock) {

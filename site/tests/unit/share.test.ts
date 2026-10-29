@@ -4,7 +4,9 @@ import { SHARE_TEXT, SHARE_URL, sharePage, shareLinks } from '../../src/scripts/
 describe('shareLinks', () => {
   it('encodes url and text for each network', () => {
     const l = shareLinks('https://a.test/?x=1&y=2', 'a & b é');
-    expect(l.bluesky).toBe('https://bsky.app/intent/compose?text=' + encodeURIComponent('a & b é'));
+    expect(l.bluesky).toBe(
+      'https://bsky.app/intent/compose?text=' + encodeURIComponent('a & b é https://a.test/?x=1&y=2'),
+    );
     expect(l.x).toBe(
       'https://x.com/intent/post?text=' +
         encodeURIComponent('a & b é') +

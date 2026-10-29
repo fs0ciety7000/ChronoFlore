@@ -78,12 +78,14 @@ export function mutedTones(palette: Palette): { inkSoft: string; caption: string
 
 /**
  * Text colours for the two pairings that do not sit on `--bg`: text on the
- * `--ink` fill (primary buttons) and text on the `--surface` fill (cards).
+ * `--ink` fill (primary buttons) and text on the `--surface` fill (cards) and on the `--field` fill (soft buttons).
  * `--surface` is mixed continuously while `--ink` flips, so near the crossover
  * the plain pairings can fall under 4.5:1. Each tone starts at its design
  * colour and is pushed toward black/white only as far as needed.
  */
-export function surfaceTones(palette: Palette): { onInk: string; onSurface: string } {
+export const LAVENDER = '#cdc4ef'; // --lavender in tokens.css
+
+export function surfaceTones(palette: Palette): { onInk: string; onSurface: string; onField: string } {
   const { ink, surface } = palette;
   const readable = (start: string, on: string) => {
     if (contrast(start, on) >= MIN_CONTRAST) return start;
@@ -94,5 +96,7 @@ export function surfaceTones(palette: Palette): { onInk: string; onSurface: stri
     }
     return color;
   };
-  return { onInk: readable(surface, ink), onSurface: readable(ink, surface) };
+  // --field = color-mix(in srgb, surface 68%, lavender)
+  const field = mixHex(surface, LAVENDER, 0.32);
+  return { onInk: readable(surface, ink), onSurface: readable(ink, surface), onField: readable(ink, field) };
 }

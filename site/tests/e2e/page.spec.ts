@@ -105,8 +105,10 @@ test.describe('share and metadata', () => {
     const btn = page.locator('[data-copy-link]');
     await btn.click();
     await expect(btn).toHaveText('Lien copié');
+    await expect(page.locator('[role="status"][data-share-status]')).toHaveText('Lien copié');
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('https://chronoflore.cardormedia.com/');
     await expect(btn).toHaveText('Copier le lien', { timeout: 4000 });
+    await expect(page.locator('[data-share-status]')).toHaveText('');
   });
 
   test('without clipboard, shows a preselected readonly input', async ({ page }) => {
@@ -134,5 +136,27 @@ test.describe('share and metadata', () => {
     expect(await page.evaluate(() => (window as any).__shared)).toMatchObject({
       url: 'https://chronoflore.cardormedia.com/',
     });
+  });
+
+  test('hero button without share or clipboard reveals the input in view', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+      Object.defineProperty(navigator, 'share', { value: () => Promise.reject(new Error('x')), configurable: true });
+    });
+    await page.goto('/');
+    await page.locator('[data-share-primary]').click();
+    const input = page.locator('#partager input[readonly]');
+    await expect(input).toBeVisible();
+    await expect(input).toBeInViewport();
+  });
+
+  test('hero button announces a clipboard copy in the live region', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', { value: () => Promise.reject(new Error('x')), configurable: true });
+    });
+    await page.goto('/');
+    await page.locator('[data-share-primary]').click();
+    await expect(page.locator('[data-share-status]')).toHaveText('Lien copié');
   });
 });

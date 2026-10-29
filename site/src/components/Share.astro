@@ -23,6 +23,7 @@ const links = [
         ))
       }
     </div>
+    <p class="sr-only" role="status" data-share-status></p>
     <div class="share__manual" data-share-manual hidden>
       <label for="share-url">Copie ce lien :</label>
       <input id="share-url" type="text" readonly value={SHARE_URL} />
@@ -62,6 +63,16 @@ const links = [
   }
   .actions {
     padding-top: 0.75rem;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .share__manual {
     display: flex;

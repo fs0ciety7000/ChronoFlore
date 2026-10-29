@@ -7,7 +7,7 @@ export function shareLinks(url: string, text: string): { bluesky: string; x: str
   const u = encodeURIComponent(url);
   const t = encodeURIComponent(text);
   return {
-    bluesky: `https://bsky.app/intent/compose?text=${t}`,
+    bluesky: `https://bsky.app/intent/compose?text=${encodeURIComponent(`${text} ${url}`)}`,
     x: `https://x.com/intent/post?text=${t}&url=${u}`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
   };
@@ -54,21 +54,29 @@ export function initShare(): void {
     input.focus();
     input.select();
   };
+  const status = document.querySelector<HTMLElement>('[data-share-status]');
   const confirm = () => {
-    if (!copyBtn) return;
-    copyBtn.textContent = 'Lien copié';
+    if (copyBtn) copyBtn.textContent = 'Lien copié';
+    if (status) status.textContent = 'Lien copié';
     clearTimeout(timer);
-    timer = window.setTimeout(() => (copyBtn.textContent = idle), 2000);
+    timer = window.setTimeout(() => {
+      if (copyBtn) copyBtn.textContent = idle;
+      if (status) status.textContent = '';
+    }, 2000);
   };
-  const handle = (outcome: ShareOutcome) => {
+  const handle = (outcome: ShareOutcome, fromHero = false) => {
     if (outcome === 'copied') confirm();
-    else if (outcome === 'manual') showManual();
+    else if (outcome === 'manual') {
+      // From the hero the Share block is far below: bring the input into view.
+      if (fromHero) document.getElementById('partager')?.scrollIntoView({ block: 'center' });
+      showManual();
+    }
   };
 
   copyBtn?.addEventListener('click', async () => handle(await copy(navigator, SHARE_URL)));
   primary?.addEventListener('click', async (e) => {
     if (!navigator.share) return; // desktop: the anchor scrolls to #partager
     e.preventDefault();
-    handle(await sharePage(navigator, SHARE_URL, SHARE_TEXT));
+    handle(await sharePage(navigator, SHARE_URL, SHARE_TEXT), true);
   });
 }

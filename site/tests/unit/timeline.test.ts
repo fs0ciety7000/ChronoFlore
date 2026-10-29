@@ -1,3 +1,4 @@
+import { mixHex } from '../../src/scripts/color';
 import { describe, expect, it } from 'vitest';
 import {
   PALETTES,
@@ -79,13 +80,14 @@ describe('surfaceTones', () => {
   it('keeps text on --ink and on --surface readable at every progress', () => {
     for (let i = 0; i <= 1000; i++) {
       const palette = paletteAt(i / 1000);
-      const { onInk, onSurface } = surfaceTones(palette);
+      const { onInk, onSurface, onField } = surfaceTones(palette);
+      expect(contrast(onField, mixHex(palette.surface, '#cdc4ef', 0.32)), `onField at ${i / 1000}`).toBeGreaterThanOrEqual(4.5);
       expect(contrast(onInk, palette.ink), `onInk at ${i / 1000}`).toBeGreaterThanOrEqual(4.5);
       expect(contrast(onSurface, palette.surface), `onSurface at ${i / 1000}`).toBeGreaterThanOrEqual(4.5);
     }
   });
   it('is the plain surface/ink pairing at the design endpoints', () => {
-    expect(surfaceTones(PALETTES.day)).toEqual({ onInk: PALETTES.day.surface, onSurface: PALETTES.day.ink });
-    expect(surfaceTones(PALETTES.night)).toEqual({ onInk: PALETTES.night.surface, onSurface: PALETTES.night.ink });
+    expect(surfaceTones(PALETTES.day)).toMatchObject({ onInk: PALETTES.day.surface, onSurface: PALETTES.day.ink });
+    expect(surfaceTones(PALETTES.night)).toMatchObject({ onInk: PALETTES.night.surface, onSurface: PALETTES.night.ink });
   });
 });
