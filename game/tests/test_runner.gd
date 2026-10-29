@@ -15,6 +15,9 @@ func _run_all() -> void:
 		if f.begins_with("test_") and f.ends_with(".gd"):
 			files.append(f)
 	files.sort()
+	if files.is_empty():
+		failed += 1
+		push_error("FAIL no test files found in %s" % UNIT_DIR)
 	for f: String in files:
 		await _run_file(f)
 	print("Results: %d passed, %d failed" % [passed, failed])
@@ -40,6 +43,10 @@ func _run_file(file: String) -> void:
 	methods.sort()
 	for n: String in methods:
 		tc.context = "%s::%s" % [file, n]
+		var before: int = tc.passed + tc.failed
 		await tc.call(n)
+		if tc.passed + tc.failed == before:
+			tc.failed += 1
+			push_error("FAIL %s made no assertions (crashed?)" % tc.context)
 	passed += tc.passed
 	failed += tc.failed
