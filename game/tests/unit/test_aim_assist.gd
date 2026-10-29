@@ -31,7 +31,10 @@ func test_pick_source() -> void:
 	assert_eq(AimAssist.pick_source(S.STICK, true, Vector2.ZERO, Vector2.ZERO, true), S.MOUSE, "mouse moved")
 	assert_eq(AimAssist.pick_source(S.STICK, false, Vector2.ZERO, Vector2(1, 0), true), S.MOVE, "idle stick -> move")
 	assert_eq(AimAssist.pick_source(S.MOVE, false, Vector2.ZERO, Vector2(1, 0), false), S.MOVE, "unplugged pad keeps move")
-	assert_eq(AimAssist.pick_source(S.MOUSE, false, Vector2.ZERO, Vector2(1, 0), true), S.MOUSE, "mouse stays")
+	assert_eq(AimAssist.pick_source(S.STICK, false, Vector2.ZERO, Vector2(1, 0), false), S.MOVE, "unplug while on stick -> move")
+	assert_eq(AimAssist.pick_source(S.MOUSE, false, Vector2.ZERO, Vector2(1, 0), true), S.MOVE, "pad player on left stick -> move")
+	assert_eq(AimAssist.pick_source(S.MOUSE, false, Vector2.ZERO, Vector2(1, 0), false), S.MOUSE, "keyboard+mouse stays on mouse")
+	assert_eq(AimAssist.pick_source(S.MOUSE, false, Vector2.ZERO, Vector2.ZERO, true), S.MOUSE, "mouse stays when pad idle")
 
 func test_input_actions_exist() -> void:
 	for action in ["move_left", "move_right", "move_up", "move_down", "aim_left", "aim_right",

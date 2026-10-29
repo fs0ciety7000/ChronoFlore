@@ -57,6 +57,10 @@ func _torus(inner: float, outer: float) -> TorusMesh:
 
 func _build() -> void:
 	# Torso: skin-toned capsule hidden under four stripe rings.
+	var torso := CapsuleMesh.new()
+	torso.radius = 0.19
+	torso.height = BODY_HEIGHT
+	_add(torso, SKIN, Vector3(0, BODY_HEIGHT * 0.5, 0))
 	var ring_h := (BODY_HEIGHT - 0.1) / 4.0
 	for i in 4:
 		var cyl := CylinderMesh.new()
@@ -74,16 +78,16 @@ func _build() -> void:
 	_add(_sphere(HEAD_RADIUS), SKIN, Vector3(0, HEAD_Y, 0))
 	_add(_sphere(HEAD_RADIUS * 0.96), HAIR, Vector3(0, HEAD_Y + 0.03, -0.04))
 	# Face: round pink glasses (ring faces +Z) and a smile bar.
-	for sx in [-1.0, 1.0]:
-		_add(_torus(0.045, 0.065), GLASSES, Vector3(0.09 * sx, HEAD_Y + 0.02, 0.215), 90.0)
+	for sx: float in [-1.0, 1.0]:
+		_add(_torus(0.045, 0.065), GLASSES, Vector3(0.09 * sx, HEAD_Y + 0.02, 0.24), 90.0)
 	var smile := _torus(0.02, 0.04)
-	_add(smile, Color("fff5ee"), Vector3(0, HEAD_Y - 0.09, 0.215), 90.0).scale = Vector3(1.4, 1.0, 0.6)
+	_add(smile, Color("fff5ee"), Vector3(0, HEAD_Y - 0.09, 0.24), 90.0).scale = Vector3(1.4, 1.0, 0.6)
 	# Braids: chains of black spheres hanging on both sides.
-	for sx in [-1.0, 1.0]:
+	for sx: float in [-1.0, 1.0]:
 		for j in 5:
 			_add(_sphere(0.05 - j * 0.004), HAIR, Vector3(0.24 * sx + 0.01 * j * sx, HEAD_Y - 0.05 - j * 0.09, -0.02))
 	# Golden necklace.
-	_add(_torus(0.012, 0.19), GOLD, Vector3(0, 0.6, 0))
+	_add(_torus(0.17, 0.19), GOLD, Vector3(0, 0.6, 0))
 
 func set_walking(on: bool) -> void:
 	if on == _walking:

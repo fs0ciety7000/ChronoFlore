@@ -44,6 +44,10 @@ static func pick_source(current: Source, mouse_moved: bool, stick: Vector2, move
 		return Source.STICK
 	if mouse_moved:
 		return Source.MOUSE
-	if current == Source.STICK and pad_active:
+	# Never freeze: an idle stick falls back to the move direction, even if the pad vanished.
+	if current == Source.STICK:
+		return Source.MOVE
+	# A pad player who only uses the left stick; keyboard+mouse players (no pad) stay on MOUSE.
+	if current == Source.MOUSE and pad_active and move.length() > STICK_THRESHOLD:
 		return Source.MOVE
 	return current
