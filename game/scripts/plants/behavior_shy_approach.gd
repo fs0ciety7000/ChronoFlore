@@ -1,9 +1,10 @@
 class_name BehaviorShyApproach
 extends PlantBehavior
 ## Câlinette: walks up to the heroine, hesitates, then hops back at the last moment. The net
-## picks her without darts while she approaches or hesitates; she never takes her eyes off her.
+## picks her without darts while she approaches or hesitates; she never takes her eyes off her,
+## except in PANIC, where she lands at once (even mid-hop) and runs off facing her flight.
 
-enum Phase { APPROACH, HESITATE, HOP, REST }
+enum Phase { APPROACH, HESITATE, HOP, REST, PANIC }
 
 ## Stops this close to the heroine.
 const APPROACH_DISTANCE := 2.5
@@ -31,6 +32,8 @@ func reset() -> void:
 
 func desired_velocity(plant: Plant, delta: float) -> Vector2:
 	if plant.state == Plant.State.PANIC:
+		if phase != Phase.PANIC:
+			_enter(Phase.PANIC) # FLEE -> PANIC keeps the behavior: drop out of any hop
 		return plant.flee_direction()
 	if not plant.has_threat():
 		return Vector2.ZERO
@@ -71,7 +74,7 @@ func hover_height(_plant: Plant) -> float:
 	return sin(PI * clampf(_t / HOP_TIME, 0.0, 1.0)) * HOP_HEIGHT
 
 func faces_threat() -> bool:
-	return true
+	return phase != Phase.PANIC
 
 func _enter(p: Phase) -> void:
 	phase = p

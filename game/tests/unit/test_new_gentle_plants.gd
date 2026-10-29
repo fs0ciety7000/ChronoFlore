@@ -87,6 +87,33 @@ func test_calinette_netted_during_approach_only() -> void:
 	assert_true(plant.hit_by_tool(ToolData.Effect.CAPTURE), "net picks the approaching one without darts")
 	_cleanup()
 
+func test_calinette_panic_mid_hop_lands_and_faces_flight() -> void:
+	# FLEE -> PANIC keeps the behavior: a panic during the hop must not leave her floating.
+	var heroine := Vector2(11.5, 10)
+	var plant := _spawn("calinette", Vector2(8, 10))
+	var hopping := false
+	for i in 300:
+		plant.set_threat(heroine, Vector2(-1, 0))
+		plant.step(DT)
+		if plant.hover_height() > 0.0:
+			hopping = true
+			break
+	assert_true(hopping, "mid-hop before the panic")
+	plant.state = Plant.State.PANIC
+	var before := _xz(plant)
+	plant.set_threat(heroine, Vector2(-1, 0))
+	plant.step(DT)
+	assert_eq(plant.hover_height(), 0.0, "lands as soon as she panics")
+	var motion := _xz(plant) - before
+	assert_true(motion.length() > 0.0, "runs in PANIC")
+	var visual := plant.get_node("Visual") as Node3D
+	assert_near(visual.rotation.y, atan2(motion.x, motion.y), 1e-3, "faces her flight, not the heroine")
+	for i in 60:
+		plant.set_threat(heroine, Vector2(-1, 0))
+		plant.step(DT)
+	assert_eq(plant.hover_height(), 0.0, "stays on the ground in PANIC")
+	_cleanup()
+
 # --- Souffloine --------------------------------------------------------------------------------
 
 func test_souffloine_uncatchable_airborne() -> void:
