@@ -19,13 +19,17 @@ export function mountDiorama(env: Env, scroll?: Progress): void {
   if (!shouldUse3D(env)) return;
   const host = document.getElementById('diorama');
   if (!host) return;
+  // Reserve the right-hand lane for the island past the hero (desktop CSS in
+  // global.css). Set now, before the sections below the fold are seen.
+  const root = document.documentElement;
+  root.classList.add('has-diorama');
 
   whenIdle(async () => {
     const canvas = document.createElement('canvas');
     canvas.className = 'diorama__canvas';
     canvas.setAttribute('aria-hidden', 'true');
     const cleanups: (() => void)[] = [];
-    let diorama: { setProgress(p: number): void; setPointer(nx: number, ny: number): void; dispose(): void } | undefined;
+    let diorama: import('./scene').Diorama | undefined;
     let failed = false;
 
     // Any failure leaves the poster in place; the page never depends on 3D.
@@ -33,6 +37,7 @@ export function mountDiorama(env: Env, scroll?: Progress): void {
       if (failed) return;
       failed = true;
       host.dataset.state = 'poster';
+      root.classList.remove('has-diorama');
       cleanups.forEach((c) => c());
       diorama?.dispose();
       canvas.remove();
@@ -57,7 +62,17 @@ export function mountDiorama(env: Env, scroll?: Progress): void {
     }
 
     const d = diorama;
-    if (scroll) cleanups.push(scroll.onProgress((p) => d.setProgress(p)));
+    // Glide: 0 at the top, 1 once most of the hero has scrolled past.
+    const hero = document.getElementById('top');
+    const glide = () => (hero ? Math.min(1, Math.max(0, window.scrollY / (hero.offsetHeight * 0.85))) : 1);
+    if (scroll) {
+      cleanups.push(
+        scroll.onProgress((p) => {
+          d.setProgress(p);
+          d.setGlide(glide());
+        }),
+      );
+    }
     const onPointer = (e: PointerEvent) => {
       if (e.pointerType === 'touch') return;
       d.setPointer((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);

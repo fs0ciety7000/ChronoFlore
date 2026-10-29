@@ -1,13 +1,15 @@
 ---
 // Opening. #diorama is a full-bleed stage behind the page: it starts as the
 // poster (absolute, at the top of the page) and, when the live 3D scene is
-// ready (src/scripts/diorama/loader.ts), becomes a fixed backdrop that stays
-// behind every section (data-state="live"). Text sits on .veil patches of the
-// page colour, so its contrast never depends on the scene.
+// ready (src/scripts/diorama/loader.ts), becomes a fixed backdrop on desktop
+// (data-state="live"): past the hero the island glides into a right-hand lane
+// that the sections keep free (--lane in global.css). On small screens the
+// stage scrolls away with the hero. The hero copy is kept clear of the island
+// by geometry (max-width below vs focusRect in diorama/framing.ts).
 ---
 
 <section id="top" class="hero wrap" data-scene="opening" aria-labelledby="hero-title">
-  <div class="hero__text veil">
+  <div class="hero__text">
     <p class="hero__kicker">Jeu d'action-arcade · en développement</p>
     <h1 id="hero-title">Huit heures de sommeil. Toute une flore à capturer.</h1>
     <p class="hero__lead">
@@ -44,8 +46,8 @@
   }
   @media (min-width: 56rem) {
     .hero {
-      --focus-size: min(52vw, 95lvh);
-      --focus-x: 70vw;
+      --focus-size: min(50vw, 95lvh);
+      --focus-x: 72vw;
       --focus-y: 54lvh;
     }
   }
@@ -63,6 +65,12 @@
     align-items: flex-start;
     gap: 1.5rem;
     max-width: 36rem;
+  }
+  @media (min-width: 56rem) {
+    .hero__text {
+      /* Ends left of the island (focusRect keeps it right of 46vw + 24px). */
+      max-width: min(36rem, calc(46vw - var(--gutter)));
+    }
   }
   .hero__kicker {
     margin: 0;
@@ -103,14 +111,16 @@
     position: absolute;
     top: 0;
     left: 0;
-    z-index: -2; /* below the .veil patches (-1) */
+    z-index: -1;
     width: 100%;
     height: 100lvh;
     overflow: hidden;
     pointer-events: none;
   }
-  .stage[data-state='live'] {
-    position: fixed;
+  @media (min-width: 56rem) {
+    .stage[data-state='live'] {
+      position: fixed;
+    }
   }
   .stage img {
     position: absolute;

@@ -2,14 +2,18 @@
 // by loader.ts (its own chunk), never in the initial bundle.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { lightAt } from '../lighting';
 import { clampProgress, dawnFactor, nightFactor } from '../timeline';
+import { DESKTOP_MIN, ISLAND_SCREEN_RADIUS_M, focusRect, metresPerPixel } from './framing';
 import { ISLAND, buildIslandBase, type Placement } from './island';
 
 export type Diorama = {
   setProgress(p: number): void;
   /** Pointer in viewport coordinates, -1..1 on both axes (y down). */
   setPointer(nx: number, ny: number): void;
+  /** 0 = hero composition, 1 = island resting in the right-hand lane (desktop). */
+  setGlide(g: number): void;
   dispose(): void;
 };
 
@@ -31,19 +35,6 @@ const smoothstep = (a: number, b: number, x: number) => {
 };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const damp = (dt: number, rate: number) => 1 - Math.exp(-dt * rate);
-
-/**
- * Where the island sits on screen, in CSS pixels of the canvas. Keep in sync
- * with the poster position in Hero.astro (--focus-x / --focus-y / --focus-size).
- */
-function focusRect(w: number, h: number, dive: number) {
-  if (w >= 896) {
-    const size = Math.min(w * 0.52, h * 0.95);
-    return { x: w * lerp(0.7, 0.74, dive), y: h * lerp(0.54, 0.58, dive), size };
-  }
-  const size = Math.min(w * 0.98, h * 0.52);
-  return { x: w * 0.5, y: h * lerp(0.3, 0.34, dive), size };
-}
 
 /** Patches a Polyfork material so its pink/warm vertex colours glow at night. */
 function addGlow(material: THREE.Material, uniform: { value: number }) {
@@ -80,14 +71,27 @@ function dotTexture(): THREE.CanvasTexture {
   return tex;
 }
 
+/** Soft cloud look: smooth normals, near-white, lit a little from within. */
+function softenCloud(mesh: THREE.Mesh, material: THREE.MeshStandardMaterial) {
+  const g = mesh.geometry.clone();
+  g.deleteAttribute('normal');
+  const smooth = mergeVertices(g, 1e-3);
+  g.dispose();
+  smooth.computeVertexNormals();
+  mesh.geometry = smooth;
+  mesh.material = material;
+}
+
 type Swayer = { obj: THREE.Object3D; box: THREE.Box3; amp: number; start: number; petal: THREE.Color };
 
 export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama {
+  // Phones and tablets: fewer pixels and no shadow pass.
+  const phone = matchMedia('(pointer: coarse)').matches || window.innerWidth < 768;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.toneMapping = THREE.NoToneMapping; // Polyfork colours are authored without ACES
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.shadowMap.enabled = true;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, phone ? 1.5 : 2));
+  renderer.shadowMap.enabled = !phone;
   renderer.shadowMap.type = THREE.PCFShadowMap; // soft by default since r182
 
   const scene = new THREE.Scene();
@@ -96,9 +100,8 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
 
   const hemi = new THREE.HemisphereLight();
   const sun = new THREE.DirectionalLight();
-  sun.castShadow = true;
-  const shadowSize = window.innerWidth >= 900 ? 2048 : 1024; // lighter on phones
-  sun.shadow.mapSize.set(shadowSize, shadowSize);
+  sun.castShadow = !phone;
+  sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -17, right: 17, top: 17, bottom: -17, near: 1, far: 90 });
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.03;
@@ -170,9 +173,17 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
   const timer = new THREE.Timer();
   timer.connect(document);
 
+  // Clouds share one soft material whose inner light follows the sky.
+  const cloudMat = new THREE.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, roughness: 1, emissive: '#ffffff', emissiveIntensity: 0.3 });
+  const replaced = new Set<THREE.Material>();
+
   // State driven from outside.
   let progressTarget = 0;
   let progress = 0;
+  let glideTarget = 0;
+  let glide = 0;
+  let lastRender = 0;
+  let islandAttr = '';
   const pointerTarget = new THREE.Vector2();
   const pointer = new THREE.Vector2();
   let pointerDirty = false;
@@ -227,6 +238,7 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
     const p = progress;
     const dive = smoothstep(0.04, 0.62, p);
     const dawn = dawnFactor(p);
+    const g = width >= DESKTOP_MIN ? glide : 0;
     pointer.lerp(pointerTarget, damp(dt, 4));
     // Scroll lowers the camera toward the island (35° -> 22°) and moves in;
     // the dawn pulls back a little. The pointer adds a ±3° parallax.
@@ -241,24 +253,42 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
     camera.lookAt(target);
 
     // Orthographic frustum laid out so the target lands on the focus point.
-    const f = focusRect(width, height, dive);
-    const s = 31 / f.size; // metres per CSS pixel: the island (~24 m) plus air
+    const f = focusRect(width, height, dive, g);
+    const s = metresPerPixel(f.size);
     camera.left = -f.x * s;
     camera.right = (width - f.x) * s;
     camera.top = f.y * s;
     camera.bottom = -(height - f.y) * s;
-    camera.zoom = 1 + 0.12 * dive - 0.06 * dawn;
+    // A slight push-in while the island is the hero; none once it rests in the lane.
+    camera.zoom = 1 + (0.12 * dive - 0.06 * dawn) * (1 - g);
     camera.updateProjectionMatrix();
+
+    // Clouds tuck in under the island as it moves into the lane (and always on
+    // small screens, where the copy runs full width), so none drifts out under
+    // the text; they also sink so they never poke through the meadow.
+    const tuck = width < DESKTOP_MIN ? 1 : g;
+    const k = lerp(1, 0.38, tuck);
+    for (const c of clouds.children) {
+      c.position.set(c.userData.x * k, c.userData.y + c.userData.bob - 5.5 * tuck, c.userData.z * k);
+    }
+
+    // Published for the e2e test that keeps copy clear of the island.
+    const r = (ISLAND_SCREEN_RADIUS_M / s) * camera.zoom;
+    const attr = `${Math.round(f.x)},${Math.round(f.y)},${Math.round(r)}`;
+    if (attr !== islandAttr) host.dataset.island = islandAttr = attr;
   }
 
   function applyLight() {
     // Unsmoothed: the sky must match the page colour (--bg) in the same frame,
-    // or the .veil patches would show while scrolling.
+    // so the island never sits on a different sky than the page while scrolling.
     const p = progressTarget;
     const l = lightAt(nightFactor(p), dawnFactor(p));
     scene.background = light.background.set(l.background);
     fog.color.copy(light.background);
     hemi.color.copy(light.sky.set(l.hemiSky));
+    cloudMat.emissive.copy(light.sky);
+    cloudMat.emissiveIntensity = 0.3 * (1 - 0.7 * l.glow); // soft by day, dim at night
+    cloudMat.color.setScalar(1 - 0.35 * l.glow);
     hemi.groundColor.copy(light.ground.set(l.hemiGround));
     hemi.intensity = l.hemiIntensity;
     sun.color.copy(light.sun.set(l.sunColor));
@@ -366,9 +396,14 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
     const now = timer.getElapsed();
     progress = lerp(progress, progressTarget, damp(dt, 6));
     if (Math.abs(progress - progressTarget) < 1e-4) progress = progressTarget;
+    glide = lerp(glide, glideTarget, damp(dt, 5));
+    if (Math.abs(glide - glideTarget) < 1e-3) glide = glideTarget;
     island.rotation.y = (now / TURN_SECONDS) * Math.PI * 2;
-    clouds.rotation.y = -(now / (TURN_SECONDS * 2.5)) * Math.PI * 2;
-    clouds.children.forEach((c, i) => (c.position.y = (c.userData.y as number) + Math.sin(now * 0.25 + i * 1.3) * 0.6));
+    // Clouds stay on their side of the island (off the hero copy) and bob.
+    clouds.children.forEach((c, i) => {
+      c.userData.bob = Math.sin(now * 0.25 + i * 1.3) * 0.6;
+      c.rotation.y = (c.userData.ry as number) + Math.sin(now * 0.05 + i) * 0.2;
+    });
     placeCamera(dt);
     applyLight();
     island.updateMatrixWorld();
@@ -382,6 +417,12 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
   function frame(time: number) {
     raf = 0;
     if (disposed) return;
+    // Resting small in the lane: ~30 fps is plenty for a slow turn.
+    if (glide > 0.98 && glideTarget > 0.98 && time - lastRender < 32) {
+      schedule();
+      return;
+    }
+    lastRender = time;
     timer.update(time);
     const dt = Math.min(Math.max(timer.getDelta(), 0), 0.1);
     render(dt);
@@ -415,6 +456,11 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
         if (!mesh.isMesh) return;
         mesh.castShadow = p.key === 'tree' || p.key === 'rock' || p.id.startsWith('leafy-bush') || p.id.startsWith('fern');
         mesh.receiveShadow = p.key !== 'cloud';
+        if (p.key === 'cloud') {
+          replaced.add(mesh.material as THREE.Material);
+          softenCloud(mesh, cloudMat);
+          return;
+        }
         if (weight > 0) {
           // One material per role, so blossoms and flower beds glow differently.
           const src = mesh.material as THREE.MeshStandardMaterial;
@@ -427,12 +473,13 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
             glowUniforms.push({ uniform, weight });
             materialCache.set(key, mat);
           }
+          replaced.add(src);
           mesh.material = mat;
         }
       });
       if (p.key === 'cloud') {
         // Built 9 m up; a uniform offset brings them level with the island.
-        obj.userData.y = p.y ?? 0;
+        Object.assign(obj.userData, { x: p.x, y: p.y ?? 0, z: p.z, ry: p.ry ?? 0, bob: 0 });
         clouds.add(obj);
         continue;
       }
@@ -461,6 +508,10 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
       progressTarget = clampProgress(p);
       if (!ready) progress = progressTarget;
     },
+    setGlide(g: number) {
+      glideTarget = Math.min(1, Math.max(0, Number.isFinite(g) ? g : 0));
+      if (!ready) glide = glideTarget;
+    },
     setPointer(nx: number, ny: number) {
       pointerTarget.set(Math.max(-1, Math.min(1, nx)), Math.max(-1, Math.min(1, ny)));
       pointerDirty = true;
@@ -474,14 +525,27 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
       resizeObserver.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
       timer.dispose();
+      const materials = new Set<THREE.Material>(replaced);
       scene.traverse((o) => {
         const mesh = o as THREE.Mesh;
         if (mesh.geometry) mesh.geometry.dispose();
         const mats = mesh.material ? (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) : [];
-        mats.forEach((m) => m.dispose());
+        mats.forEach((m) => materials.add(m));
       });
+      for (const m of materials) {
+        // Dispose any texture the material holds (map, emissiveMap, ...).
+        for (const value of Object.values(m)) if (value instanceof THREE.Texture) value.dispose();
+        m.dispose();
+      }
+      petals.dispose();
+      sun.shadow.dispose();
       dot.dispose();
       renderer.dispose();
+      try {
+        renderer.forceContextLoss(); // free the GPU context now, not at GC time
+      } catch {
+        /* already lost */
+      }
     },
   };
 }

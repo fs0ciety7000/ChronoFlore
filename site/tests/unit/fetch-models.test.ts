@@ -16,15 +16,18 @@ afterEach(() => dirs.splice(0).forEach((d) => rmSync(d, { recursive: true, force
 const body = (id: string) => new TextEncoder().encode(`glTF:${id}`);
 const sha8 = (b: Uint8Array) => createHash('sha256').update(b).digest('hex').slice(0, 8);
 
-function fakeFetch(failing: string[] = []) {
+function fakeFetch(failing: string[] = [], notGlb: string[] = []) {
   const calls: string[] = [];
-  const impl = async (url: string) => {
+  const signals: unknown[] = [];
+  const impl = async (url: string, init?: { signal?: AbortSignal }) => {
     calls.push(url);
+    signals.push(init?.signal);
     const id = url.match(/cdn\/(.+)\.glb$/)![1];
     if (failing.includes(id)) return new Response('nope', { status: 404 });
+    if (notGlb.includes(id)) return new Response('<html>oops</html>', { status: 200 });
     return new Response(body(id), { status: 200 });
   };
-  return { impl, calls };
+  return { impl, calls, signals };
 }
 
 describe('fetchModels', () => {
@@ -43,6 +46,18 @@ describe('fetchModels', () => {
     const { impl } = fakeFetch(['b-2']);
     await expect(fetchModels(['a-1', 'b-2'], dir, impl)).rejects.toThrow(/b-2/);
     expect(readdirSync(dir)).not.toContain('manifest.json');
+  });
+
+  it('rejects a response that is not a GLB, naming the id', async () => {
+    const dir = tmp();
+    await expect(fetchModels(['a-1', 'b-2'], dir, fakeFetch([], ['a-1']).impl)).rejects.toThrow(/a-1.*glTF/);
+    expect(readdirSync(dir)).not.toContain('manifest.json');
+  });
+
+  it('gives every request a timeout signal', async () => {
+    const { impl, signals } = fakeFetch();
+    await fetchModels(['a-1'], tmp(), impl);
+    expect(signals[0]).toBeInstanceOf(AbortSignal);
   });
 
   it('removes stale versions of the models', async () => {

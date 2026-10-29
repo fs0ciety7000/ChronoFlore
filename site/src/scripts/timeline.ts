@@ -34,10 +34,43 @@ export function paletteAt(p: number): Palette {
   return paletteFor(nightFactor(p), dawnFactor(p));
 }
 
+/**
+ * Dusk keyframes between day and night. A straight RGB mix of cream and
+ * indigo passes through a flat grey; going through a golden hour and a rose
+ * twilight keeps the sky pastel and chromatic all the way (ink and tones are
+ * still derived from bg below, so the contrast rules are unchanged).
+ */
+const DUSK: { at: number; palette: Omit<Palette, 'ink'> }[] = [
+  { at: 0.35, palette: { bg: '#f6dcc0', accent: '#f4b0bc', surface: '#fff7ee' } },
+  { at: 0.65, palette: { bg: '#c4899c', accent: '#f7c0cf', surface: '#f8e9ec' } },
+];
+
+/** Day -> golden -> twilight -> night along `n` (0..1), for one palette key. */
+function nightMix(key: 'bg' | 'accent' | 'surface', n: number): string {
+  const stops = [
+    { at: 0, color: PALETTES.day[key] },
+    ...DUSK.map((k) => ({ at: k.at, color: k.palette[key] })),
+    { at: 1, color: PALETTES.night[key] },
+  ];
+  const t = Math.min(1, Math.max(0, Number.isFinite(n) ? n : 0));
+  let i = 0;
+  while (i < stops.length - 2 && t > stops[i + 1].at) i++;
+  const a = stops[i];
+  const b = stops[i + 1];
+  return mixHex(a.color, b.color, (t - a.at) / (b.at - a.at));
+}
+
+// Sunrise, halfway from night to dawn, for the same reason (no grey).
+const SUNRISE: Omit<Palette, 'ink'> = { bg: '#cf8fa6', accent: '#f6bccb', surface: '#f9e8ec' };
+
 /** Palette for a night factor `n` and a dawn factor `d` (both 0..1). */
 export function paletteFor(n: number, d: number): Palette {
-  const { day, night, dawn } = PALETTES;
-  const mix = (key: keyof Palette) => mixHex(mixHex(day[key], night[key], n), dawn[key], d);
+  const { night, dawn, day } = PALETTES;
+  const dd = Math.min(1, Math.max(0, Number.isFinite(d) ? d : 0));
+  const mix = (key: 'bg' | 'accent' | 'surface') => {
+    const from = nightMix(key, n);
+    return dd < 0.5 ? mixHex(from, SUNRISE[key], dd / 0.5) : mixHex(SUNRISE[key], dawn[key], (dd - 0.5) / 0.5);
+  };
   const bg = mix('bg');
   // Ink flips (not interpolated) between the day and night inks at the
   // luminance where white and black give equal contrast (~0.179). Near that

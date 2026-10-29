@@ -119,14 +119,20 @@ function compose(): Placement[] {
   cluster(WILD, -7.8, -3.4, 7, 1.2, 'flower');
   cluster(GRASS, 0, 0, 40, 10, 'plant');
 
-  // Clouds drift around the island, off its edge and below its rim, so it
-  // floats above them. They are built 9 m up: a uniform drop brings them level.
-  for (const [x, z, y] of [
-    [-21, -9, -18],
-    [19, -14, -19],
-    [-15, 19, -20],
-    [22, 12, -17],
-  ]) out.push({ id: CLOUD, x, z, y, ry: r2(rand() * Math.PI * 2), key: 'cloud' });
+  // Clouds float off the island's edge and below its rim, so it floats above
+  // them. They are built 9 m up: a uniform drop brings them level. Positions
+  // are given as (right, front) of the iso view (camera azimuth 45°) and kept
+  // right of the island so none drifts under the hero copy on the left.
+  for (const [right, front, y] of [
+    [20, -4, -17],
+    [14, 10, -19],
+    [4, 16, -21],
+    [-6, -12, -18],
+  ]) {
+    const x = r2((right + front) / Math.SQRT2);
+    const z = r2((front - right) / Math.SQRT2);
+    out.push({ id: CLOUD, x, z, y, ry: r2(rand() * Math.PI * 2), key: 'cloud' });
+  }
 
   return out;
 }

@@ -11,10 +11,10 @@ const links = [
 ---
 
 <header class="site-header wrap">
-  <a class="site-header__brand veil" href="#top">
+  <a class="site-header__brand" href="#top">
     <Logo variant="horizontal" size={44} label="ChronoFlore" />
   </a>
-  <nav class="site-header__nav veil" aria-label="Sections">
+  <nav class="site-header__nav" aria-label="Sections">
     <ul>
       {links.map((l) => <li class:list={{ 'nav-wide': l.wide }}><a href={l.href}>{l.label}</a></li>)}
     </ul>

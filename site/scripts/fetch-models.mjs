@@ -9,11 +9,13 @@ import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const CDN = 'https://polyfork.dev/cdn';
+const TIMEOUT_MS = 30_000;
+const GLB_MAGIC = 'glTF';
 
 /**
  * @param {string[]} ids Polyfork model ids.
  * @param {string} dir Output directory.
- * @param {(url: string) => Promise<Response>} [fetchImpl]
+ * @param {(url: string, init?: { signal?: AbortSignal }) => Promise<Response>} [fetchImpl]
  */
 export async function fetchModels(ids, dir, fetchImpl = fetch) {
   await mkdir(dir, { recursive: true });
@@ -21,10 +23,10 @@ export async function fetchModels(ids, dir, fetchImpl = fetch) {
   const files = {};
   for (const id of ids) {
     try {
-      const res = await fetchImpl(`${CDN}/${id}.glb`);
+      const res = await fetchImpl(`${CDN}/${id}.glb`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const bytes = new Uint8Array(await res.arrayBuffer());
-      if (bytes.length === 0) throw new Error('empty file');
+      if (new TextDecoder().decode(bytes.subarray(0, 4)) !== GLB_MAGIC) throw new Error(`not a GLB (no ${GLB_MAGIC} header)`);
       const sha8 = createHash('sha256').update(bytes).digest('hex').slice(0, 8);
       files[id] = { name: `${id}.${sha8}.glb`, bytes };
     } catch (err) {

@@ -76,7 +76,7 @@ test.describe('scroll drives palette and sleep clock', () => {
     for (const f of [0, 0.3, 0.4, 0.5, 0.6, 0.78, 0.9, 1]) {
       await scrollToFraction(page, f);
       await page.waitForTimeout(100);
-      for (const sel of ['.dream__text p', '.plate-heading__caption', '.herbarium__note']) {
+      for (const sel of ['.dream__text p', '.plate-heading__caption']) {
         const ratio = await textContrast(page, sel);
         expect(ratio, `${sel} at ${f}`).toBeGreaterThanOrEqual(4.5);
       }
@@ -125,6 +125,8 @@ test('keeps .btn--primary and surface-card text at >= 4.5:1 across the crossover
     expect(soft, `.btn--soft at ${f}`).toBeGreaterThanOrEqual(4.5);
     const quiet = await contrastOn(page, '.btn--quiet', '.btn--quiet');
     expect(quiet, `.btn--quiet at ${f}`).toBeGreaterThanOrEqual(4.5);
+    const note = await contrastOn(page, '.herbarium__note', '.herbarium__note');
+    expect(note, `.herbarium__note at ${f}`).toBeGreaterThanOrEqual(4.5);
     const share = await contrastOn(page, '.share__card p', '.share__card');
     expect(share, `.share__card p at ${f}`).toBeGreaterThanOrEqual(4.5);
   }
