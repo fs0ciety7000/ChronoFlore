@@ -35,7 +35,7 @@ const WANDER_PAUSE_MIN := 0.8
 const WANDER_PAUSE_MAX := 2.0
 const WANDER_MARGIN := 1.0
 ## Missed net: short startled sprint.
-const STARTLE_DURATION := 0.5
+const STARTLE_DURATION := 0.8
 const STARTLE_BOOST := 1.5
 const CAPTURE_FREE_DELAY := 0.3
 ## Emission energy at plant_glow = 1.
@@ -110,8 +110,16 @@ func hit_by_tool(effect: ToolData.Effect) -> bool:
 				return true
 			_alert_from_hit()
 			if not _is_stalker():
-				_startle_left = STARTLE_DURATION
+				startle()
 	return false
+
+## Short sprint boost after a missed net; only a fleeing or panicked plant reacts.
+func startle() -> void:
+	if state == State.FLEE or state == State.PANIC:
+		_startle_left = STARTLE_DURATION
+
+func is_startled() -> bool:
+	return _startle_left > 0.0
 
 func is_emerging() -> bool:
 	return state == State.EMERGING

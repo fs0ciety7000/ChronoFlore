@@ -290,3 +290,17 @@ func test_set_glow_drives_emission() -> void:
 			leaked = true
 	assert_false(leaked, "materials are per plant")
 	_cleanup()
+
+func test_startle_only_while_fleeing() -> void:
+	var plant := _spawn("revette")
+	plant.startle()
+	assert_false(plant.is_startled(), "no startle while wandering")
+	plant.state = Plant.State.FLEE
+	plant.startle()
+	assert_true(plant.is_startled(), "startled while fleeing")
+	plant.set_threat(Vector2(5, 10), Vector2(1, 0))
+	_steps(plant, 40)
+	assert_true(plant.is_startled(), "still startled before 0.8 s")
+	_steps(plant, 20)
+	assert_false(plant.is_startled(), "startle ends after 0.8 s")
+	_cleanup()
