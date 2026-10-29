@@ -4,9 +4,12 @@ extends Node3D
 ## The root keeps an identity transform; plants and projectiles live under it.
 
 signal night_ended(result: Dictionary)
+## A capture was counted in the herbarium; new_page is true on a first discovery.
+signal capture_registered(species: PlantSpecies, new_page: bool)
 
 const PLANT_SCENE := preload("res://scenes/plants/plant.tscn")
 const WAKE_SCENE := "res://scenes/ui/wake.tscn"
+const PAUSE_SCENE := preload("res://scenes/ui/pause.tscn")
 ## Seconds between population top-ups (progressive respawn).
 const SPAWN_INTERVAL := 2.0
 ## Spawn points keep this distance to the island edge.
@@ -29,6 +32,8 @@ var clock: NightClock
 var lucidity: Lucidity
 var captures: Array[StringName] = []
 var ended: bool = false
+## The open pause menu, or null.
+var pause_menu: PauseMenu
 
 @onready var island: Island = $Island
 @onready var heroine: Heroine = $Heroine
@@ -36,7 +41,8 @@ var ended: bool = false
 @onready var camera: IsoCamera = $IsoCamera
 @onready var plants_root: Node3D = $Plants
 @onready var _belt: ToolBelt = $Heroine/ToolBelt
-@onready var _hud_label: Label = $HUD/Label
+@onready var hud: Hud = $HUD/Hud
+@onready var _hud_layer: CanvasLayer = $HUD
 @onready var _fade: ColorRect = $Fade/ColorRect
 
 var _rng := RandomNumberGenerator.new()
@@ -52,15 +58,13 @@ func _ready() -> void:
 	clock.minutes_changed.connect(_on_minutes_changed)
 	clock.dawn_reached.connect(end_night.bind(true))
 	lucidity.depleted.connect(end_night.bind(false))
-	lucidity.petal_lost.connect(func(_p: int) -> void: _update_hud())
-	lucidity.petal_regrown.connect(func(_p: int) -> void: _update_hud())
 
 	var start := island.shape.centroid()
 	heroine.global_position = Vector3(start.x, island.ground_height(), start.y)
 	heroine.lucidity = lucidity
 	heroine.nightmare_hit.connect(_on_nightmare_hit)
-	_belt.tool_changed.connect(func(_t: ToolData) -> void: _update_hud())
 	_belt.set_tools(_available_tools())
+	hud.bind(self, _belt)
 
 	night_lighting.target_progress = 0.0
 	night_lighting.set_display_progress(0.0)
@@ -73,7 +77,6 @@ func _ready() -> void:
 
 	_fade.color = Color(WAKE_FADE_COLOR, 0.0)
 	spawn_tick()
-	_update_hud()
 
 func _physics_process(delta: float) -> void:
 	if ended:
@@ -96,7 +99,10 @@ func _physics_process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if ended:
 		return
-	if event.is_action_pressed("next_tool"):
+	if event.is_action_pressed("pause"):
+		open_pause()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("next_tool"):
 		_belt.cycle(1)
 	elif event.is_action_pressed("prev_tool"):
 		_belt.cycle(-1)
@@ -187,7 +193,8 @@ func _on_plant_captured(plant: Plant) -> void:
 	var species := plant.species
 	# Herbarium first: the minutes below may reach dawn and end the night.
 	lucidity.register_capture()
-	GameState.record(species)
+	var record := GameState.record(species)
+	capture_registered.emit(species, bool(record["new_species"]))
 	captures.append(species.id)
 	if plant.state != Plant.State.CAPTURED and not plant.is_queued_for_deletion():
 		plant.queue_free() # a real capture frees itself after its shrink tween
@@ -195,7 +202,6 @@ func _on_plant_captured(plant: Plant) -> void:
 	var speed := SpawnRules.speed_multiplier(clock.hour())
 	for p in live_plants():
 		p.speed_multiplier = speed
-	_update_hud()
 
 func _on_plant_escaped(_plant: Plant) -> void:
 	if not ended:
@@ -217,7 +223,6 @@ func _on_nightmare_hit() -> void:
 
 func _on_minutes_changed(_minutes: int) -> void:
 	night_lighting.target_progress = clock.progress()
-	_update_hud()
 
 func _on_glow_changed(value: float) -> void:
 	_plant_glow = value
@@ -236,8 +241,6 @@ func _go_to_wake() -> void:
 		return
 	if ResourceLoader.exists(WAKE_SCENE):
 		get_tree().change_scene_to_file(WAKE_SCENE)
-	else:
-		print("Night over (wake screen comes in Task 13): ", GameState.last_night)
 
 func _available_tools() -> Array[ToolData]:
 	var result: Array[ToolData] = []
@@ -265,11 +268,18 @@ static func _outline_rect(shape: IslandShape) -> Rect2:
 		rect = rect.expand(v)
 	return rect
 
-# Placeholder HUD until Task 13.
-func _update_hud() -> void:
-	if _hud_label == null or clock == null:
+## Pauses the tree and shows the pause menu (which keeps running while paused).
+func open_pause() -> void:
+	if ended or pause_menu != null:
 		return
-	var tool := _belt.current()
-	_hud_label.text = "%d h %02d   ·   Pétales %d/%d   ·   %s" % [
-		floori(clock.minutes / 60.0), clock.minutes % 60, lucidity.petals, lucidity.max_petals,
-		tool.display_name if tool != null else "—"]
+	get_tree().paused = true
+	pause_menu = PAUSE_SCENE.instantiate() as PauseMenu
+	pause_menu.resumed.connect(func() -> void: pause_menu = null)
+	pause_menu.abandoned.connect(func() -> void:
+		pause_menu = null
+		end_night(false))
+	_hud_layer.add_child(pause_menu)
+
+func _exit_tree() -> void:
+	if pause_menu != null and is_inside_tree():
+		get_tree().paused = false

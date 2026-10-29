@@ -1,0 +1,73 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/title.gd" id="1_title"]
+[ext_resource type="Theme" path="res://scenes/ui/theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scenes/ui/clock_flower.gd" id="3_flower"]
+
+[node name="Title" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_title")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.992, 0.965, 0.918, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Box" type="VBoxContainer" parent="Center"]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Flower" type="Control" parent="Center/Box"]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+script = ExtResource("3_flower")
+
+[node name="Name" type="Label" parent="Center/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.894, 0.545, 0.69, 1)
+theme_override_font_sizes/font_size = 60
+text = "ChronoFlore"
+horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="Center/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Cueille tes rêves avant l'aube"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Center/Box"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="StartButton" type="Button" parent="Center/Box"]
+layout_mode = 2
+text = "Commencer la nuit"
+
+[node name="HerbariumButton" type="Button" parent="Center/Box"]
+layout_mode = 2
+text = "Herbier"
+
+[node name="QuitButton" type="Button" parent="Center/Box"]
+layout_mode = 2
+text = "Quitter"

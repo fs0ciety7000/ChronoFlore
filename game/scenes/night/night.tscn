@@ -1,25 +1,11 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night_session.gd" id="1_session"]
 [ext_resource type="PackedScene" path="res://scenes/island/island.tscn" id="2_island"]
 [ext_resource type="PackedScene" path="res://scenes/env/night_lighting.tscn" id="3_lighting"]
 [ext_resource type="PackedScene" path="res://scenes/heroine/heroine.tscn" id="4_heroine"]
 [ext_resource type="PackedScene" path="res://scenes/camera/iso_camera.tscn" id="5_camera"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud"]
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(1, 0.97, 0.9, 0.92)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-
-[sub_resource type="LabelSettings" id="LabelSettings_hud"]
-font_size = 22
-font_color = Color(0.36, 0.27, 0.33, 1)
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="6_hud"]
 
 [node name="Night" type="Node3D"]
 script = ExtResource("1_session")
@@ -36,11 +22,7 @@ script = ExtResource("1_session")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
-[node name="Label" type="Label" parent="HUD"]
-offset_left = 16.0
-offset_top = 16.0
-theme_override_styles/normal = SubResource("StyleBoxFlat_hud")
-label_settings = SubResource("LabelSettings_hud")
+[node name="Hud" parent="HUD" instance=ExtResource("6_hud")]
 
 [node name="Fade" type="CanvasLayer" parent="."]
 layer = 10
