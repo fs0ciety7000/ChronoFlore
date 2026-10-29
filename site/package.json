@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "fetch:models": "node scripts/fetch-models.mjs",
+    "fetch:game": "node scripts/fetch-game.mjs",
     "brand": "node scripts/export-brand.mjs",
     "poster": "node scripts/render-poster.mjs"
   },
