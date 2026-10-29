@@ -39,6 +39,8 @@ const SCOOP_TIME := 0.18
 ## Hoop: wider in its ring plane (local XZ); bag: longer (local Y) as it scoops.
 const SCOOP_HOOP := Vector3(1.25, 1.0, 1.25)
 const SCOOP_BAG := Vector3(1.2, 1.45, 1.2)
+## Built at runtime under the hand bone (see _attach_hand_tools).
+const HAND_TOOLS_SCENE := preload("res://scenes/heroine/hand_tools.tscn")
 ## Hand prop shown for each tool effect; the net is the default.
 const TOOL_PROPS := {
 	ToolData.Effect.CAPTURE: ^"Net",
@@ -48,8 +50,10 @@ const TOOL_PROPS := {
 
 ## Skinned body mesh (gets the hurt flash overlay); set per model scene.
 @export var body_mesh_path: NodePath = ^"Model/Heroine/Skeleton3D/HeroineMesh"
-## Parent of the Net/DartGun/Harpoon props, under the hand.R BoneAttachment3D.
+## Parent of the Net/DartGun/Harpoon props, under the hand.R BoneAttachment3D. Both nodes are
+## created at runtime: Skeleton3D/<attachment>/<tools> from this path (see _attach_hand_tools).
 @export var hand_tools_path: NodePath = ^"Model/Heroine/Skeleton3D/HandR/HandTools"
+@export var hand_bone: StringName = &"hand.R"
 
 var _walking: bool = false
 var _flash: StandardMaterial3D
@@ -71,7 +75,7 @@ var _trail_emit_left: float = 0.0
 var _scoop: Tween
 @onready var _anim: AnimationPlayer = $Model/AnimationPlayer
 @onready var _mesh: MeshInstance3D = get_node(body_mesh_path)
-@onready var _hand_tools: Node3D = get_node_or_null(hand_tools_path)
+@onready var _hand_tools: Node3D = _attach_hand_tools()
 
 func _ready() -> void:
 	# Hurt flash: a white unshaded overlay whose alpha is tweened.
@@ -90,6 +94,32 @@ func _process(delta: float) -> void:
 	_hand_hold_left = maxf(_hand_hold_left - delta, 0.0)
 	_update_props()
 	_tick_trail(delta)
+
+## Adds the BoneAttachment3D and the HandTools props under the model's Skeleton3D. They are not
+## saved in the .tscn: nodes added inside the instanced (non-editable) .glb are dropped when the
+## export re-packs the scene, which left every exported build without tools in hand.
+func _attach_hand_tools() -> Node3D:
+	var existing := get_node_or_null(hand_tools_path) as Node3D
+	if existing != null:
+		return existing
+	var count := hand_tools_path.get_name_count()
+	if count < 3:
+		return null
+	var names := PackedStringArray()
+	for i in count - 2:
+		names.append(hand_tools_path.get_name(i))
+	var skeleton := get_node_or_null(NodePath("/".join(names))) as Skeleton3D
+	if skeleton == null or skeleton.find_bone(hand_bone) < 0:
+		push_warning("HeroineVisual: no %s bone for the hand tools" % hand_bone)
+		return null
+	var attach := BoneAttachment3D.new()
+	attach.name = hand_tools_path.get_name(count - 2)
+	attach.bone_name = hand_bone
+	skeleton.add_child(attach)
+	var tools := HAND_TOOLS_SCENE.instantiate() as Node3D
+	tools.name = hand_tools_path.get_name(count - 1)
+	attach.add_child(tools)
+	return tools
 
 ## Top-level ribbon mesh, drawn (at zero alpha) from the first frame so its shader is compiled
 ## before the first swing (Web).
