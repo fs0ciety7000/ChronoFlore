@@ -9,6 +9,8 @@ const EASE_RATE: float = 1.5
 const GLOW_EPSILON: float = 0.01
 ## Fixed sun heading; only the pitch follows the palette.
 const SUN_YAW_DEG: float = -30.0
+## Camera-to-scene distance the palette tint is calibrated for (IsoCamera.DISTANCE).
+const TINT_REFERENCE_DISTANCE: float = 40.0
 
 ## Night progress to reach (0 = 0 h, 1 = 8 h).
 @export var target_progress: float = 0.0
@@ -39,6 +41,12 @@ func _apply() -> void:
 	var sun := $Sun as DirectionalLight3D
 	env.background_color = p["background"]
 	env.ambient_light_color = p["ambient_color"]
+	env.adjustment_saturation = p["saturation"]
+	# Uniform fog (the ortho camera sees everything at ~the same depth) tints the whole diorama.
+	var tint: float = clampf(float(p["tint"]), 0.0, 0.95)
+	env.fog_enabled = tint > 0.001
+	env.fog_light_color = p["ambient_color"]
+	env.fog_density = -log(1.0 - tint) / TINT_REFERENCE_DISTANCE
 	sun.light_color = p["sun_color"]
 	sun.light_energy = p["sun_energy"]
 	sun.rotation_degrees = Vector3(float(p["sun_pitch_deg"]), SUN_YAW_DEG, 0.0)

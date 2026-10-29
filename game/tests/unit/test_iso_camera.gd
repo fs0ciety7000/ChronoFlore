@@ -22,7 +22,7 @@ func test_clamped_focus() -> void:
 	assert_near(cam.focus_point().z, 0.0, 0.001, "z untouched")
 	var camera := cam.get_node("Camera3D") as Camera3D
 	assert_eq(camera.projection, Camera3D.PROJECTION_ORTHOGONAL, "orthographic")
-	assert_near(camera.size, 22.0, 0.001, "ortho size")
+	assert_near(camera.size, IsoCamera.ORTHO_SIZE, 0.001, "ortho size")
 	(parts[0] as Node).free()
 
 func test_camera_iso_angle() -> void:

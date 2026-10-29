@@ -2,13 +2,14 @@ class_name NightPalette
 extends RefCounted
 ## Sky/light colours as a function of night progress (0 = 0 h, 1 = 8 h), linearly interpolated.
 
-# Each key: [progress, background, sun_color, sun_energy, ambient_color, sun_pitch_deg, plant_glow]
+# Each key: [progress, background, sun_color, sun_energy, ambient_color, sun_pitch_deg, plant_glow,
+#             saturation (Environment adjustment), tint (0..1 mix towards ambient_color via fog)]
 const KEYS := [
-	[0.0, "f6efe0", "fff4e0", 1.0, "fdf6ea", -55.0, 0.0],
-	[0.25, "f6efe0", "ffe9cc", 0.95, "f7efe6", -40.0, 0.0],
-	[0.375, "2e2f63", "8d8fd8", 0.45, "5a5c9e", -60.0, 1.0],
-	[0.75, "2e2f63", "8d8fd8", 0.45, "5a5c9e", -60.0, 1.0],
-	[1.0, "f7c9d4", "ffd1dc", 0.8, "f0d4e8", -20.0, 0.3],
+	[0.0, "f6efe0", "fff7ea", 0.15, "f3efe9", -55.0, 0.0, 0.85, 0.0],
+	[0.25, "f6ece0", "ffe8d2", 0.14, "f5e9e2", -40.0, 0.0, 0.85, 0.0],
+	[0.375, "3b3d78", "c0b2ff", 0.1, "aea2ff", -60.0, 1.0, 1.15, 0.22],
+	[0.75, "3b3d78", "c0b2ff", 0.1, "aea2ff", -60.0, 1.0, 1.15, 0.22],
+	[1.0, "f7c9d4", "ffc9bd", 0.17, "ffc4dc", -20.0, 0.3, 1.05, 0.2],
 ]
 
 static func sample(progress: float) -> Dictionary:
@@ -27,4 +28,6 @@ static func sample(progress: float) -> Dictionary:
 		"ambient_color": Color(a[4]).lerp(Color(b[4]), k),
 		"sun_pitch_deg": lerpf(float(a[5]), float(b[5]), k),
 		"plant_glow": lerpf(float(a[6]), float(b[6]), k),
+		"saturation": lerpf(float(a[7]), float(b[7]), k),
+		"tint": lerpf(float(a[8]), float(b[8]), k),
 	}

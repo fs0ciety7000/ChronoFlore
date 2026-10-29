@@ -75,8 +75,14 @@ func test_lighting_applies_palette() -> void:
 	assert_eq(env.tonemap_mode, Environment.TONE_MAPPER_LINEAR, "linear tone mapping")
 	var sun := lighting.get_node("Sun") as DirectionalLight3D
 	assert_true(sun.shadow_enabled, "shadows on")
-	assert_near(sun.light_energy, 0.8, 0.001, "sun energy at dawn")
+	assert_near(sun.light_energy, 0.17, 0.001, "sun energy at dawn")
 	assert_near(sun.rotation_degrees.x, -20.0, 0.01, "sun pitch at dawn")
+	assert_true(env.adjustment_enabled, "colour adjustments on")
+	assert_near(env.adjustment_saturation, 1.05, 0.001, "dawn saturation")
+	assert_true(env.fog_enabled, "dawn tint fog on")
+	assert_near(env.fog_density, -log(1.0 - 0.2) / NightLighting.TINT_REFERENCE_DISTANCE, 0.0001, "tint density")
+	lighting.set_display_progress(0.0)
+	assert_false(env.fog_enabled, "no tint by day")
 	lighting.queue_free()
 	await tree.process_frame
 
