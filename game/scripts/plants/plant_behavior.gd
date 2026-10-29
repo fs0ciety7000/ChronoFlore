@@ -22,6 +22,8 @@ static func for_species(species: PlantSpecies) -> PlantBehavior:
 			return BehaviorFloater.new()
 		PlantSpecies.Behavior.CHARGER:
 			return BehaviorCharger.new()
+		PlantSpecies.Behavior.ROOT_TRAP:
+			return BehaviorRootTrap.new()
 	return BehaviorDarter.new()
 
 ## Called by the plant each time it (re)enters FLEE, and when it leaves FLEE/PANIC.

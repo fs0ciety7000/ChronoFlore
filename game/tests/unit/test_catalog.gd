@@ -6,7 +6,7 @@ func _catalog() -> GameCatalog:
 func test_catalog_loads() -> void:
 	var c := _catalog()
 	assert_true(c != null, "catalog loads")
-	assert_eq(c.species.size(), 9, "9 species")
+	assert_eq(c.species.size(), 10, "10 species")
 	assert_eq(c.tools.size(), 3, "3 tools")
 	assert_eq(c.milestones.size(), 1, "1 milestone")
 	assert_eq(c.dawn_memories.size(), 3, "3 dawn memories")
@@ -23,6 +23,7 @@ func test_species_values() -> void:
 		[&"melancolys", "Mélancolys", "mélancolie", PlantSpecies.Rarity.UNCOMMON, true, 2.2, 3.0, PlantSpecies.Behavior.POND_SEEKER],
 		[&"lumiole", "Lumiole", "espoir", PlantSpecies.Rarity.RARE, true, 6.0, 4.0, PlantSpecies.Behavior.FLOATER],
 		[&"croque_colere", "Croque-Colère", "colère", PlantSpecies.Rarity.UNCOMMON, true, 1.6, 2.0, PlantSpecies.Behavior.CHARGER],
+		[&"lierre_jalousie", "Lierre-Jalousie", "jalousie", PlantSpecies.Rarity.UNCOMMON, true, 1.0, 3.0, PlantSpecies.Behavior.ROOT_TRAP],
 	]
 	for r: Array in rows:
 		var s := c.species_by_id(r[0])

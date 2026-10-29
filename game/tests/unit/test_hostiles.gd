@@ -5,7 +5,7 @@ extends "res://tests/test_case.gd"
 const PLANT_SCENE := "res://scenes/plants/plant.tscn"
 const HEROINE_SCENE := preload("res://scenes/heroine/heroine.tscn")
 const DT := 1.0 / 60.0
-const HOSTILE_IDS: Array[String] = ["ronce_angoisse", "croque_colere"]
+const HOSTILE_IDS: Array[String] = ["ronce_angoisse", "croque_colere", "lierre_jalousie"]
 
 var _root: Node3D
 
@@ -130,6 +130,8 @@ func test_eligible_hostiles_by_hour() -> void:
 	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 0.0)), [&"ronce_angoisse"], "0 h: Ronce only")
 	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 1.99)), [&"ronce_angoisse"], "Croque not before 2 h")
 	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 2.0)), [&"ronce_angoisse", &"croque_colere"], "2 h: + Croque")
+	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 3.0)), [&"ronce_angoisse", &"croque_colere", &"lierre_jalousie"],
+		"3 h: + Lierre")
 	for s in SpawnRules.eligible_capturables(c, 8.0):
 		assert_false(s.hostile, "%s: gentle list has no hostile" % s.id)
 
@@ -194,4 +196,34 @@ func test_charger_asleep_never_charges() -> void:
 		plant.step(DT)
 	assert_false(plant.is_telegraphing() or plant.is_charging(), "a sleeping croque does not attack")
 	assert_true(_xz(plant).distance_to(Vector2(10, 10)) < 1e-4, "and does not move")
+	_cleanup()
+
+# --- Lierre-Jalousie (ROOT_TRAP) ---------------------------------------------------------------
+
+func test_root_trap_casts_vine_ring_under_heroine() -> void:
+	var lierre := _species("lierre_jalousie")
+	assert_eq(lierre.behavior, PlantSpecies.Behavior.ROOT_TRAP, "lierre traps")
+	var heroine := await _heroine(Vector2(15, 10))
+	var plant := _spawn("lierre_jalousie", Vector2(10, 10))
+	var rings: Array[Hazard] = []
+	plant.hazard_spawned.connect(func(h: Hazard) -> void: rings.append(h))
+	var t := 0.0
+	while rings.is_empty() and t < 5.0:
+		plant.set_threat(_xz(heroine), Vector2(-1, 0))
+		plant.step(DT)
+		t += DT
+	assert_eq(rings.size(), 1, "casts a vine ring")
+	if rings.is_empty():
+		_cleanup()
+		return
+	var ring := rings[0]
+	assert_true(ring is VineRing, "it is a vine ring")
+	assert_true(ring.center_xz().distance_to(_xz(heroine)) < 0.05, "under the heroine")
+	assert_near(ring.radius, VineRing.RADIUS, 1e-6, "radius 1.2 m")
+	assert_near(VineRing.RADIUS, 1.2, 1e-6, "spec radius")
+	assert_true(ring.telegraph_time >= 1.0 - 1e-6, "sign 1 s before the vines")
+	for i in int(11.0 / DT):
+		plant.set_threat(Vector2(15, 10), Vector2(-1, 0))
+		plant.step(DT)
+	assert_eq(rings.size(), 3, "one ring every 5 s (%d)" % rings.size())
 	_cleanup()

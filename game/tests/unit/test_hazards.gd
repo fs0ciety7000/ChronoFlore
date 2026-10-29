@@ -126,3 +126,29 @@ func test_immobilized_heroine_does_not_walk() -> void:
 	Input.action_release("move_right")
 	assert_true(Vector2(h.global_position.x, h.global_position.z).length() < 0.01, "held in place")
 	_cleanup()
+
+# --- Vine ring ---------------------------------------------------------------------------------
+
+func test_vine_ring_immobilizes_once_per_window() -> void:
+	var h := await _heroine()
+	var ring := _add_hazard(VineRing.new(), Vector2(0.4, 0.0), 1.0) as VineRing
+	assert_true(ring.has_ground_mark(), "ground sign before the vines")
+	_ticks(ring, 0.9)
+	assert_false(h.is_immobilized(), "not held before the vines spring")
+	_ticks(ring, 0.15)
+	assert_true(h.is_immobilized(), "held once the vines spring")
+	assert_near(h.immobilized_left(), VineRing.HOLD_TIME, 1e-4, "held 1 s")
+	assert_eq(h.lucidity.petals, 4, "the vines cost one petal")
+	h.tick_status(0.5)
+	_ticks(ring, 0.5) # lingering vines do not hold her again
+	assert_near(h.immobilized_left(), 0.5, 1e-3, "no re-hold while the vines linger")
+	var again := _add_hazard(VineRing.new(), Vector2.ZERO, 0.6) as VineRing
+	_ticks(again, 0.65)
+	assert_eq(h.lucidity.petals, 4, "a second ring in the invulnerability window costs nothing")
+	assert_near(h.immobilized_left(), 0.5, 1e-3, "nor holds her again in that window")
+	var outside := _add_hazard(VineRing.new(), Vector2(3.0, 0.0), 0.6) as VineRing
+	var struck: Array[int] = [0]
+	outside.struck.connect(func(_t: Node3D) -> void: struck[0] += 1)
+	_ticks(outside, 0.65)
+	assert_eq(struck[0], 0, "a ring 3 m away misses")
+	_cleanup()
