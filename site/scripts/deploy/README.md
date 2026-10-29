@@ -14,6 +14,7 @@ Variables d'environnement (jamais commitées, jamais affichées) :
 | `COOLIFY_SERVER_IP` | IP publique du serveur Coolify (cible du DNS) |
 | `CLOUDFLARE_API_TOKEN` | jeton Cloudflare avec `Zone:DNS:Edit` sur `cardormedia.com` |
 | `CLOUDFLARE_ACCOUNT_ID` | compte Cloudflare (informatif) |
+| `GAME_RELEASE_TOKEN` | PAT GitHub fine-grained, `Contents: read` sur `fs0ciety7000/ChronoFlore` : télécharge le jeu Web au build (variable de **build** Coolify, voir étape 2 bis) |
 
 Outils : `curl`, `jq`.
 
@@ -36,8 +37,8 @@ API="$COOLIFY_API_URL/api/v1"
 | Domaine | `https://chronoflore.cardormedia.com` (HTTPS Let's Encrypt via Traefik/Coolify) |
 | Projet Coolify | `ChronoFlore`, environnement `production`, serveur `localhost` |
 
-Le `Dockerfile` fait `npm ci`, `npm run fetch:models` (modèles Polyfork, non commités) puis `npm run build` (Astro) et sert `dist/` avec nginx.
-`nginx.conf` : cache long (`immutable`, 1 an) sur `/_astro/*` et `/models/*`, `no-cache` sur le HTML.
+Le `Dockerfile` fait `npm ci`, `npm run fetch:models` (modèles Polyfork, non commités), `npm run fetch:game` (build Web du jeu, non commité, dans `public/jouer/`) puis `npm run build` (Astro) et sert `dist/` avec nginx.
+`nginx.conf` : cache long (`immutable`, 1 an) sur `/_astro/*` et `/models/*`, `no-cache` sur le HTML et sur tout `/jouer/` (fichiers Godot non hachés).
 
 > **Attention** : tout fichier sous `/models/` est servi `immutable` pendant un an. Un modèle modifié
 > doit donc changer de nom (nom versionné ou haché, ex. `island.3f9a2c.glb`), sinon les navigateurs
@@ -82,6 +83,30 @@ if [ -z "$APP_UUID" ]; then
       name:"chronoflore-site", instant_deploy:false }')" | jq -r .uuid)
 fi
 ```
+
+## 2 bis. Jeu Web : jeton de build `GAME_RELEASE_TOKEN`
+
+Le jeu (`/jouer/`) est exporté par GitHub Actions (`.github/workflows/game-web.yml`) sur la
+pré-release `game-web-latest` (asset `chronoflore-web.zip`). Le dépôt étant privé, le build Docker
+le télécharge avec un PAT. Sans jeton (ou si le téléchargement échoue), le build réussit quand même
+et `/jouer/` affiche « Le jeu arrive bientôt ».
+
+1. GitHub → Settings → Developer settings → Fine-grained tokens → *Generate new token* :
+   propriétaire `fs0ciety7000`, *Only select repositories* → `ChronoFlore`,
+   *Repository permissions* → `Contents: Read-only` (rien d'autre), expiration au choix.
+2. Coolify → application `chronoflore-site` → *Environment Variables* → ajouter
+   `GAME_RELEASE_TOKEN`, cocher **Build Variable** (pas runtime). Ou par l'API :
+
+```bash
+curl -sS "${CO[@]}" -X POST "$API/applications/$APP_UUID/envs" -d "$(jq -n --arg v "$GAME_RELEASE_TOKEN" \
+  '{key:"GAME_RELEASE_TOKEN", value:$v, is_build_time:true, is_preview:false}')" | jq -c .
+```
+
+3. Le jeu est publié après le workflow (quelques minutes après un push sur `game/**`) : redéployer
+   le site ensuite (étape 4) pour qu'il prenne le nouveau build.
+
+Le jeton ne finit pas dans l'image : `ARG` n'existe que dans l'étage de build, l'image nginx finale
+est un étage séparé.
 
 ## 3. Cloudflare : enregistrement DNS
 
