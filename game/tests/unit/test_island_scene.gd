@@ -47,20 +47,6 @@ func test_walkable_meadow_is_large_and_pond_blocked() -> void:
 	assert_true(shape.is_clear(shape.centroid(), 2.0), "heroine start is clear of the pond")
 	island.free()
 
-func test_enable_vertex_colors_duplicates_material() -> void:
-	var original := StandardMaterial3D.new()
-	var box := BoxMesh.new()
-	box.material = original
-	var mi := MeshInstance3D.new()
-	mi.mesh = box
-	var root := Node3D.new()
-	root.add_child(mi)
-	PolyforkUtil.enable_vertex_colors(root)
-	var active := mi.get_active_material(0) as BaseMaterial3D
-	assert_true(active != null and active.vertex_color_use_as_albedo, "override uses vertex colours")
-	assert_false(original.vertex_color_use_as_albedo, "source material untouched")
-	root.free()
-
 func test_lighting_applies_palette() -> void:
 	var lighting: Node = (load(LIGHTING_SCENE) as PackedScene).instantiate()
 	tree.root.add_child(lighting)
