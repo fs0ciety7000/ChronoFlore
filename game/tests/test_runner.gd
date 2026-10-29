@@ -25,9 +25,9 @@ func _run_all() -> void:
 
 func _run_file(file: String) -> void:
 	var script: Script = load("%s/%s" % [UNIT_DIR, file])
-	if script == null:
+	if script == null or not script.can_instantiate():
 		failed += 1
-		push_error("FAIL %s: cannot load script" % file)
+		push_error("FAIL %s: cannot load script (parse error?)" % file)
 		return
 	var tc: Object = script.new()
 	if tc == null or not ("tree" in tc):
