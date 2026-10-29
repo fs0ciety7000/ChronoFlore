@@ -2,11 +2,16 @@
 extends SceneTree
 
 const UNIT_DIR: String = "res://tests/unit"
+const ErrorLogger := preload("res://tests/error_logger.gd")
 
 var passed: int = 0
 var failed: int = 0
+var functions: int = 0
+var _errors: ErrorLogger
 
 func _initialize() -> void:
+	_errors = ErrorLogger.new()
+	OS.add_logger(_errors)
 	_run_all()
 
 func _run_all() -> void:
@@ -20,8 +25,22 @@ func _run_all() -> void:
 		push_error("FAIL no test files found in %s" % UNIT_DIR)
 	for f: String in files:
 		await _run_file(f)
-	print("Results: %d passed, %d failed" % [passed, failed])
+	await process_frame # errors from nodes freed at the end of the last test
+	failed += _report_errors(_errors.count() - _seen, "after the last test")
+	OS.remove_logger(_errors)
+	print("Results: %d test functions, %d assertions passed, %d failed" % [functions, passed, failed])
 	quit(1 if failed > 0 else 0)
+
+var _seen: int = 0
+
+## Fails `where` once per engine/script error logged since the last check; returns the count.
+func _report_errors(count: int, where: String) -> int:
+	if count <= 0:
+		return 0
+	for e: String in _errors.since(_seen):
+		printerr("FAIL %s: runtime error: %s" % [where, e])
+	_seen += count
+	return count
 
 func _run_file(file: String) -> void:
 	var script: Script = load("%s/%s" % [UNIT_DIR, file])
@@ -44,9 +63,12 @@ func _run_file(file: String) -> void:
 	for n: String in methods:
 		tc.context = "%s::%s" % [file, n]
 		var before: int = tc.passed + tc.failed
+		failed += _report_errors(_errors.count() - _seen, "before %s" % tc.context)
+		functions += 1
 		await tc.call(n)
 		if tc.passed + tc.failed == before:
 			tc.failed += 1
 			push_error("FAIL %s made no assertions (crashed?)" % tc.context)
+		tc.failed += _report_errors(_errors.count() - _seen, tc.context)
 	passed += tc.passed
 	failed += tc.failed
