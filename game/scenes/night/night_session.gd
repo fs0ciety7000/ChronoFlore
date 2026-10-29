@@ -43,6 +43,8 @@ var clock: NightClock
 var lucidity: Lucidity
 var captures: Array[StringName] = []
 var ended: bool = false
+## Physics seconds since the night started: stops on pause, follows time_scale.
+var physics_time: float = 0.0
 ## The open pause menu, or null.
 var pause_menu: PauseMenu
 ## Playable characters: [the Heroine node] in solo, [P1, P2] in co-op. players[0] is `heroine`.
@@ -130,6 +132,7 @@ func prewarm_nodes() -> Array[Node3D]:
 func _physics_process(delta: float) -> void:
 	if ended:
 		return
+	physics_time += delta
 	for player in players:
 		var p := Vector2(player.global_position.x, player.global_position.z)
 		var clamped := island.shape.clamp_inside(p, Heroine.EDGE_MARGIN)
@@ -271,6 +274,7 @@ func _add_player(player: Heroine) -> void:
 	players.append(player)
 	player.lucidity = lucidity
 	player.island = island.shape
+	player.time_source = func() -> float: return physics_time
 	if not player.nightmare_hit.is_connected(_on_nightmare_hit):
 		player.nightmare_hit.connect(_on_nightmare_hit)
 	_belt_of(player).set_tools(_available_tools())

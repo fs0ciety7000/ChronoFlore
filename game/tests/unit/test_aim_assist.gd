@@ -134,4 +134,8 @@ func test_nightmare_hit() -> void:
 	h.take_nightmare_hit()
 	assert_eq(hits[0], 1, "second hit invulnerable")
 	assert_eq(h.lucidity.petals, 4, "one petal lost")
+	h.tick_status(Lucidity.HIT_INVULNERABILITY - 0.1)
+	assert_false(h.take_nightmare_hit(), "still invulnerable after 1.4 s of physics time")
+	h.tick_status(0.2)
+	assert_true(h.take_nightmare_hit(), "hit again after 1.6 s of physics time")
 	h.free()

@@ -35,6 +35,9 @@ var uses_mouse: bool = true
 var pad_device: int = DeviceAssignment.ALL_PADS
 var lucidity: Lucidity ## injected by NightSession
 var island: IslandShape ## injected by NightSession; clamps knockbacks
+## Game time in seconds for the invulnerability window (NightSession injects its physics time,
+## which stops on pause and follows time_scale). Unset: this heroine's own physics time.
+var time_source: Callable
 
 var _immobile_left: float = 0.0
 var _slow_left: float = 0.0
@@ -44,6 +47,7 @@ var _knockback_velocity: Vector3 = Vector3.ZERO
 var _knockback_left: float = 0.0
 
 var _mouse_moved: bool = false
+var _own_time: float = 0.0 ## physics seconds ticked by tick_status
 @onready var _visual: Node = $Visual
 
 func _ready() -> void:
@@ -151,7 +155,7 @@ func update_aim(mouse_moved: bool, mouse_ground: Variant, stick: Vector2, move: 
 func take_nightmare_hit(from_xz: Variant = null) -> bool:
 	if lucidity == null:
 		return false
-	if not lucidity.take_hit_for(player_index, Time.get_ticks_msec() / 1000.0):
+	if not lucidity.take_hit_for(player_index, game_time()):
 		return false
 	nightmare_hit.emit()
 	if _visual != null and _visual.has_method("blink_hurt"):
@@ -159,6 +163,12 @@ func take_nightmare_hit(from_xz: Variant = null) -> bool:
 	if from_xz is Vector2:
 		knock_back_from(from_xz)
 	return true
+
+## Seconds of game (physics) time, never wall-clock: pauses and time_scale hold it.
+func game_time() -> float:
+	if time_source.is_valid():
+		return float(time_source.call())
+	return _own_time
 
 ## Starts a KNOCKBACK_DISTANCE slide away from from_xz, clamped inside the island.
 func knock_back_from(from_xz: Vector2) -> void:
@@ -204,6 +214,7 @@ func move_speed() -> float:
 
 ## Counts the immobilized / slowed timers down (called by _physics_process; tests call it).
 func tick_status(delta: float) -> void:
+	_own_time += delta
 	_immobile_left = maxf(_immobile_left - delta, 0.0)
 	_slow_left = maxf(_slow_left - delta, 0.0)
 	if _slow_left <= 0.0:

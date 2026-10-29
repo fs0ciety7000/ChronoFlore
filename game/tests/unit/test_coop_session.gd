@@ -75,6 +75,19 @@ func test_shared_lucidity_two_hits() -> void:
 	assert_eq(s.lucidity.petals, 3, "2 petals lost, never more")
 	_end(s)
 
+## M3: the invulnerability window runs on the session's physics time, not the wall clock.
+func test_invulnerability_uses_session_time() -> void:
+	var s: NightSession = await _session()
+	var p1 := s.players[0]
+	assert_near(p1.game_time(), s.physics_time, 1e-9, "player reads the session's physics time")
+	assert_true(p1.take_nightmare_hit(), "first hit")
+	OS.delay_msec(50)
+	s.physics_time += Lucidity.HIT_INVULNERABILITY - 0.1
+	assert_false(p1.take_nightmare_hit(), "still invulnerable after 1.4 s of play")
+	s.physics_time += 0.2
+	assert_true(p1.take_nightmare_hit(), "hit again after 1.6 s of play")
+	_end(s)
+
 func test_vine_ring_catches_both_players() -> void:
 	var s: NightSession = await _session()
 	var c := s.island.shape.centroid()
