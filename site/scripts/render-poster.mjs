@@ -9,7 +9,7 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import sharp from 'sharp';
 
 const siteDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');

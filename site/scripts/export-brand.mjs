@@ -9,7 +9,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import opentype from 'opentype.js';
 import pngToIco from 'png-to-ico';
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import { PALETTE, faviconSvg, logoSvg, symbolSvg } from '../src/brand/geometry.mjs';
 
 const siteDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');

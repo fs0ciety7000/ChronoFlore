@@ -36,7 +36,7 @@ API="$COOLIFY_API_URL/api/v1"
 | Domaine | `https://chronoflore.cardormedia.com` (HTTPS Let's Encrypt via Traefik/Coolify) |
 | Projet Coolify | `ChronoFlore`, environnement `production`, serveur `localhost` |
 
-Le `Dockerfile` fait `npm ci` puis `npm run build` (Astro) et sert `dist/` avec nginx.
+Le `Dockerfile` fait `npm ci`, `npm run fetch:models` (modèles Polyfork, non commités) puis `npm run build` (Astro) et sert `dist/` avec nginx.
 `nginx.conf` : cache long (`immutable`, 1 an) sur `/_astro/*` et `/models/*`, `no-cache` sur le HTML.
 
 > **Attention** : tout fichier sous `/models/` est servi `immutable` pendant un an. Un modèle modifié
