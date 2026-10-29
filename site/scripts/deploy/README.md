@@ -14,7 +14,7 @@ Variables d'environnement (jamais commitées, jamais affichées) :
 | `COOLIFY_SERVER_IP` | IP publique du serveur Coolify (cible du DNS) |
 | `CLOUDFLARE_API_TOKEN` | jeton Cloudflare avec `Zone:DNS:Edit` sur `cardormedia.com` |
 | `CLOUDFLARE_ACCOUNT_ID` | compte Cloudflare (informatif) |
-| `GAME_RELEASE_TOKEN` | PAT GitHub fine-grained, `Contents: read` sur `fs0ciety7000/ChronoFlore` : télécharge le jeu Web au build (variable de **build** Coolify, voir étape 2 bis) |
+| `GAME_RELEASE_TOKEN` | PAT GitHub fine-grained, `Contents: read` sur `fs0ciety7000/ChronoFlore` : télécharge le jeu Web et les builds bureau au build (variable de **build** Coolify, voir étapes 2 bis et 2 ter) |
 
 Outils : `curl`, `jq`.
 
@@ -37,8 +37,8 @@ API="$COOLIFY_API_URL/api/v1"
 | Domaine | `https://chronoflore.cardormedia.com` (HTTPS Let's Encrypt via Traefik/Coolify) |
 | Projet Coolify | `ChronoFlore`, environnement `production`, serveur `localhost` |
 
-Le `Dockerfile` fait `npm ci`, `npm run fetch:models` (modèles Polyfork, non commités), `npm run fetch:game` (build Web du jeu, non commité, dans `public/jouer/`) puis `npm run build` (Astro) et sert `dist/` avec nginx.
-`nginx.conf` : cache long (`immutable`, 1 an) sur `/_astro/*` et `/models/*`, `no-cache` sur le HTML et sur tout `/jouer/` (fichiers Godot non hachés).
+Le `Dockerfile` fait `npm ci`, `npm run fetch:models` (modèles Polyfork, non commités), `npm run fetch:game` (build Web du jeu, non commité, dans `public/jouer/`), `npm run fetch:downloads` (builds bureau, dans `public/telecharger/`) puis `npm run build` (Astro) et sert `dist/` avec nginx.
+`nginx.conf` : cache long (`immutable`, 1 an) sur `/_astro/*` et `/models/*`, `no-cache` sur le HTML, sur tout `/jouer/` (fichiers Godot non hachés) et sur `/telecharger/` (noms non versionnés, servis en `Content-Disposition: attachment`, sans gzip).
 
 > **Attention** : tout fichier sous `/models/` est servi `immutable` pendant un an. Un modèle modifié
 > doit donc changer de nom (nom versionné ou haché, ex. `island.3f9a2c.glb`), sinon les navigateurs
@@ -107,6 +107,42 @@ curl -sS "${CO[@]}" -X POST "$API/applications/$APP_UUID/envs" -d "$(jq -n --arg
 
 Le jeton ne finit pas dans l'image : `ARG` n'existe que dans l'étage de build, l'image nginx finale
 est un étage séparé.
+
+## 2 ter. Jeu bureau : `/telecharger/`
+
+`.github/workflows/game-desktop.yml` (mêmes déclencheurs que le Web : push sur `master` touchant
+`game/**`, ou lancement manuel) publie sur la pré-release `game-desktop-latest` :
+
+| Fichier | Construit où | Contenu |
+|---|---|---|
+| `ChronoFlore-windows.exe` | ubuntu | exécutable unique (PCK intégré), ~110 Mo |
+| `ChronoFlore-linux.deb` | ubuntu (`dpkg-deb`) | `/opt/chronoflore/ChronoFlore.x86_64`, lanceur `/usr/bin/chronoflore`, `.desktop`, icône 256 px ; version `0.1.<numéro du run>` |
+| `ChronoFlore-linux.tar.gz` | ubuntu | le binaire x86_64 seul (PCK intégré) |
+| `ChronoFlore-macos.dmg` | export `.app` universel sur ubuntu, puis `hdiutil` sur `macos-latest` | `.app` (signature ad hoc) + raccourci `Applications` |
+| `chronoflore-desktop.json` | ubuntu | `{version, commit, date}` affichés par le site |
+
+Le job macOS ne fait que télécharger l'`.app`, la re-signer ad hoc et lancer `hdiutil` (pas de
+checkout, pas de Godot) : sur un dépôt privé, une minute de runner macOS compte pour **10 minutes**
+du quota Actions. Compter ~1-2 min macOS par build.
+
+Au build du site, `npm run fetch:downloads` copie ces fichiers dans `public/telecharger/` et écrit
+`manifest.json` (noms, tailles, version). Sans jeton, sans release ou en cas d'erreur, le build
+continue : le manifeste est vide (ou omet le fichier en échec) et le site affiche « bientôt
+disponible » au lieu d'un lien. Comme pour le Web, redéployer le site **après** la fin du workflow.
+
+L'image nginx grossit d'environ **230 Mo** (≈ 110 Mo `.exe`, 65 Mo `.dmg`, 30 Mo `.tar.gz`,
+24 Mo `.deb`) : surveiller le disque du serveur Coolify (anciennes images, `docker image prune`).
+
+**Builds non signés** (pas de compte Apple Developer ni de certificat Windows) :
+
+- macOS : Gatekeeper bloque le premier lancement. Clic droit (ou Ctrl-clic) sur `ChronoFlore.app`
+  → *Ouvrir* → *Ouvrir* ; sur macOS 15+, si le bouton n'apparaît pas : Réglages Système →
+  Confidentialité et sécurité → *Ouvrir quand même*. En terminal :
+  `xattr -dr com.apple.quarantine /Applications/ChronoFlore.app`.
+- Windows : SmartScreen affiche « Windows a protégé votre ordinateur » → *Informations
+  complémentaires* → *Exécuter quand même*.
+- Linux : `sudo apt install ./ChronoFlore-linux.deb`, puis `chronoflore` ; ou extraire le `.tar.gz`
+  et lancer `./ChronoFlore.x86_64`.
 
 ## 3. Cloudflare : enregistrement DNS
 
