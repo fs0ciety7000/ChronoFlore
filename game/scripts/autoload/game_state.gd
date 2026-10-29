@@ -3,12 +3,17 @@ extends Node
 
 signal herbarium_changed
 
+## Who plays the night. Only the heroine dreams: the hero is a figure of her dream.
+enum Mode { SOLO_HEROINE, SOLO_HERO, COOP }
+
 const NIGHT_SCENE := "res://scenes/night/night.tscn"
 
 var catalog: GameCatalog = load("res://data/catalog.tres")
 var herbarium: Herbarium = Herbarium.new()
 var save_path: String = SaveStore.DEFAULT_PATH
 var last_night: Dictionary = {} ## filled by finish_night, read by the wake screen
+## Last chosen mode; kept for the whole session (title and wake screens do not reset it).
+var mode: Mode = Mode.SOLO_HEROINE
 
 ## Species discovered since begin_night(), in discovery order.
 var _night_discoveries: Array[StringName] = []
@@ -53,7 +58,12 @@ func finish_night(minutes: int, full: bool, captures: Array[StringName]) -> Dict
 	herbarium_changed.emit()
 	return last_night
 
+## Starts a night with the current mode (the wake screen's "next night").
 func start_night() -> void:
+	start_night_with(mode)
+
+func start_night_with(p_mode: Mode) -> void:
+	mode = p_mode
 	get_tree().change_scene_to_file(NIGHT_SCENE)
 
 func _save() -> void:

@@ -37,9 +37,9 @@ func test_pick_source() -> void:
 	assert_eq(AimAssist.pick_source(S.MOUSE, false, Vector2.ZERO, Vector2.ZERO, true), S.MOUSE, "mouse stays when pad idle")
 
 func test_input_actions_exist() -> void:
-	for action in ["move_left", "move_right", "move_up", "move_down", "aim_left", "aim_right",
-			"aim_up", "aim_down", "use_tool", "next_tool", "prev_tool", "tool_1", "tool_2",
-			"tool_3", "pause"]:
+	for action in ["p1_move_left", "p1_move_right", "p1_move_up", "p1_move_down", "p1_aim_left",
+			"p1_aim_right", "p1_aim_up", "p1_aim_down", "p1_use_tool", "p1_next_tool", "p1_prev_tool",
+			"p1_tool_1", "p1_tool_2", "p1_tool_3", "pause"]:
 		assert_true(InputMap.has_action(action), "has " + action)
 		if InputMap.has_action(action):
 			assert_true(InputMap.action_get_events(action).size() >= 1, action + " has events")

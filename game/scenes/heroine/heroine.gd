@@ -16,6 +16,15 @@ const KNOCKBACK_DURATION := 0.15
 ## The heroine is kept this far inside the island outline (NightSession clamps with it too).
 const EDGE_MARGIN := 0.4
 
+## 0 for P1 (the heroine in co-op), 1 for P2. Picks the p1_* / p2_* input actions.
+@export var player_index: int = 0
+## Visual (heroine_visual.tscn or hero2_visual.tscn, same interface). Null keeps the scene's own.
+@export var visual_scene: PackedScene:
+	set(value):
+		visual_scene = value
+		if is_node_ready():
+			_apply_visual_scene()
+
 var aim_dir: Vector2 = Vector2(0, 1) ## unit XZ, never zero
 var aim_source: AimAssist.Source = AimAssist.Source.MOVE
 var lucidity: Lucidity ## injected by NightSession
@@ -33,12 +42,44 @@ var _mouse_moved: bool = false
 
 func _ready() -> void:
 	add_to_group("heroine")
+	if visual_scene != null:
+		_apply_visual_scene()
 	_apply_facing()
 	var belt := get_node_or_null("ToolBelt") as ToolBelt
-	if belt != null and _visual != null and _visual.has_method("play_swing"):
-		belt.tool_used.connect(func(_tool: ToolData) -> void: _visual.call("play_swing"))
-	if belt != null and _visual != null and _visual.has_method("set_tool"):
-		belt.tool_changed.connect(func(tool: ToolData) -> void: _visual.call("set_tool", tool))
+	# The lambdas read _visual at call time, so they follow a later visual swap.
+	if belt != null:
+		belt.tool_used.connect(func(_tool: ToolData) -> void:
+			if _visual != null and _visual.has_method("play_swing"):
+				_visual.call("play_swing"))
+		belt.tool_changed.connect(func(tool: ToolData) -> void:
+			if _visual != null and _visual.has_method("set_tool"):
+				_visual.call("set_tool", tool))
+		if _visual != null and _visual.has_method("set_tool"):
+			_visual.call("set_tool", belt.current())
+
+## This player's input action: "use_tool" -> &"p1_use_tool" (index 0) or &"p2_use_tool" (index 1).
+func action(base: StringName) -> StringName:
+	return StringName("p%d_%s" % [player_index + 1, base])
+
+## Replaces the Visual child with an instance of visual_scene (no-op when already that scene).
+func _apply_visual_scene() -> void:
+	if visual_scene == null:
+		return
+	var old := get_node_or_null("Visual")
+	if old != null and old.scene_file_path == visual_scene.resource_path:
+		_visual = old
+		return
+	if old != null:
+		remove_child(old)
+		old.queue_free()
+	var fresh := visual_scene.instantiate()
+	fresh.name = "Visual"
+	add_child(fresh)
+	move_child(fresh, mini(1, get_child_count() - 1))
+	_visual = fresh
+	_apply_facing()
+	var belt := get_node_or_null("ToolBelt") as ToolBelt
+	if belt != null and _visual.has_method("set_tool"):
 		_visual.call("set_tool", belt.current())
 
 ## Screen-space input (x right, y down, as Input.get_vector) to a unit-or-shorter XZ vector.
@@ -49,13 +90,14 @@ func facing() -> Vector2:
 	return aim_dir
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion:
+	# The mouse belongs to P1 (keyboard-mouse); P2 aims with a stick or by walking.
+	if player_index == 0 and event is InputEventMouseMotion:
 		_mouse_moved = true
 
 func _physics_process(_delta: float) -> void:
 	tick_status(_delta)
-	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var stick := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
+	var move := Input.get_vector(action(&"move_left"), action(&"move_right"), action(&"move_up"), action(&"move_down"))
+	var stick := Input.get_vector(action(&"aim_left"), action(&"aim_right"), action(&"aim_up"), action(&"aim_down"))
 	var w := screen_to_world(move)
 	velocity = Vector3(w.x, 0.0, w.y) * move_speed()
 	if _knockback_left > 0.0:

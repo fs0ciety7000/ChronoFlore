@@ -1,6 +1,7 @@
 class_name WakeScreen
 extends Control
-## Night summary, read from GameState.last_night.
+## Night summary, read from GameState.last_night. Only the heroine dreams: the texts speak of
+## her whoever was played.
 
 const TITLE_SCENE := "res://scenes/main.tscn"
 
@@ -17,7 +18,7 @@ func _ready() -> void:
 	if bool(night.get("full", false)):
 		title_label.text = "Nuit complète — l'aube !"
 	else:
-		title_label.text = "Réveil en sursaut à %s" % ClockFlower.format_time(minutes)
+		title_label.text = "Elle se réveille en sursaut à %s" % ClockFlower.format_time(minutes)
 	summary_label.text = _summary(night)
 	memory_label.text = _memory(night)
 	memory_label.visible = not memory_label.text.is_empty()

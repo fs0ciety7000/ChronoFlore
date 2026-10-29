@@ -10,6 +10,11 @@ signal capture_registered(species: PlantSpecies, new_page: bool)
 const PLANT_SCENE := preload("res://scenes/plants/plant.tscn")
 const WAKE_SCENE := "res://scenes/ui/wake.tscn"
 const PAUSE_SCENE := preload("res://scenes/ui/pause.tscn")
+const HEROINE_SCENE := preload("res://scenes/heroine/heroine.tscn")
+const HEROINE_VISUAL := preload("res://scenes/heroine/heroine_visual.tscn")
+const HERO_VISUAL := preload("res://scenes/heroine/hero2_visual.tscn")
+## P2 starts this far from P1 (co-op): ~1.6 m to the screen right (see Heroine.SCREEN_RIGHT).
+const P2_START_OFFSET := Vector2(1.1, -1.1)
 ## Seconds between population top-ups (progressive respawn).
 const SPAWN_INTERVAL := 2.0
 ## Spawn points keep this distance to the island edge.
@@ -35,6 +40,8 @@ var captures: Array[StringName] = []
 var ended: bool = false
 ## The open pause menu, or null.
 var pause_menu: PauseMenu
+## Playable characters: [the Heroine node] in solo, [P1, P2] in co-op. players[0] is `heroine`.
+var players: Array[Heroine] = []
 
 @onready var island: Island = $Island
 @onready var heroine: Heroine = $Heroine
@@ -60,12 +67,7 @@ func _ready() -> void:
 	clock.dawn_reached.connect(end_night.bind(true))
 	lucidity.depleted.connect(end_night.bind(false))
 
-	var start := island.shape.centroid()
-	heroine.global_position = Vector3(start.x, island.ground_height(), start.y)
-	heroine.lucidity = lucidity
-	heroine.island = island.shape
-	heroine.nightmare_hit.connect(_on_nightmare_hit)
-	_belt.set_tools(_available_tools())
+	setup_players(GameState.mode)
 	hud.bind(self, _belt)
 
 	night_lighting.target_progress = 0.0
@@ -83,16 +85,19 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if ended:
 		return
+	for player in players:
+		var p := Vector2(player.global_position.x, player.global_position.z)
+		var clamped := island.shape.clamp_inside(p, Heroine.EDGE_MARGIN)
+		if clamped != p:
+			player.global_position = Vector3(clamped.x, player.global_position.y, clamped.y)
 	var h := _heroine_xz()
-	var clamped := island.shape.clamp_inside(h, Heroine.EDGE_MARGIN)
-	if clamped != h:
-		heroine.global_position = Vector3(clamped.x, heroine.global_position.y, clamped.y)
-		h = clamped
 	for plant in live_plants():
 		plant.set_threat(h, heroine.aim_dir)
-	_belt.tick(delta)
-	if Input.is_action_pressed("use_tool"):
-		_belt.try_use(heroine.global_position + Vector3.UP * TOOL_ORIGIN_HEIGHT, heroine.aim_dir)
+	for player in players:
+		var belt := _belt_of(player)
+		belt.tick(delta)
+		if Input.is_action_pressed(player.action(&"use_tool")):
+			belt.try_use(player.global_position + Vector3.UP * TOOL_ORIGIN_HEIGHT, player.aim_dir)
 	_spawn_timer += delta
 	if _spawn_timer >= SPAWN_INTERVAL:
 		_spawn_timer = 0.0
@@ -104,14 +109,53 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		open_pause()
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("next_tool"):
-		_belt.cycle(1)
-	elif event.is_action_pressed("prev_tool"):
-		_belt.cycle(-1)
-	else:
-		for i in 3:
-			if event.is_action_pressed("tool_%d" % (i + 1)):
-				_belt.select(i)
+		return
+	for player in players:
+		var belt := _belt_of(player)
+		if event.is_action_pressed(player.action(&"next_tool")):
+			belt.cycle(1)
+		elif event.is_action_pressed(player.action(&"prev_tool")):
+			belt.cycle(-1)
+		else:
+			for i in 3:
+				if event.is_action_pressed(player.action(StringName("tool_%d" % (i + 1)))):
+					belt.select(i)
+
+## Builds the players for a mode: the scene's Heroine node is always P1 (heroine visual, or the
+## hero's in SOLO_HERO); co-op adds P2 (the hero). Safe to call again: extra players are removed.
+func setup_players(p_mode: GameState.Mode) -> void:
+	for i in range(players.size() - 1, 0, -1):
+		var extra := players[i]
+		players.remove_at(i)
+		extra.remove_from_group("heroine")
+		extra.queue_free()
+	players.clear()
+	heroine.player_index = 0
+	heroine.visual_scene = HERO_VISUAL if p_mode == GameState.Mode.SOLO_HERO else HEROINE_VISUAL
+	_add_player(heroine)
+	if p_mode == GameState.Mode.COOP:
+		var p2 := HEROINE_SCENE.instantiate() as Heroine
+		p2.name = "Hero"
+		p2.player_index = 1
+		p2.visual_scene = HERO_VISUAL
+		add_child(p2)
+		move_child(p2, heroine.get_index() + 1)
+		_add_player(p2)
+	var start := island.shape.centroid()
+	for i in players.size():
+		var at := start + P2_START_OFFSET * i
+		players[i].global_position = Vector3(at.x, island.ground_height(), at.y)
+
+func _add_player(player: Heroine) -> void:
+	players.append(player)
+	player.lucidity = lucidity
+	player.island = island.shape
+	if not player.nightmare_hit.is_connected(_on_nightmare_hit):
+		player.nightmare_hit.connect(_on_nightmare_hit)
+	_belt_of(player).set_tools(_available_tools())
+
+func _belt_of(player: Heroine) -> ToolBelt:
+	return player.get_node("ToolBelt") as ToolBelt
 
 ## Plants still in play (not captured, escaping or being freed).
 func live_plants() -> Array[Plant]:

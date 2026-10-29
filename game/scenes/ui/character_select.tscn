@@ -1,0 +1,173 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/character_select.gd" id="1_select"]
+[ext_resource type="Theme" path="res://scenes/ui/theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/custom/heroine/thumb.png" id="3_thumb"]
+[ext_resource type="Texture2D" path="res://assets/custom/hero2/thumb.png" id="4_thumb"]
+[ext_resource type="Texture2D" path="res://assets/custom/coop/thumb.png" id="5_thumb"]
+
+[node name="CharacterSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_select")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.992, 0.965, 0.918, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Box" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+theme_override_constants/separation = 26
+
+[node name="Header" type="Label" parent="Center/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.894, 0.545, 0.69, 1)
+theme_override_font_sizes/font_size = 40
+text = "Qui entre dans son rêve cette nuit ?"
+horizontal_alignment = 1
+
+[node name="Cards" type="HBoxContainer" parent="Center/Box"]
+layout_mode = 2
+theme_override_constants/separation = 28
+alignment = 1
+
+[node name="HeroineCard" type="Button" parent="Center/Box/Cards"]
+custom_minimum_size = Vector2(250, 350)
+layout_mode = 2
+
+[node name="Content" type="VBoxContainer" parent="Center/Box/Cards/HeroineCard"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = -14.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Thumb" type="TextureRect" parent="Center/Box/Cards/HeroineCard/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+texture = ExtResource("3_thumb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="Center/Box/Cards/HeroineCard/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Elle"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="Center/Box/Cards/HeroineCard/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.38, 0.6, 1)
+theme_override_font_sizes/font_size = 19
+text = "La rêveuse"
+horizontal_alignment = 1
+
+[node name="HeroCard" type="Button" parent="Center/Box/Cards"]
+custom_minimum_size = Vector2(250, 350)
+layout_mode = 2
+
+[node name="Content" type="VBoxContainer" parent="Center/Box/Cards/HeroCard"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = -14.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Thumb" type="TextureRect" parent="Center/Box/Cards/HeroCard/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+texture = ExtResource("4_thumb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="Center/Box/Cards/HeroCard/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Lui"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="Center/Box/Cards/HeroCard/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.38, 0.6, 1)
+theme_override_font_sizes/font_size = 19
+text = "Venu dans son rêve"
+horizontal_alignment = 1
+
+[node name="CoopCard" type="Button" parent="Center/Box/Cards"]
+custom_minimum_size = Vector2(250, 350)
+layout_mode = 2
+
+[node name="Content" type="VBoxContainer" parent="Center/Box/Cards/CoopCard"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = -14.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Thumb" type="TextureRect" parent="Center/Box/Cards/CoopCard/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+texture = ExtResource("5_thumb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="Center/Box/Cards/CoopCard/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "À deux"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="Center/Box/Cards/CoopCard/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.38, 0.6, 1)
+theme_override_font_sizes/font_size = 19
+text = "J1 elle · J2 lui"
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="Center/Box"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Retour"

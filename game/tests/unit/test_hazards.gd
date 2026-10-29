@@ -120,10 +120,10 @@ func test_heroine_slow_keeps_longest() -> void:
 func test_immobilized_heroine_does_not_walk() -> void:
 	var h := await _heroine()
 	h.immobilize(1.0)
-	Input.action_press("move_right")
+	Input.action_press("p1_move_right")
 	for i in 10:
 		h._physics_process(DT)
-	Input.action_release("move_right")
+	Input.action_release("p1_move_right")
 	assert_true(Vector2(h.global_position.x, h.global_position.z).length() < 0.01, "held in place")
 	_cleanup()
 
