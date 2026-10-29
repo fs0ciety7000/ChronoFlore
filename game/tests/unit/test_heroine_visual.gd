@@ -119,3 +119,39 @@ func test_net_rests_on_the_shoulder_between_swings() -> void:
 	v.call("play_shot")
 	assert_false(v.call("is_carrying"), "harpoon off the shoulder for the shot")
 	v.free()
+
+func test_net_prop_is_big_and_readable() -> void:
+	var tools := (load("res://scenes/heroine/hand_tools.tscn") as PackedScene).instantiate()
+	var hoop := (tools.get_node("Net/Hoop") as MeshInstance3D).mesh as TorusMesh
+	var handle := (tools.get_node("Net/Handle") as MeshInstance3D).mesh as CylinderMesh
+	var bag := (tools.get_node("Net/Bag") as MeshInstance3D).mesh as CylinderMesh
+	assert_true((hoop.inner_radius + hoop.outer_radius) * 0.5 >= 0.38, "hoop radius ~0.4 m")
+	assert_true(hoop.outer_radius - hoop.inner_radius >= 0.07, "thick rim")
+	assert_true(handle.height >= 1.05, "handle ~1.1 m")
+	assert_true(bag.height >= 0.45 and bag.top_radius >= 0.35, "big bag")
+	assert_true(bag.material is ShaderMaterial, "mesh-pattern bag")
+	tools.free()
+
+func test_swing_trail_follows_the_hoop() -> void:
+	var v := VISUAL_SCENE.instantiate()
+	tree.root.add_child(v)
+	await tree.process_frame
+	assert_eq((v.call("trail_points") as Array).size(), 0, "no trail before a swing")
+	v.call("play_swing")
+	for i in 12:
+		await tree.process_frame
+	var pts: Array = v.call("trail_points")
+	assert_true(pts.size() >= 3, "trail emitted during the swing")
+	var hoop := v.get_node("Model/Heroine/Skeleton3D/HandR/HandTools/Net/Hoop") as Node3D
+	if pts.size() > 0:
+		assert_true((pts[-1] as Vector3).distance_to(hoop.global_position) < 0.3, "newest point at the hoop")
+	var bag := v.get_node("Model/Heroine/Skeleton3D/HandR/HandTools/Net/Bag") as Node3D
+	await tree.create_timer(0.75).timeout
+	assert_eq((v.call("trail_points") as Array).size(), 0, "trail faded after the swing")
+	assert_true(bag.scale.is_equal_approx(Vector3.ONE), "scoop settled")
+	v.call("set_tool", load("res://data/tools/tranquilizer.tres") as ToolData)
+	v.call("play_shot")
+	for i in 5:
+		await tree.process_frame
+	assert_eq((v.call("trail_points") as Array).size(), 0, "no net trail for a shot")
+	v.free()

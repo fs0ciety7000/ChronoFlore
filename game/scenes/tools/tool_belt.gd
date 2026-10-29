@@ -6,7 +6,6 @@ signal tool_changed(tool: ToolData)
 signal tool_used(tool: ToolData)
 
 const PROJECTILE_SCENE := preload("res://scenes/tools/projectile.tscn")
-const NET_SWING_SCENE := preload("res://scenes/tools/net_swing.tscn")
 const NET_HALF_ANGLE := 60.0
 ## Dart / harpoon puff, this far along the shot from the tool origin (in front of the hands).
 const MUZZLE_OFFSET := 0.5
@@ -83,7 +82,6 @@ func _use_net(tool: ToolData, origin: Vector3, dir: Vector2) -> void:
 			in_reach.append(plant)
 	in_reach.sort_custom(func(a: Plant, b: Plant) -> bool:
 		return a.xz().distance_squared_to(o2) < b.xz().distance_squared_to(o2))
-	_spawn_swing(origin, dir, tool.max_range)
 	for plant in in_reach:
 		if plant.hit_by_tool(tool.effect):
 			return
@@ -110,20 +108,6 @@ func _fire(tool: ToolData, origin: Vector3, dir: Vector2) -> Vector2:
 	puff.position = origin + Vector3(shot.x, 0.0, shot.y) * MUZZLE_OFFSET
 	puff.play()
 	return shot
-
-## Curved swoosh sweeping the capture cone (NET_HALF_ANGLE either side) out to the net's reach.
-func _spawn_swing(origin: Vector3, dir: Vector2, reach: float) -> void:
-	var host := _spawn_parent()
-	if host == null:
-		return
-	var swing := NET_SWING_SCENE.instantiate() as NetSwing
-	swing.half_angle = NET_HALF_ANGLE
-	swing.radius = reach
-	host.add_child(swing)
-	swing.position = origin
-	swing.rotation.y = atan2(dir.x, dir.y)
-	swing.reset_physics_interpolation()
-	swing.play()
 
 func _spawn_parent() -> Node:
 	if not is_inside_tree():
