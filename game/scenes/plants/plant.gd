@@ -170,6 +170,11 @@ func hover_height() -> float:
 func ground_speed() -> float:
 	return species.base_speed * speed_multiplier * torpor.speed_factor()
 
+## Ground speed of this tick in FLEE/PANIC, startle boost included (m/s): what step() applies
+## to a behavior's desired velocity. Keep in sync with step().
+func flight_speed() -> float:
+	return ground_speed() * (STARTLE_BOOST if _startle_left > 0.0 else 1.0)
+
 ## Moves the plant on the XZ plane (behaviors: dive into and out of the pond).
 func place_xz(p: Vector2) -> void:
 	_set_xz(p)

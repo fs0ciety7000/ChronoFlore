@@ -164,6 +164,42 @@ func test_souffloine_hop_length_and_air_time() -> void:
 	assert_near(took_off.distance_to(landed), BehaviorHopper.HOP_DISTANCE, 0.2, "3 m hop")
 	_cleanup()
 
+## Steps a Souffloine (heroine fixed at `heroine`) until the end of its first hop; `mid_air` runs
+## once, a few frames after take-off. Returns [take-off point, landing point].
+func _first_hop(plant: Plant, heroine: Vector2, mid_air: Callable) -> Array[Vector2]:
+	var took_off := Vector2.INF
+	var air := 0
+	for i in 240:
+		plant.set_threat(heroine, Vector2(-1, 0))
+		var was := plant.is_airborne()
+		var before := _xz(plant)
+		plant.step(DT)
+		if plant.is_airborne() and not was:
+			took_off = before
+		if plant.is_airborne():
+			air += 1
+			if air == 6:
+				mid_air.call()
+		elif was:
+			return [took_off, _xz(plant)]
+	return [took_off, Vector2.INF]
+
+func test_souffloine_lands_on_its_point_despite_speed_changes() -> void:
+	# A startle (x1.5) or a dart mid-air changes the live speed, not the landing point.
+	var heroine := Vector2(10.5, 10)
+	var calm := _spawn("souffloine", Vector2(8, 10))
+	var ref := _first_hop(calm, heroine, func() -> void: pass)
+	var startled := _spawn("souffloine", Vector2(8, 10))
+	var hop := _first_hop(startled, heroine, func() -> void:
+		startled.startle()
+		startled.hit_by_tool(ToolData.Effect.TORPOR))
+	assert_true(startled.torpor.charges == 1, "the dart hit mid-air")
+	assert_true(ref[1] != Vector2.INF and hop[1] != Vector2.INF, "both hops landed")
+	assert_true(hop[1].distance_to(ref[1]) < 1e-3,
+		"same landing point (%s vs %s)" % [hop[1], ref[1]])
+	assert_near(hop[0].distance_to(hop[1]), BehaviorHopper.HOP_DISTANCE, 0.2, "still a 3 m hop")
+	_cleanup()
+
 func test_souffloine_never_leaves_island_unless_panic() -> void:
 	# Review Focus 4: chased against the edge, every hop lands inside the outline.
 	var island := _square()
