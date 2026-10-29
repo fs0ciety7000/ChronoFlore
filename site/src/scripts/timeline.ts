@@ -80,8 +80,9 @@ export function paletteFor(n: number, d: number): Palette {
   const base = useLight ? night.ink : day.ink;
   const extreme = useLight ? '#ffffff' : '#000000';
   let ink = base;
-  for (let t = 0; t <= 1 && contrast(ink, bg) < MIN_CONTRAST; t += 0.05) {
-    ink = mixHex(base, extreme, t);
+  // Integer steps so the last one (pure black/white) is really tried.
+  for (let i = 1; i <= 20 && contrast(ink, bg) < MIN_CONTRAST; i++) {
+    ink = mixHex(base, extreme, i / 20);
   }
   return { bg, ink, accent: mix('accent'), surface: mix('surface') };
 }
@@ -112,6 +113,8 @@ export function mutedTones(palette: Palette): { inkSoft: string; caption: string
   };
 }
 
+export const LAVENDER = '#cdc4ef'; // --lavender in tokens.css
+
 /**
  * Text colours for the two pairings that do not sit on `--bg`: text on the
  * `--ink` fill (primary buttons) and text on the `--surface` fill (cards) and on the `--field` fill (soft buttons).
@@ -119,8 +122,6 @@ export function mutedTones(palette: Palette): { inkSoft: string; caption: string
  * the plain pairings can fall under 4.5:1. Each tone starts at its design
  * colour and is pushed toward black/white only as far as needed.
  */
-export const LAVENDER = '#cdc4ef'; // --lavender in tokens.css
-
 export function surfaceTones(palette: Palette): { onInk: string; onSurface: string; onField: string } {
   const { ink, surface } = palette;
   const readable = (start: string, on: string) => {
