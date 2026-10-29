@@ -127,7 +127,12 @@ func test_herbarium_page_scrolls_with_keyboard() -> void:
 	assert_true(h.page_scroll.scroll_vertical < after_down, "ui_up scrolls back")
 	h.scroll_page_by(-100000.0)
 	assert_eq(h.page_scroll.scroll_vertical, 0, "clamped at top")
-	# ui_left returns to the list; selecting another species resets to the top.
+	# ui_left returns to the list, on the entry of the page shown.
+	h.page_scroll.grab_focus()
+	tree.root.push_input(_action(&"ui_left"))
+	var revette := GameState.catalog.species.find(GameState.catalog.species_by_id(&"revette"))
+	assert_true(h.list_buttons[revette].has_focus(), "ui_left gives the focus back to the list entry")
+	# Selecting another species resets to the top.
 	h.page_scroll.scroll_vertical = 500
 	h.show_species(&"nostalgerbe")
 	assert_eq(h.page_scroll.scroll_vertical, 0, "new page starts on top")
