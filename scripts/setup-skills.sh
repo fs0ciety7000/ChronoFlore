@@ -27,7 +27,6 @@ SKILLS=(
   "npx skills add https://github.com/emilkowalski/skills --skill animate"
   "npx skills add https://github.com/samber/cc-skills-golang --skill golang-database"
   "npx skills add https://github.com/windmill-labs/windmill --skill rust-backend"
-  "npx skills add https://github.com/thedivergentai/gd-agentic-skills --skill godot-skill-judge"
 )
 
 ok=0
@@ -53,12 +52,15 @@ if (( fail > 0 )); then
   printf '  ✗ %s\n' "${failed[@]}"
 fi
 
+# godot-skill-judge: removed upstream, vendored in .agents/skills/godot-skill-judge
+# (restored from thedivergentai/game-dev-agentic-skills@e202694^).
+
 # Plugin Superpowers : à faire dans Claude Code (commandes slash, pas shell).
 cat <<'EOF'
 
 Plugin Superpowers (à lancer dans Claude Code) :
   /plugin marketplace add obra/superpowers
-  /plugin install superpowers@superpowers-marketplace
+  /plugin install superpowers@superpowers-dev
 
 Puis redémarre Claude Code pour charger les skills.
 EOF

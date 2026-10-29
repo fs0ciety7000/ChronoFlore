@@ -1,0 +1,64 @@
+---
+// Inline "Fleur-horloge" logo. Geometry comes from src/brand/geometry.mjs and the
+// vectorised Fredoka wordmark from src/brand/wordmark.json (npm run brand).
+// The leaf-hand carries `data-logo-hand`; its CSS pivot is the dial centre so
+// `transform: rotate(...)` turns it like a clock hand (see the sleep clock, Task 8).
+import { logoLayout, symbolMarkup } from '../brand/geometry.mjs';
+import wordmark from '../brand/wordmark.json';
+
+interface Props {
+  variant?: 'symbol' | 'horizontal' | 'stacked';
+  /** Rendered height in CSS pixels. */
+  size?: number;
+  /** Marks the leaf-hand as driven by script (sleep clock). */
+  animatedHand?: boolean;
+  label?: string;
+  class?: string;
+}
+
+const {
+  variant = 'horizontal',
+  size = 48,
+  animatedHand = false,
+  label = 'ChronoFlore',
+  class: className,
+} = Astro.props;
+
+const symbolOpts = { leafAttrs: 'data-logo-hand' };
+let viewW = 200;
+let viewH = 200;
+let body: string;
+if (variant === 'symbol') {
+  body = symbolMarkup(symbolOpts);
+} else {
+  const layout = logoLayout(variant, wordmark, symbolOpts);
+  viewW = +layout.width.toFixed(2);
+  viewH = +layout.height.toFixed(2);
+  body = layout.body;
+}
+const width = +((size * viewW) / viewH).toFixed(2);
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  class:list={['logo', className]}
+  viewBox={`0 0 ${viewW} ${viewH}`}
+  width={width}
+  height={size}
+  role="img"
+  aria-label={label}
+  data-logo={variant}
+  data-animated-hand={animatedHand ? '' : undefined}
+><Fragment set:html={body} /></svg>
+
+<style>
+  .logo {
+    display: block;
+    flex: none;
+  }
+  /* Pivot on the dial centre of the (nested) 200x200 symbol viewport. */
+  .logo :global([data-logo-hand]) {
+    transform-box: view-box;
+    transform-origin: 100px 100px;
+  }
+</style>

@@ -1,0 +1,51 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import Countdown from '../components/Countdown.astro';
+import Dream from '../components/Dream.astro';
+import Hunter from '../components/Hunter.astro';
+import Tools from '../components/Tools.astro';
+import Herbarium from '../components/Herbarium.astro';
+import Share from '../components/Share.astro';
+import Footer from '../components/Footer.astro';
+import SleepDock from '../components/SleepDock.astro';
+---
+
+<Base
+  title="ChronoFlore — huit heures de sommeil, toute une flore à capturer"
+  description="Jeu d'action-arcade en développement. Lucide dans son rêve, une botaniste-chasseuse capture les plantes nées de ses émotions avant le réveil."
+>
+  <Header />
+  <main id="contenu">
+    <Hero />
+    <Countdown />
+    <Dream />
+    <Hunter />
+    <Tools />
+    <Herbarium />
+    <Share />
+  </main>
+  <Footer />
+  <SleepDock />
+</Base>
+
+<script>
+  import { readEnv } from '../scripts/env';
+  import { initScroll } from '../scripts/scroll';
+  import { initShare } from '../scripts/share';
+  import { mountDiorama } from '../scripts/diorama/loader';
+  import { initClockHand } from '../scripts/clock-hand';
+  import { initSleepDock } from '../scripts/sleep-dock';
+  import { initReveal } from '../scripts/reveal';
+  import { initCursor } from '../scripts/cursor';
+
+  const env = readEnv();
+  const scroll = initScroll(env);
+  initShare();
+  initClockHand(scroll);
+  initSleepDock(scroll);
+  initReveal(env);
+  initCursor(env);
+  mountDiorama(env, scroll);
+</script>

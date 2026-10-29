@@ -1,0 +1,42 @@
+---
+import PlateHeading from './PlateHeading.astro';
+---
+
+<section id="reve" class="dream wrap section" data-scene="reve" aria-labelledby="reve-title">
+  <PlateHeading plate="I" id="reve-title">Le rêve</PlateHeading>
+  <div class="dream__text">
+    <p>
+      Elle s'endort et le monde se reconstruit en petites îles flottantes, couleur de bonbon et de
+      fin d'après-midi. Elle sait qu'elle rêve.
+    </p>
+    <p>
+      Les plantes qui y poussent ne sont pas tout à fait des plantes : ce sont ses émotions, ses
+      souvenirs, ses pensées. Certaines se laissent approcher. D'autres s'enfuient.
+    </p>
+  </div>
+</section>
+
+<style>
+  .dream {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem 3rem;
+  }
+  @media (min-width: 56rem) {
+    .dream {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    }
+  }
+  .dream__text {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-width: 40rem;
+    font-size: var(--step-lead);
+    line-height: 1.55;
+  }
+  .dream__text p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+</style>

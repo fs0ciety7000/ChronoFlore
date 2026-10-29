@@ -4,32 +4,62 @@ Règles communes à tous les agents de code (Claude Code, Codex, Cursor, etc.). 
 
 ## Contexte du projet
 
-- **Nom** : `TODO`
-- **Type** : `TODO` (voir `.claude/skills-registry.md`)
-- **Résumé en une phrase** : `TODO`
+- **Nom** : ChronoFlore
+- **Type** : `gamedev-godot` (`game/`) + `web-frontend` (`site/`)
+- **Résumé en une phrase** : jeu d'action-arcade isométrique kawaï et mélancolique où une rêveuse lucide, botaniste-chasseuse, capture au filet, au harpon et au fusil tranquillisant les plantes nées de ses émotions avant de se réveiller. Une run = une nuit de 8 h de sommeil, sans chronomètre en temps réel : chaque capture fait avancer l'heure, une jauge de lucidité (pétales) qui se vide la réveille trop tôt (voir `docs/superpowers/specs/`).
+
+### Direction artistique (référence pour tout asset)
+
+- **Diorama** : île de terrain flottante, bords en coupe de terre, lumière douce, ombres légères, fond crème uni, couleurs pastel.
+- **Caméra** : 3D, `Camera3D` orthographique, angle isométrique fixe.
+- **Héroïne** : peau foncée, longues tresses noires, lunettes rondes teintées roses, grand sourire, haut à rayures multicolores (vert, rouge, orange, violet), petit collier doré. Proportions chibi.
+- **Rendu** (réf. vidéo pêche) : 3D stylisée vue de dessus/iso, eau turquoise translucide aux caustiques, écume blanche, ombres franches et douces, HUD minimal en cartouches crème arrondies.
+- **Ton** : mélancolique mais kawaï ; les plantes sont des émotions, des souvenirs et des pensées.
+
+### Assets 3D
+
+- **Source unique** : catalogue Polyfork (MCP `polyfork`) ou modèles faits maison. Aucune autre banque d'assets.
+- **Polyfork → Godot** : télécharge le GLB (pas le module `.mjs`, prévu pour three.js), range-le dans `game/assets/polyfork/<asset-id>/`. Tailles en mètres réels, origine au sol : choisis la bonne taille au lieu de rescaler.
+- **Fait maison** : l'héroïne et les plantes-émotions capturables (aucun équivalent au catalogue). Sources dans `game/assets/custom/`.
+- Kits Polyfork pertinents : `salvage-commons-d0be9f` (îles flottantes), `nature-forest-kit-f29d6a`, `insect-world-e44b9f` (plantes géantes).
 
 ## Commandes
 
 ```bash
-# À remplir selon la stack
-install: TODO
-dev:     TODO
-test:    TODO
-lint:    TODO
-build:   TODO
+# Jeu (Godot 4.7.2, binaire `godot` dans le PATH ; export Web : templates 4.7.2 installés)
+import:  godot --headless --path game --import
+test:    godot --headless --path game --import && godot --headless --path game --script res://tests/test_runner.gd
+run:     godot --path game
+build:   mkdir -p build/web && godot --headless --path game --export-release "Web" ../build/web/index.html
+
+# Site vitrine (Node 22, depuis site/)
+install: npm install
+dev:     npm run dev
+build:   npm run build          # sortie dans site/dist/
+lint:    npm run check          # astro check
+deploy:  push sur la branche suivie par Coolify -> build du Dockerfile de site/
 ```
+
+## Déploiement
+
+- Coolify : `site/Dockerfile` (build Astro puis nginx). Variables d'API dans `.env` (voir `.env.example`).
+- DNS : enregistrement Cloudflare `chronoflore.cardormedia.com` vers `COOLIFY_SERVER_IP`.
 
 ## Structure du dépôt
 
 ```
 .
-├── AGENTS.md            # ce fichier
-├── CLAUDE.md            # entrée Claude Code (importe AGENTS.md)
-├── .claude/
-│   ├── skills-registry.md   # routage type de projet → skills
-│   └── commands/new-project.md
+├── AGENTS.md, CLAUDE.md     # règles agents
+├── .claude/                 # settings, commandes, registre des skills, skills installés
+├── .agents/skills/          # sources des skills (npx skills)
 ├── scripts/setup-skills.sh  # installation des skills
-└── src/                 # code (TODO)
+├── game/                    # projet Godot (project.godot)
+│   ├── scenes/  scripts/  assets/
+│   └── tests/test_runner.gd
+├── site/                    # site vitrine Astro
+│   ├── src/pages/  public/
+│   └── Dockerfile, nginx.conf
+└── branding/                # logo (sources SVG + exports)
 ```
 
 ## Règles de travail
