@@ -21,13 +21,20 @@ export function initScroll(env: Env): ScrollHandle {
 
   const root = document.documentElement;
   const countdown = document.getElementById('countdown');
+  const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   const listeners = new Set<(p: number) => void>();
   let lastClock = '';
+  let lastBg = '';
 
   const apply = (raw: number) => {
     const p = clampProgress(raw);
     const palette = env.reducedMotion ? discretePalette(p) : paletteAt(p);
     root.style.setProperty('--bg', palette.bg);
+    // Browser chrome follows the sky; written only when the colour changes.
+    if (themeColor && palette.bg !== lastBg) {
+      themeColor.content = palette.bg;
+      lastBg = palette.bg;
+    }
     root.style.setProperty('--ink', palette.ink);
     root.style.setProperty('--accent', palette.accent);
     root.style.setProperty('--surface', palette.surface);

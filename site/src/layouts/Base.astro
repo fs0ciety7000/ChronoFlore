@@ -10,6 +10,8 @@ import { SHARE_URL } from '../scripts/share';
 
 // /og.png is rendered by Task 9; the URL is absolute because crawlers need it.
 const OG_IMAGE = `${SHARE_URL}og.png`;
+const OG_IMAGE_ALT =
+  'Île-diorama flottante au crépuscule, logo ChronoFlore et le titre Huit heures de sommeil. Toute une flore à capturer.';
 
 interface Props {
   title: string;
@@ -25,6 +27,7 @@ const { title, description } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <!-- Day value; scroll.ts keeps it on the live --bg. -->
     <meta name="theme-color" content={PALETTES.day.bg} />
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
     <meta property="og:type" content="website" />
@@ -36,10 +39,12 @@ const { title, description } = Astro.props;
     <meta property="og:image" content={OG_IMAGE} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={OG_IMAGE_ALT} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={OG_IMAGE} />
+    <meta name="twitter:image:alt" content={OG_IMAGE_ALT} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

@@ -90,6 +90,10 @@ test.describe('share and metadata', () => {
     expect(await meta('meta[property="og:description"]')).toBeTruthy();
     expect(await meta('meta[property="og:image"]')).toBe('https://chronoflore.cardormedia.com/og.png');
     expect(await meta('meta[name="twitter:card"]')).toBe('summary_large_image');
+    const alt =
+      'Île-diorama flottante au crépuscule, logo ChronoFlore et le titre Huit heures de sommeil. Toute une flore à capturer.';
+    expect(await meta('meta[property="og:image:alt"]')).toBe(alt);
+    expect(await meta('meta[name="twitter:image:alt"]')).toBe(alt);
     await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute('href', '/favicon.svg');
     await expect(page.locator('link[rel="icon"][href="/favicon.ico"]')).toHaveCount(1);
   });

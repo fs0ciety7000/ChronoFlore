@@ -89,6 +89,16 @@ test.describe('scroll drives palette and sleep clock', () => {
     await expect.poll(() => bgOf(page)).toBe('#22203a');
   });
 
+  test('theme-color follows the palette', async ({ page }) => {
+    const themeColor = () => page.locator('meta[name="theme-color"]').getAttribute('content');
+    await page.goto('/');
+    expect(await themeColor()).toBe('#f6f1e7');
+    await scrollToFraction(page, 0.78);
+    await expect.poll(themeColor).toBe('#22203a');
+    await scrollToFraction(page, 1);
+    await expect.poll(themeColor).toBe('#fbeee9');
+  });
+
   test('stays at 08:00:00 after resizing 1280 -> 375 at the bottom', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
