@@ -51,7 +51,7 @@ bone_name = "hand.R"
 bone_idx = 14
 
 [node name="Net" type="Node3D" parent="Model/Heroine/Skeleton3D/HandR"]
-transform = Transform3D(0.28734788, 0.9407209, -0.18020943, 0, -0.18814418, -0.98214144, -0.9578263, 0.28221628, -0.05406283, 0, 0.045, 0)
+transform = Transform3D(-0.18020943, 0.9407209, -0.28734788, -0.98214144, -0.18814418, 0, -0.05406283, 0.28221628, 0.9578263, 0, 0.045, 0)
 
 [node name="Handle" type="MeshInstance3D" parent="Model/Heroine/Skeleton3D/HandR/Net"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.205, 0)

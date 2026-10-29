@@ -17,6 +17,7 @@ func test_heroine_visual_animations() -> void:
 	assert_eq(ap.get_animation("Idle").loop_mode, Animation.LOOP_LINEAR, "Idle loops")
 	assert_eq(ap.get_animation("Walk").loop_mode, Animation.LOOP_LINEAR, "Walk loops")
 	assert_eq(ap.get_animation("Swing").loop_mode, Animation.LOOP_NONE, "Swing is one-shot")
+	assert_near(ap.get_animation("Swing").length, 0.45, 0.02, "Swing lasts ~0.45 s")
 	assert_eq(ap.current_animation, "Idle", "starts idle")
 	v.call("set_walking", true)
 	assert_eq(ap.current_animation, "Walk", "walks when moving")

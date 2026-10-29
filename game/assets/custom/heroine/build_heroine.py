@@ -882,52 +882,60 @@ def build_actions(arm):
     n = 36
     make_action(arm, "Walk", [(f, walk(f / n)) for f in range(0, n + 1, 3)])
 
-    # Swing: right-arm net swing, 0.45 s one-shot (27 frames @ 60 fps)
+    # Swing: right-arm net swing, 0.45 s one-shot (27 frames @ 60 fps).
+    # Readable from the iso camera: head stays up, torso only twists a little, and the
+    # arm sweeps the net at shoulder height from her right-back (wind-up) to front-right
+    # (strike) to front-left (follow-through). The hoop stays ~0.7 m up and out of the
+    # head's silhouette, plane kept near horizontal (the Net prop in heroine_visual.tscn
+    # is rolled to match), so it reads as a ring whether she faces the camera or not.
+    # upper_arm X raises the arm forward, then Y yaws it (+ = to her right).
+    # Arm/hand keys were solved numerically for those hoop targets, then rounded.
     rest = idle(0.0)
     wind = {
-        "hips": {"loc": (0, -0.01, 0), "rot": (0, -12, 0)},
-        "spine": {"rot": (-4, -10, 0)},
-        "chest": {"rot": (0, -18, 0)},
-        "head": {"rot": (-4, 10, 0)},
-        "upper_arm.R": {"rot": (-25, 0, -70)},
-        "lower_arm.R": {"rot": (35, 0, 0)},
-        "hand.R": {"rot": (0, 0, -20)},
-        "upper_arm.L": {"rot": (20, 0, -20)},
+        "hips": {"loc": (0, -0.008, 0), "rot": (0, -6, 0)},
+        "spine": {"rot": (0, -4, 0)},
+        "chest": {"rot": (-2, -8, 0)},
+        "head": {"rot": (-6, 14, 0)},
+        "upper_arm.R": {"rot": (111, 51, -1)},
+        "lower_arm.R": {"rot": (0, 0, 0)},
+        "hand.R": {"rot": (-26, 46, 13)},
+        "upper_arm.L": {"rot": (15, 0, -20)},
         "lower_arm.L": {"rot": (30, 0, 0)},
-        "upper_leg.L": {"rot": (15, 0, 0)},
-        "upper_leg.R": {"rot": (-8, 0, 0)},
+        "upper_leg.L": {"rot": (8, 0, 0)},
+        "upper_leg.R": {"rot": (-6, 0, 0)},
         "braid.L": {"rot": (0, 0, -6)},
         "braid.R": {"rot": (0, 0, -6)},
         "braid.B": {"rot": (0, 0, 6)},
     }
     strike = {
-        "hips": {"loc": (0, -0.02, 0), "rot": (0, 8, 0)},
-        "spine": {"rot": (10, 4, 0)},
-        "chest": {"rot": (6, 10, 0)},
-        "head": {"rot": (4, -8, 0)},
-        "upper_arm.R": {"rot": (105, 0, -35)},
-        "lower_arm.R": {"rot": (5, 0, 0)},
-        "hand.R": {"rot": (-15, 0, 0)},
-        "upper_arm.L": {"rot": (-25, 0, -25)},
+        "hips": {"loc": (0, -0.015, 0), "rot": (0, 4, 0)},
+        "spine": {"rot": (2, 3, 0)},
+        "chest": {"rot": (0, 6, 0)},
+        "head": {"rot": (-6, -8, 0)},
+        "upper_arm.R": {"rot": (125, -2, 27)},
+        "lower_arm.R": {"rot": (0, 0, 0)},
+        "hand.R": {"rot": (-29, 30, 20)},
+        "upper_arm.L": {"rot": (-15, 0, -25)},
         "lower_arm.L": {"rot": (30, 0, 0)},
-        "upper_leg.L": {"rot": (22, 0, 0)},
-        "lower_leg.L": {"rot": (-12, 0, 0)},
-        "upper_leg.R": {"rot": (-14, 0, 0)},
-        "braid.L": {"rot": (-8, 0, 8)},
-        "braid.R": {"rot": (-8, 0, 8)},
-        "braid.B": {"rot": (7, 0, -6)},
+        "upper_leg.L": {"rot": (14, 0, 0)},
+        "lower_leg.L": {"rot": (-8, 0, 0)},
+        "upper_leg.R": {"rot": (-10, 0, 0)},
+        "braid.L": {"rot": (-6, 0, 8)},
+        "braid.R": {"rot": (-6, 0, 8)},
+        "braid.B": {"rot": (5, 0, -6)},
     }
     follow = {
-        "hips": {"loc": (0, -0.012, 0), "rot": (0, 10, 0)},
-        "spine": {"rot": (6, 6, 0)},
-        "chest": {"rot": (4, 16, 0)},
-        "head": {"rot": (2, -4, 0)},
-        "upper_arm.R": {"rot": (80, 0, 0)},
-        "lower_arm.R": {"rot": (15, 0, 0)},
+        "hips": {"loc": (0, -0.01, 0), "rot": (0, 8, 0)},
+        "spine": {"rot": (2, 5, 0)},
+        "chest": {"rot": (0, 10, 0)},
+        "head": {"rot": (-4, -14, 0)},
+        "upper_arm.R": {"rot": (91, -62, 47)},
+        "lower_arm.R": {"rot": (0, 0, 0)},
+        "hand.R": {"rot": (-25, 21, 30)},
         "upper_arm.L": {"rot": (-10, 0, -15)},
         "lower_arm.L": {"rot": (20, 0, 0)},
-        "upper_leg.L": {"rot": (14, 0, 0)},
-        "upper_leg.R": {"rot": (-8, 0, 0)},
+        "upper_leg.L": {"rot": (10, 0, 0)},
+        "upper_leg.R": {"rot": (-6, 0, 0)},
         "braid.L": {"rot": (6, 0, 6)},
         "braid.R": {"rot": (6, 0, 6)},
         "braid.B": {"rot": (-6, 0, -4)},
