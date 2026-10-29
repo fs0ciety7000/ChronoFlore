@@ -31,6 +31,8 @@ import Footer from '../components/Footer.astro';
 <script>
   import { readEnv } from '../scripts/env';
   import { initScroll } from '../scripts/scroll';
+  import { initShare } from '../scripts/share';
 
   initScroll(readEnv());
+  initShare();
 </script>

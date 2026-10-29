@@ -84,6 +84,48 @@ test.describe('scroll drives palette and countdown', () => {
   });
 });
 
+/** Contrast of an element's text against the real background colour of `bgSelector`. */
+async function contrastOn(page: Page, selector: string, bgSelector: string): Promise<number> {
+  return page.evaluate(
+    ([sel, bgSel]) => {
+      const rgb = (css: string): [number, number, number] => {
+        const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = css;
+        ctx.fillRect(0, 0, 1, 1);
+        const d = ctx.getImageData(0, 0, 1, 1).data;
+        return [d[0], d[1], d[2]];
+      };
+      const lum = (c: [number, number, number]) => {
+        const [r, g, b] = c.map((v) => {
+          const x = v / 255;
+          return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const fg = lum(rgb(getComputedStyle(document.querySelector(sel)!).color));
+      const bg = lum(rgb(getComputedStyle(document.querySelector(bgSel)!).backgroundColor));
+      const [hi, lo] = fg > bg ? [fg, bg] : [bg, fg];
+      return (hi + 0.05) / (lo + 0.05);
+    },
+    [selector, bgSelector],
+  );
+}
+
+test('keeps .btn--primary and surface-card text at >= 4.5:1 across the crossover', async ({ page }) => {
+  await page.goto('/');
+  for (const f of [0, 0.4, 0.5, 0.6, 0.78, 1]) {
+    await scrollToFraction(page, f);
+    await page.waitForTimeout(100);
+    const btn = await contrastOn(page, '.btn--primary', '.btn--primary');
+    expect(btn, `.btn--primary at ${f}`).toBeGreaterThanOrEqual(4.5);
+    const card = await contrastOn(page, '.tool p', '.tool');
+    expect(card, `.tool p at ${f}`).toBeGreaterThanOrEqual(4.5);
+    const share = await contrastOn(page, '.share__card p', '.share__card');
+    expect(share, `.share__card p at ${f}`).toBeGreaterThanOrEqual(4.5);
+  }
+});
+
 test.describe('reduced motion', () => {
   test.use({ reducedMotion: 'reduce' });
 

@@ -69,7 +69,7 @@ a {
   padding: 0.625rem 1rem;
   border-radius: 999px;
   background: var(--ink);
-  color: var(--surface);
+  color: var(--on-ink);
   font-weight: 700;
   text-decoration: none;
   transform: translateY(-200%);
@@ -115,7 +115,7 @@ a {
 
 .btn--primary {
   background: var(--ink);
-  color: var(--surface);
+  color: var(--on-ink);
 }
 .btn--quiet {
   background: var(--surface);

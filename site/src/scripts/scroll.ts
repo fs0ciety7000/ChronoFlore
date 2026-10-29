@@ -2,7 +2,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import type { Env } from './env';
-import { PALETTES, clampProgress, countdownAt, mutedTones, paletteAt, type Palette } from './timeline';
+import { PALETTES, clampProgress, countdownAt, mutedTones, paletteAt, surfaceTones, type Palette } from './timeline';
 
 export type ScrollHandle = {
   onProgress(cb: (p: number) => void): () => void;
@@ -35,6 +35,9 @@ export function initScroll(env: Env): ScrollHandle {
     const tones = mutedTones(palette);
     root.style.setProperty('--ink-soft', tones.inkSoft);
     root.style.setProperty('--caption', tones.caption);
+    const fills = surfaceTones(palette);
+    root.style.setProperty('--on-ink', fills.onInk);
+    root.style.setProperty('--on-surface', fills.onSurface);
     root.style.setProperty('--progress', String(+p.toFixed(4)));
     const clock = countdownAt(p);
     if (countdown && clock !== lastClock) {

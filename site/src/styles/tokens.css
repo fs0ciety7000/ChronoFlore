@@ -12,6 +12,9 @@
   --accent: #f4b9c8;
   --surface: #fffdf8;
   --progress: 0;
+  /* Text on the --ink and --surface fills; the scroll layer keeps them at 4.5:1. */
+  --on-ink: #fffdf8;
+  --on-surface: #3b3350;
 
   /* Fixed brand tones (logo, specimen plates, tool marks). */
   --lavender: #cdc4ef;

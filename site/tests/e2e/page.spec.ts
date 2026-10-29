@@ -78,3 +78,61 @@ test.describe('static one-page layout', () => {
     expect(share).toBeGreaterThan(reve);
   });
 });
+
+test.describe('share and metadata', () => {
+  test('exposes Open Graph, Twitter and icon metadata', async ({ page }) => {
+    await page.goto('/');
+    const meta = (sel: string) => page.locator(sel).getAttribute('content');
+    expect(await meta('meta[property="og:title"]')).toContain('ChronoFlore');
+    expect(await meta('meta[property="og:description"]')).toBeTruthy();
+    expect(await meta('meta[property="og:image"]')).toBe('https://chronoflore.cardormedia.com/og.png');
+    expect(await meta('meta[name="twitter:card"]')).toBe('summary_large_image');
+    await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute('href', '/favicon.svg');
+    await expect(page.locator('link[rel="icon"][href="/favicon.ico"]')).toHaveCount(1);
+  });
+
+  test('share links carry encoded URL and text', async ({ page }) => {
+    await page.goto('/');
+    const hrefs = await page.locator('#partager a.btn--soft').evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).href));
+    expect(hrefs.some((h) => h.startsWith('https://bsky.app/intent/compose?text=') && h.includes('%C3%A0'))).toBe(true);
+    expect(hrefs.some((h) => h.startsWith('https://x.com/intent/post?text=') && h.includes('&url=https%3A%2F%2Fchronoflore'))).toBe(true);
+    expect(hrefs.some((h) => h.startsWith('https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fchronoflore'))).toBe(true);
+  });
+
+  test('"Copier le lien" copies and confirms for 2 s', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto('/');
+    const btn = page.locator('[data-copy-link]');
+    await btn.click();
+    await expect(btn).toHaveText('Lien copié');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('https://chronoflore.cardormedia.com/');
+    await expect(btn).toHaveText('Copier le lien', { timeout: 4000 });
+  });
+
+  test('without clipboard, shows a preselected readonly input', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+    });
+    await page.goto('/');
+    await page.locator('[data-copy-link]').click();
+    const input = page.locator('#partager input[readonly]');
+    await expect(input).toBeVisible();
+    await expect(input).toHaveValue('https://chronoflore.cardormedia.com/');
+    expect(await input.evaluate((i: HTMLInputElement) => i.selectionEnd! - i.selectionStart!)).toBe(36);
+  });
+
+  test('"Partager le rêve" calls navigator.share when available', async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as any).__shared = null;
+      Object.defineProperty(navigator, 'share', {
+        value: (d: unknown) => ((window as any).__shared = d, Promise.resolve()),
+        configurable: true,
+      });
+    });
+    await page.goto('/');
+    await page.locator('[data-share-primary]').click();
+    expect(await page.evaluate(() => (window as any).__shared)).toMatchObject({
+      url: 'https://chronoflore.cardormedia.com/',
+    });
+  });
+});

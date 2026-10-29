@@ -75,3 +75,24 @@ export function mutedTones(palette: Palette): { inkSoft: string; caption: string
     caption: readable((t) => mixHex(ink, accent, t), 0.32),
   };
 }
+
+/**
+ * Text colours for the two pairings that do not sit on `--bg`: text on the
+ * `--ink` fill (primary buttons) and text on the `--surface` fill (cards).
+ * `--surface` is mixed continuously while `--ink` flips, so near the crossover
+ * the plain pairings can fall under 4.5:1. Each tone starts at its design
+ * colour and is pushed toward black/white only as far as needed.
+ */
+export function surfaceTones(palette: Palette): { onInk: string; onSurface: string } {
+  const { ink, surface } = palette;
+  const readable = (start: string, on: string) => {
+    if (contrast(start, on) >= MIN_CONTRAST) return start;
+    const extreme = luminance(on) < CROSSOVER_LUMINANCE ? '#ffffff' : '#000000';
+    let color = start;
+    for (let i = 1; i <= 20 && contrast(color, on) < MIN_CONTRAST; i++) {
+      color = mixHex(start, extreme, i / 20);
+    }
+    return color;
+  };
+  return { onInk: readable(surface, ink), onSurface: readable(ink, surface) };
+}
