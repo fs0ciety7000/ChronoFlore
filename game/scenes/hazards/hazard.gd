@@ -42,6 +42,7 @@ func setup(at: Vector3, telegraph: float) -> void:
 	_impacted = false
 	if is_inside_tree():
 		global_position = at
+		reset_physics_interpolation()
 	else:
 		position = at
 	_ensure_mark()

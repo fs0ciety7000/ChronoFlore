@@ -20,6 +20,8 @@ func launch(p_tool: ToolData, origin: Vector3, dir: Vector2) -> void:
 	tool_data = p_tool
 	direction = dir.normalized() if dir.length_squared() > 1e-8 else Vector2(0, 1)
 	position = origin
+	if is_inside_tree():
+		reset_physics_interpolation()
 
 func _physics_process(delta: float) -> void:
 	step(delta)

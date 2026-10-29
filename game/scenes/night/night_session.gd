@@ -192,6 +192,7 @@ func setup_players(p_mode: GameState.Mode) -> void:
 	for i in players.size():
 		var at := start + P2_START_OFFSET * i
 		players[i].global_position = Vector3(at.x, island.ground_height(), at.y)
+		players[i].reset_physics_interpolation() # a placement, not a move
 	_last_xz = player_points()
 	assignments.clear()
 	apply_devices(Input.get_connected_joypads())
@@ -338,6 +339,7 @@ func add_plant(species: PlantSpecies, at: Vector2) -> Plant:
 	plants_root.add_child(plant)
 	plant.setup(species, island.shape, SpawnRules.speed_multiplier(clock.hour()))
 	plant.global_position = Vector3(at.x, island.ground_height(), at.y)
+	plant.reset_physics_interpolation() # no slide from the origin on its first frame
 	plant.set_glow(_plant_glow)
 	plant.captured.connect(_on_plant_captured)
 	plant.escaped.connect(_on_plant_escaped)

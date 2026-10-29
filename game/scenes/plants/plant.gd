@@ -170,9 +170,15 @@ func ground_speed() -> float:
 func flight_speed() -> float:
 	return ground_speed() * (STARTLE_BOOST if _startle_left > 0.0 else 1.0)
 
-## Moves the plant on the XZ plane (behaviors: dive into and out of the pond).
+## Moves the plant on the XZ plane, interpolated (behaviors: drift on the pond).
 func place_xz(p: Vector2) -> void:
 	_set_xz(p)
+
+## Jumps to `p` on the XZ plane (dive, emerge): drawn there at once, without interpolating.
+func teleport_xz(p: Vector2) -> void:
+	_set_xz(p)
+	if is_inside_tree():
+		reset_physics_interpolation()
 
 func has_threat() -> bool:
 	return _has_threat
@@ -401,7 +407,7 @@ func _emerge() -> void:
 	var target := xz() + dir * _rng.randf_range(EMERGE_MIN_DISTANCE, EMERGE_MAX_DISTANCE)
 	if island != null:
 		target = island.clamp_walkable(target, EDGE_MARGIN, OBSTACLE_MARGIN)
-	_set_xz(target)
+	teleport_xz(target)
 	state = State.EMERGING
 
 func _wander(delta: float) -> Vector2:

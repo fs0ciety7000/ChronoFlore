@@ -81,6 +81,7 @@ func _start_windup(plant: Plant, dir: Vector2) -> void:
 	var p := plant.ground_point()
 	if _lane.is_inside_tree():
 		_lane.global_position = p
+		_lane.reset_physics_interpolation()
 	else:
 		_lane.position = p
 	_lane.rotation = Vector3(0.0, atan2(dir.x, dir.y), 0.0)

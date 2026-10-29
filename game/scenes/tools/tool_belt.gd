@@ -110,6 +110,7 @@ func _spawn_swing(origin: Vector3, dir: Vector2) -> void:
 	host.add_child(swing)
 	swing.position = origin
 	swing.rotation.y = atan2(dir.x, dir.y)
+	swing.reset_physics_interpolation()
 	var tween := swing.create_tween()
 	tween.tween_property(swing, "scale", Vector3(1.0, 1.0, 0.1), SWING_FADE)
 	tween.tween_callback(swing.queue_free)

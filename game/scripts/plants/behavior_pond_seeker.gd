@@ -74,7 +74,7 @@ func tick_hidden(plant: Plant, delta: float) -> void:
 		plant.place_xz(pos)
 		return
 	_hidden_left = 0.0
-	plant.place_xz(_emerge_point(plant, pos))
+	plant.teleport_xz(_emerge_point(plant, pos))
 	_rest_left = EMERGE_REST
 	_has_target = false
 
@@ -116,7 +116,7 @@ func _dive(plant: Plant) -> void:
 	var c := Vector2(_pond.x, _pond.y)
 	var out := plant.xz() - c
 	out = out.normalized() if out.length_squared() > 1e-8 else Vector2.RIGHT
-	plant.place_xz(c + out * maxf(_pond.z - LILY_INSET, 0.0))
+	plant.teleport_xz(c + out * maxf(_pond.z - LILY_INSET, 0.0))
 
 ## Shore point nearest the lily that is walkable and far enough from the heroine; else the
 ## walkable one farthest from her.

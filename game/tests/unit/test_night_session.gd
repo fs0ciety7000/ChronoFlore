@@ -205,3 +205,17 @@ func test_nightmare_spawns_follow_rarity() -> void:
 	assert_true(ronce > 1.5 * (champi + ortie), "common Ronce outnumbers both rare ones together (uniform: half) %s" % counts)
 	assert_true(champi + ortie > 0, "rare ones still spawn (%s)" % counts)
 	_end(s)
+
+## M8: physics interpolation is on; the camera follows interpolated targets and is not
+## interpolated itself; spawns are placements (no slide from the origin).
+func test_physics_interpolation_setup() -> void:
+	assert_true(bool(ProjectSettings.get_setting("physics/common/physics_interpolation")), "interpolation on")
+	var s: NightSession = await _session()
+	assert_eq(s.camera.physics_interpolation_mode, Node.PHYSICS_INTERPOLATION_MODE_OFF, "camera moves per frame")
+	var plant := s.add_plant(GameState.catalog.species_by_id(&"revette"), s.island.shape.centroid() + Vector2(5, 0))
+	await tree.process_frame
+	var drawn := plant.get_global_transform_interpolated().origin
+	assert_true(drawn.distance_to(plant.global_position) < 0.5, "drawn at its spawn point (%s vs %s)" % [drawn, plant.global_position])
+	var h := s.heroine.get_global_transform_interpolated().origin
+	assert_true(h.distance_to(s.heroine.global_position) < 0.5, "heroine drawn where she was placed")
+	_end(s)

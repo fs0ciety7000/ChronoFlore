@@ -4,6 +4,8 @@ extends Node3D
 ## child is offset along the iso view axis. The focus point is clamped to `bounds` (XZ).
 ## With several targets (co-op) it frames their barycentre and widens its ortho size with their
 ## spread (CoopRules.camera_size: ORTHO_SIZE up to x1.5).
+## Physics interpolation is on: the camera moves every rendered frame (_process), so it is not
+## interpolated itself and follows its targets' interpolated transforms (no judder at 120 Hz+).
 
 const PITCH_DEG := -35.264
 const YAW_DEG := 45.0
@@ -19,6 +21,7 @@ var _targets: Array[Node3D] = []
 @onready var _camera: Camera3D = $Camera3D
 
 func _ready() -> void:
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	_camera.size = ORTHO_SIZE
 	var basis := Basis(Vector3.UP, deg_to_rad(YAW_DEG)) * Basis(Vector3.RIGHT, deg_to_rad(PITCH_DEG))
@@ -56,8 +59,9 @@ func _process(delta: float) -> void:
 	if not _has_targets():
 		return
 	var k := 1.0 - exp(-FOLLOW_RATE * delta)
-	position = position.lerp(_clamped_target(), k)
-	_camera.size = lerpf(_camera.size, _wanted_size(), k)
+	var points := _ground_points(true)
+	position = position.lerp(_clamped_focus(points), k)
+	_camera.size = lerpf(_camera.size, _size_for(points), k)
 
 func _has_targets() -> bool:
 	for t in _targets:
@@ -65,17 +69,22 @@ func _has_targets() -> bool:
 			return true
 	return false
 
-func _ground_points() -> PackedVector2Array:
+## Targets' XZ; `interpolated`: where they are drawn this frame (physics interpolation).
+func _ground_points(interpolated: bool = false) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	for t in _targets:
 		if t != null and is_instance_valid(t):
-			var p := t.global_position if t.is_inside_tree() else t.position
+			var p := t.position
+			if t.is_inside_tree():
+				p = t.get_global_transform_interpolated().origin if interpolated else t.global_position
 			out.append(Vector2(p.x, p.z))
 	return out
 
 ## ORTHO_SIZE widened by the largest distance between two targets.
 func _wanted_size() -> float:
-	var points := _ground_points()
+	return _size_for(_ground_points())
+
+func _size_for(points: PackedVector2Array) -> float:
 	var spread := 0.0
 	for i in points.size():
 		for j in range(i + 1, points.size()):
@@ -83,7 +92,9 @@ func _wanted_size() -> float:
 	return CoopRules.camera_size(ORTHO_SIZE, spread)
 
 func _clamped_target() -> Vector3:
-	var points := _ground_points()
+	return _clamped_focus(_ground_points())
+
+func _clamped_focus(points: PackedVector2Array) -> Vector3:
 	var sum := Vector2.ZERO
 	for p in points:
 		sum += p
