@@ -98,14 +98,14 @@ static func from_dict(d: Dictionary) -> Herbarium:
 	for k: Variant in raw_counts:
 		if not (k is String) or not _is_number(raw_counts[k]):
 			return null
-		h.counts[StringName(k)] = int(raw_counts[k])
+		h.counts[StringName(k)] = maxi(int(raw_counts[k]), 0)
 	for t: Variant in d["unlocked_tools"]:
 		if not (t is String):
 			return null
 		h.unlocked_tools.append(StringName(t))
-	h.best_minutes = int(d["best_minutes"])
-	h.full_nights = int(d["full_nights"])
-	h.next_dawn_memory = int(d["next_dawn_memory"])
+	h.best_minutes = maxi(int(d["best_minutes"]), 0)
+	h.full_nights = maxi(int(d["full_nights"]), 0)
+	h.next_dawn_memory = maxi(int(d["next_dawn_memory"]), 0)
 	return h
 
 static func _is_number(v: Variant) -> bool:

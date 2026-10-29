@@ -84,3 +84,12 @@ func test_from_dict_invalid() -> void:
 	assert_true(Herbarium.from_dict({}) == null, "empty")
 	assert_true(Herbarium.from_dict({"version": 2}) == null, "wrong version")
 	assert_true(Herbarium.from_dict({"version": 1, "counts": "x", "unlocked_tools": [], "best_minutes": 0, "full_nights": 0, "next_dawn_memory": 0}) == null, "bad counts")
+
+func test_from_dict_clamps_negatives() -> void:
+	var h := Herbarium.from_dict({"version": 1, "counts": {"revette": -4}, "unlocked_tools": [],
+		"best_minutes": -10, "full_nights": -1, "next_dawn_memory": -2})
+	assert_true(h != null, "accepted")
+	assert_eq(h.counts[&"revette"], 0, "count clamped")
+	assert_eq(h.best_minutes, 0, "best clamped")
+	assert_eq(h.full_nights, 0, "full nights clamped")
+	assert_eq(h.next_dawn_memory, 0, "memory clamped")

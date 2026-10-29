@@ -49,3 +49,18 @@ func test_save_store_corrupt() -> void:
 	assert_eq(h2.counts.size(), 0, "unknown version -> fresh")
 	assert_true(FileAccess.file_exists(PATH + ".bak"), "bak for unknown version")
 	_cleanup()
+
+func test_save_store_overwrite() -> void:
+	_cleanup()
+	var h := Herbarium.new()
+	h.best_minutes = 400
+	h.counts[&"revette"] = 3
+	assert_eq(SaveStore.save(h, PATH), OK, "first save")
+	h.best_minutes = 50
+	h.counts.clear()
+	assert_eq(SaveStore.save(h, PATH), OK, "second save")
+	var h2 := SaveStore.load_or_new(PATH)
+	assert_eq(h2.best_minutes, 50, "second save wins")
+	assert_eq(h2.counts.size(), 0, "no stale counts")
+	assert_false(FileAccess.file_exists(PATH + ".tmp"), "no tmp file")
+	_cleanup()

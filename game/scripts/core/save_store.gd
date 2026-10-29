@@ -4,15 +4,15 @@ extends RefCounted
 
 const DEFAULT_PATH := "user://save.json"
 
-## Writes via a temp file so a crash mid-write cannot truncate the previous save.
+## Writes the save directly to path (rename-based overwrite is not reliable on Windows/Web).
 static func save(h: Herbarium, path: String = DEFAULT_PATH) -> Error:
-	var tmp := path + ".tmp"
-	var f := FileAccess.open(tmp, FileAccess.WRITE)
+	var f := FileAccess.open(path, FileAccess.WRITE)
 	if f == null:
 		return FileAccess.get_open_error()
 	f.store_string(JSON.stringify(h.to_dict()))
+	var err := f.get_error()
 	f.close()
-	return DirAccess.rename_absolute(tmp, path)
+	return err
 
 ## Missing, unparsable or invalid file -> fresh Herbarium. An existing file that cannot be
 ## used is first copied to path + ".bak" so it is not silently lost.
@@ -24,5 +24,7 @@ static func load_or_new(path: String = DEFAULT_PATH) -> Herbarium:
 		var h := Herbarium.from_dict(parsed)
 		if h != null:
 			return h
-	DirAccess.copy_absolute(path, path + ".bak")
+	var copy_err := DirAccess.copy_absolute(path, path + ".bak")
+	if copy_err != OK:
+		push_warning("SaveStore: could not back up unreadable save (%s)" % error_string(copy_err))
 	return Herbarium.new()
