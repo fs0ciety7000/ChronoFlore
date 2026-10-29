@@ -20,3 +20,7 @@ target/
 
 # Astro
 .astro/
+
+# Playwright
+test-results/
+playwright-report/

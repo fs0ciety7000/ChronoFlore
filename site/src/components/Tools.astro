@@ -1,0 +1,77 @@
+---
+import PlateHeading from './PlateHeading.astro';
+---
+
+<section id="outils" class="tools wrap section" data-scene="outils" aria-labelledby="outils-title">
+  <PlateHeading plate="III" id="outils-title">Trois outils</PlateHeading>
+  <ul class="tools__list">
+    <li class="tool" data-tool="filet">
+      <svg class="tool__mark" viewBox="0 0 24 24" fill="none" stroke="var(--rose-deep)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="10" cy="10" r="6"></circle>
+        <path d="M14.5 14.5 L21 21"></path>
+        <path d="M7 6 L7 14 M10 4 L10 16 M13 6 L13 14 M6 7 L14 7 M4 10 L16 10 M6 13 L14 13"></path>
+      </svg>
+      <h3>Le filet</h3>
+      <p>Pour les petites pousses timides. Approche lente, geste doux.</p>
+    </li>
+    <li class="tool" data-tool="harpon">
+      <svg class="tool__mark" viewBox="0 0 24 24" fill="none" stroke="var(--fern)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 21 L18 6"></path>
+        <path d="M14 4 L20 4 L20 10"></path>
+        <path d="M6 15 Q3 15 3 18"></path>
+      </svg>
+      <h3>Le harpon</h3>
+      <p>Pour les plantes qui filent sur l'eau ou entre les îles.</p>
+    </li>
+    <li class="tool" data-tool="fusil">
+      <svg class="tool__mark" viewBox="0 0 24 24" fill="none" stroke="var(--iris)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 12 L17 12"></path>
+        <path d="M17 9 L21 12 L17 15"></path>
+        <path d="M6 12 L6 17"></path>
+        <circle cx="12" cy="7" r="2"></circle>
+      </svg>
+      <h3>Le fusil tranquillisant</h3>
+      <p>Pour les grandes émotions qui ne veulent pas dormir.</p>
+    </li>
+  </ul>
+</section>
+
+<style>
+  .tools {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.75rem, 1.25rem + 1.5vw, 2.5rem);
+  }
+  .tools__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tool {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+  }
+  .tool__mark {
+    width: 3rem;
+    height: 3rem;
+    margin: -0.25rem 0 0.75rem -0.25rem;
+  }
+  h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--step-h3);
+    line-height: 1.15;
+  }
+  p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+</style>

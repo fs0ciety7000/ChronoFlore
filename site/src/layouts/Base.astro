@@ -1,0 +1,34 @@
+---
+import '@fontsource/fredoka/latin-600.css';
+import '@fontsource/nunito/latin-400.css';
+import '@fontsource/nunito/latin-700.css';
+import '@fontsource/fraunces/latin-400-italic.css';
+import '../styles/tokens.css';
+import '../styles/global.css';
+import { PALETTES } from '../scripts/timeline';
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={PALETTES.day.bg} />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  </head>
+  <body>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+    <slot />
+  </body>
+</html>

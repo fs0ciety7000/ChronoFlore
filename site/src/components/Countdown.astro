@@ -1,0 +1,55 @@
+---
+import Logo from './Logo.astro';
+---
+
+<section class="countdown" data-scene="countdown" aria-label="Temps restant avant le réveil">
+  <div class="countdown__inner wrap">
+    <div class="countdown__clock">
+      <span class="countdown__mark" aria-hidden="true"><Logo variant="symbol" size={72} animatedHand /></span>
+      <output id="countdown" aria-live="off">02:00:00</output>
+    </div>
+    <p>
+      Une run, c'est une nuit. Le compte à rebours ne s'arrête jamais : quand le réveil sonne,
+      l'herbier se referme.
+    </p>
+  </div>
+</section>
+
+<style>
+  .countdown {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .countdown__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 3rem;
+    padding-block: clamp(1.75rem, 1.25rem + 2vw, 2.75rem);
+  }
+  .countdown__clock {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 0.5rem + 1vw, 1.25rem);
+  }
+  .countdown__mark :global(svg) {
+    width: auto;
+    height: clamp(3rem, 2.4rem + 2.4vw, 4.5rem);
+  }
+  output {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--step-clock);
+    line-height: 1;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  p {
+    margin: 0;
+    max-width: 30rem;
+    font-size: var(--step-lead);
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+</style>

@@ -1,12 +1,29 @@
 ---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import Countdown from '../components/Countdown.astro';
+import Dream from '../components/Dream.astro';
+import Hunter from '../components/Hunter.astro';
+import Tools from '../components/Tools.astro';
+import Herbarium from '../components/Herbarium.astro';
+import Share from '../components/Share.astro';
+import Footer from '../components/Footer.astro';
 ---
-<html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ChronoFlore</title>
-  </head>
-  <body>
-    <h1>ChronoFlore</h1>
-  </body>
-</html>
+
+<Base
+  title="ChronoFlore — deux heures de sommeil, toute une flore à capturer"
+  description="Jeu d'action-arcade en développement. Lucide dans son rêve, une botaniste-chasseuse capture les plantes nées de ses émotions avant le réveil."
+>
+  <Header />
+  <main id="contenu">
+    <Hero />
+    <Countdown />
+    <Dream />
+    <Hunter />
+    <Tools />
+    <Herbarium />
+    <Share />
+  </main>
+  <Footer />
+</Base>

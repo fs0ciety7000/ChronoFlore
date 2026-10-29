@@ -1,0 +1,59 @@
+---
+// Share links are plain intents here; Task 5 adds encoded URLs, copy and Web Share.
+const links = [
+  { label: 'Bluesky', href: 'https://bsky.app/intent/compose' },
+  { label: 'X', href: 'https://x.com/intent/post' },
+  { label: 'Facebook', href: 'https://www.facebook.com/sharer/sharer.php' },
+];
+---
+
+<section id="partager" class="share wrap section" data-scene="partager" aria-labelledby="partager-title">
+  <div class="share__card">
+    <h2 id="partager-title">Fais circuler le rêve</h2>
+    <p>Le jeu pousse encore. Un lien partagé, c'est une graine.</p>
+    <div class="actions actions--center">
+      <button type="button" class="btn btn--primary" data-copy-link>Copier le lien</button>
+      {
+        links.map((l) => (
+          <a class="btn btn--soft" href={l.href} target="_blank" rel="noopener noreferrer">
+            {l.label}
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .share {
+    padding-bottom: clamp(3rem, 2rem + 4vw, 6rem);
+  }
+  .share__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    padding: clamp(2.5rem, 1.5rem + 4vw, 5rem) clamp(1.25rem, 0.5rem + 3vw, 3rem);
+    border-radius: 2rem;
+    background: var(--surface);
+    text-align: center;
+  }
+  h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--step-h2);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  p {
+    margin: 0;
+    max-width: 32rem;
+    font-size: var(--step-lead);
+    text-wrap: pretty;
+  }
+  .actions {
+    padding-top: 0.75rem;
+  }
+</style>
