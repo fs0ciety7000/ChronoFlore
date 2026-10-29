@@ -15,20 +15,37 @@ func test_island_instantiates() -> void:
 	assert_true(island.is_in_group("island"), "in group island")
 	island.free()
 
-func test_vertex_colors_enabled() -> void:
+func test_island_meshes_use_named_materials() -> void:
 	var island: Node = (load(ISLAND_SCENE) as PackedScene).instantiate()
-	tree.root.add_child(island)
-	PolyforkUtil.enable_vertex_colors(island)
-	var found := false
-	for node in island.find_children("*", "MeshInstance3D", true, false):
+	var meshes := island.find_children("*", "MeshInstance3D", true, false)
+	assert_true(meshes.size() >= 5, "island and decor meshes present")
+	var named := 0
+	for node in meshes:
 		var mi := node as MeshInstance3D
 		for s in mi.mesh.get_surface_count():
 			var mat := mi.get_active_material(s) as BaseMaterial3D
-			if mat != null and mat.vertex_color_use_as_albedo:
-				found = true
-	assert_true(found, "a MeshInstance3D uses vertex colours as albedo")
-	island.queue_free()
-	await tree.process_frame
+			if mat != null and not mat.resource_name.is_empty() and not mat.vertex_color_use_as_albedo:
+				named += 1
+	assert_true(named >= 10, "colours come from named materials (%d)" % named)
+	island.free()
+
+func test_walkable_meadow_is_large_and_pond_blocked() -> void:
+	var island: Node = (load(ISLAND_SCENE) as PackedScene).instantiate()
+	var shape: IslandShape = island.shape
+	var rect := Rect2(shape.outline[0], Vector2.ZERO)
+	for v in shape.outline:
+		rect = rect.expand(v)
+	assert_true(rect.size.x >= 30.0 and rect.size.y >= 30.0, "walkable area >= 30 x 30 m (%s)" % rect.size)
+	assert_true(shape.outline.size() >= 12 and shape.outline.size() <= 24, "12-24 outline points")
+	assert_eq(shape.obstacles.size(), 1, "pond obstacle")
+	if shape.obstacles.size() == 1:
+		var o := shape.obstacles[0]
+		var pond := island.get_node("Pond") as StaticBody3D
+		assert_near(pond.position.x, o.x, 0.01, "pond collider x matches obstacle")
+		assert_near(pond.position.z, o.y, 0.01, "pond collider z matches obstacle")
+		assert_true(shape.contains(Vector2(o.x, o.y)), "pond lies on the meadow")
+	assert_true(shape.is_clear(shape.centroid(), 2.0), "heroine start is clear of the pond")
+	island.free()
 
 func test_enable_vertex_colors_duplicates_material() -> void:
 	var original := StandardMaterial3D.new()

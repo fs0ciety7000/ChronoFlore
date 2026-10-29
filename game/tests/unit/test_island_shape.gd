@@ -38,6 +38,21 @@ func test_random_point() -> void:
 		var p := s.random_point(rng, 1.0)
 		assert_true(s.contains(p) and s.distance_to_edge(p) >= 1.0 - 0.0001, "point %s" % p)
 
+func test_obstacles() -> void:
+	var s := _square()
+	s.obstacles = PackedVector3Array([Vector3(5, 5, 2)])
+	assert_false(s.is_clear(Vector2(6, 5)), "inside the obstacle")
+	assert_false(s.is_clear(Vector2(7.5, 5), 1.0), "within the margin")
+	assert_true(s.is_clear(Vector2(8.5, 5), 1.0), "clear beyond the margin")
+	var out := s.push_out_of_obstacles(Vector2(6, 5), 0.5)
+	assert_near(out.x, 7.5, 0.0001, "pushed out radially")
+	assert_eq(s.push_out_of_obstacles(Vector2(1, 1), 0.5), Vector2(1, 1), "clear point unchanged")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 3
+	for i in 50:
+		var p := s.random_point(rng, 0.5)
+		assert_true(s.is_clear(p, 0.5), "random point avoids the obstacle %s" % p)
+
 func test_centroid() -> void:
 	var c := _square().centroid()
 	assert_near(c.x, 5.0, 0.0001, "cx")

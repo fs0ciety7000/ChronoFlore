@@ -3,6 +3,9 @@ extends Resource
 ## Walkable island contour on the XZ plane (metres; Vector2.y is world Z).
 
 @export var outline: PackedVector2Array = PackedVector2Array()
+## Circular obstacles inside the outline, one Vector3(x, z, radius) each (the pond): never a
+## spawn or landing point. Bodies are kept out of them by their colliders.
+@export var obstacles: PackedVector3Array = PackedVector3Array()
 
 func contains(p: Vector2) -> bool:
 	return Geometry2D.is_point_in_polygon(p, outline)
@@ -51,6 +54,26 @@ func clamp_inside(p: Vector2, margin: float) -> Vector2:
 		result -= outward_normal(result) * deficit
 	return result
 
+## True when p is at least margin away from every obstacle.
+func is_clear(p: Vector2, margin: float = 0.0) -> bool:
+	for o in obstacles:
+		if p.distance_to(Vector2(o.x, o.y)) < o.z + margin:
+			return false
+	return true
+
+## p, or the nearest point at margin outside the obstacle that contains it.
+func push_out_of_obstacles(p: Vector2, margin: float) -> Vector2:
+	var result := p
+	for o in obstacles:
+		var c := Vector2(o.x, o.y)
+		var d := result.distance_to(c)
+		if d < o.z + margin:
+			var dir := (result - c) / d if d > 1e-6 else (centroid() - c).normalized()
+			if dir == Vector2.ZERO:
+				dir = Vector2.RIGHT
+			result = c + dir * (o.z + margin)
+	return result
+
 func random_point(rng: RandomNumberGenerator, margin: float) -> Vector2:
 	if outline.size() < 3:
 		return Vector2.ZERO
@@ -61,9 +84,9 @@ func random_point(rng: RandomNumberGenerator, margin: float) -> Vector2:
 		hi = hi.max(v)
 	for i in 200:
 		var p := Vector2(rng.randf_range(lo.x, hi.x), rng.randf_range(lo.y, hi.y))
-		if contains(p) and distance_to_edge(p) >= margin:
+		if contains(p) and distance_to_edge(p) >= margin and is_clear(p, margin):
 			return p
-	return clamp_inside(centroid(), margin)
+	return clamp_inside(push_out_of_obstacles(centroid(), margin), margin)
 
 ## Area centroid of the polygon (vertex average if degenerate).
 func centroid() -> Vector2:
