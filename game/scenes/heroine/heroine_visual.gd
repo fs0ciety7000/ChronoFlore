@@ -2,6 +2,9 @@ extends Node3D
 ## Hand-made character visual (heroine.glb by default, ~1.1 m, faces +Z) holding the current
 ## tool in hand.R (HandTools: Net, DartGun, Harpoon). Plays Idle/Walk by movement, Swing when a
 ## tool is used and Hurt + a white blink on hits. Reused by hero2_visual.tscn with another model.
+## Between uses the net and the harpoon rest on the right shoulder (copies under a chest
+## BoneAttachment3D "Carry", so they bob with the walk); a Swing or a harpoon shot takes the
+## hand prop off the shoulder for the move, then it goes back. The dart gun stays lowered in hand.
 
 const LOCOMOTION_BLEND := 0.15
 const ONE_SHOT_BLEND := 0.05
@@ -12,6 +15,15 @@ const FLASH_ALPHA := 0.85
 ## Dart gun / harpoon shot: the prop kicks back this far (hand space, m) and settles.
 const RECOIL_DISTANCE := 0.12
 const RECOIL_TIME := 0.18
+## Props carried on the shoulder between uses (the dart gun stays in hand).
+const CARRIED: Array[StringName] = [&"Net", &"Harpoon"]
+const CARRY_BONE := "chest"
+## Shoulder carry in the visual's space (faces +Z, her right is -X): the handle starts by the
+## right hand, rests diagonally over the right shoulder, the hoop up behind the head.
+const CARRY_GRIP := Vector3(-0.18, 0.30, 0.12)
+const CARRY_DIR := Vector3(-0.12, 0.85, -0.5)
+## After a harpoon shot the harpoon stays in hand this long before going back on the shoulder.
+const SHOT_HOLD := 0.35
 ## Hand prop shown for each tool effect; the net is the default.
 const TOOL_PROPS := {
 	ToolData.Effect.CAPTURE: ^"Net",
@@ -29,6 +41,9 @@ var _flash: StandardMaterial3D
 var _blink: Tween
 var _recoil: Tween
 var _shots: int = 0
+var _shown: StringName = &"Net"
+var _hand_hold_left: float = 0.0
+var _carry_tools: Node3D
 @onready var _anim: AnimationPlayer = $Model/AnimationPlayer
 @onready var _mesh: MeshInstance3D = get_node(body_mesh_path)
 @onready var _hand_tools: Node3D = get_node_or_null(hand_tools_path)
@@ -42,6 +57,69 @@ func _ready() -> void:
 	_mesh.material_overlay = _flash
 	_anim.animation_finished.connect(_on_animation_finished)
 	_anim.play(&"Idle")
+	_build_carry()
+	_update_props()
+
+func _process(delta: float) -> void:
+	_hand_hold_left = maxf(_hand_hold_left - delta, 0.0)
+	_update_props()
+
+## Carry pose of a prop whose handle runs along its local +Y (net, harpoon), in the visual's
+## space; the ring / tip faces up-forward so the iso camera sees it.
+static func carry_transform() -> Transform3D:
+	var y := CARRY_DIR.normalized()
+	var x := (Vector3.RIGHT - y * y.dot(Vector3.RIGHT)).normalized()
+	var z := x.cross(y)
+	return Transform3D(Basis(x, y, z), CARRY_GRIP)
+
+## Copies the carried props under a chest BoneAttachment3D, placed at carry_transform().
+func _build_carry() -> void:
+	if _hand_tools == null:
+		return
+	var skeleton := _hand_tools.get_parent().get_parent() as Skeleton3D
+	if skeleton == null:
+		return
+	var bone := skeleton.find_bone(CARRY_BONE)
+	if bone < 0:
+		return
+	var attach := BoneAttachment3D.new()
+	attach.name = "Carry"
+	attach.bone_name = CARRY_BONE
+	skeleton.add_child(attach)
+	_carry_tools = Node3D.new()
+	_carry_tools.name = "CarryTools"
+	attach.add_child(_carry_tools)
+	# The attachment follows the chest's pose; place the props from the chest's rest frame.
+	var skel_in_visual := global_transform.affine_inverse() * skeleton.global_transform
+	var chest := skel_in_visual * skeleton.get_bone_global_rest(bone)
+	var local := chest.affine_inverse() * carry_transform()
+	for prop_name in CARRIED:
+		var src := _hand_tools.get_node_or_null(NodePath(prop_name)) as Node3D
+		if src == null:
+			continue
+		var copy := src.duplicate() as Node3D
+		copy.transform = local
+		copy.visible = false
+		_carry_tools.add_child(copy)
+
+## True while the shown prop rests on the shoulder (no swing, no harpoon shot under way).
+func is_carrying() -> bool:
+	return _carry_tools != null and _shown in CARRIED and _hand_hold_left <= 0.0 \
+			and not (_anim.is_playing() and _anim.current_animation == &"Swing")
+
+## The shoulder copy of a carried prop ("Net", "Harpoon"), or null.
+func carried_prop(prop_name: StringName) -> Node3D:
+	return _carry_tools.get_node_or_null(NodePath(prop_name)) as Node3D if _carry_tools != null else null
+
+func _update_props() -> void:
+	if _hand_tools == null:
+		return
+	var carrying := is_carrying()
+	for prop in _hand_tools.get_children():
+		(prop as Node3D).visible = StringName(prop.name) == _shown and not carrying
+	if _carry_tools != null:
+		for prop in _carry_tools.get_children():
+			(prop as Node3D).visible = StringName(prop.name) == _shown and carrying
 
 func animation_player() -> AnimationPlayer:
 	return _anim
@@ -58,26 +136,26 @@ func set_tool(tool: ToolData) -> void:
 	if _hand_tools == null:
 		return
 	var shown: NodePath = TOOL_PROPS[tool.effect] if tool != null else ^"Net"
-	for prop in _hand_tools.get_children():
-		(prop as Node3D).visible = NodePath(prop.name) == shown
+	_shown = StringName(str(shown))
+	_hand_hold_left = 0.0
+	_update_props()
 
-## Name of the visible hand prop ("" if none).
+## Name of the current tool's prop, in hand or on the shoulder ("" if none).
 func shown_tool_prop() -> String:
-	if _hand_tools != null:
-		for prop in _hand_tools.get_children():
-			if (prop as Node3D).visible:
-				return prop.name
-	return ""
+	return String(_shown) if _hand_tools != null else ""
 
-## Net/tool swing (wired to ToolBelt.tool_used by Heroine).
+## Net/tool swing (wired to ToolBelt.tool_used by Heroine): off the shoulder into the sweep.
 func play_swing() -> void:
 	_play_one_shot(&"Swing")
+	_update_props()
 
 ## Dart gun / harpoon shot: a short recoil of the hand prop instead of the net swing.
 func play_shot() -> void:
 	_shots += 1
 	if _hand_tools == null:
 		return
+	_hand_hold_left = SHOT_HOLD
+	_update_props()
 	if _recoil != null:
 		_recoil.kill()
 	_hand_tools.position = Vector3.ZERO
@@ -116,6 +194,7 @@ func _is_one_shot_playing() -> bool:
 func _on_animation_finished(anim_name: StringName) -> void:
 	if anim_name in ONE_SHOTS:
 		_play_locomotion()
+	_update_props()
 
 func _set_flash(v: float) -> void:
 	_flash.albedo_color.a = v * FLASH_ALPHA
