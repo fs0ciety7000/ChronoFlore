@@ -17,9 +17,6 @@ var _swell_left: float = 0.0
 func reset() -> void:
 	_swell_left = 0.0
 
-func is_telegraphing() -> bool:
-	return _swell_left > 0.0
-
 func faces_threat() -> bool:
 	return true
 

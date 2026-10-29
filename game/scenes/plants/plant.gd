@@ -9,8 +9,6 @@ enum State { WANDER, ALERT, FLEE, PANIC, BURROWED, EMERGING, CAPTURED, ESCAPED }
 signal captured(plant: Plant)
 signal escaped(plant: Plant)
 signal fell_asleep(plant: Plant) ## relays Torpor.fell_asleep
-## A hostile launched a telegraphed attack (thorn, vine ring, spore cloud).
-signal hazard_spawned(hazard: Hazard)
 
 ## Heroine closer than this alerts a wandering plant: a careful approach to ~4 m is possible.
 const ALERT_RADIUS := 4.0
@@ -225,19 +223,7 @@ func spawn_hazard(hazard: Hazard, at: Vector3, telegraph: float) -> Hazard:
 	var parent := get_parent() if get_parent() != null else self
 	parent.add_child(hazard)
 	hazard.setup(at, telegraph)
-	hazard_spawned.emit(hazard)
 	return hazard
-
-## True while a hostile announces its attack (Croque's wind-up, Champi's swelling).
-func is_telegraphing() -> bool:
-	return _behavior != null and _behavior.is_telegraphing()
-
-func is_charging() -> bool:
-	return _behavior != null and _behavior.is_charging()
-
-## The ground sign owned by the behavior (Croque's lane), or null.
-func telegraph_mark() -> GroundMark:
-	return _behavior.telegraph_mark() if _behavior != null else null
 
 ## Adds a world-placed effect (ground sign) that dies with the plant but does not follow it.
 func add_effect(node: Node3D) -> void:

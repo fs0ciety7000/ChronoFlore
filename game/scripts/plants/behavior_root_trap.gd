@@ -18,9 +18,6 @@ var _pause: float = 0.0
 func faces_threat() -> bool:
 	return true
 
-func is_telegraphing() -> bool:
-	return _pause > 0.0
-
 func desired_velocity(plant: Plant, delta: float) -> Vector2:
 	if not plant.can_attack():
 		_pause = 0.0

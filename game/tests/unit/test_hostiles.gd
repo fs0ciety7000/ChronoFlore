@@ -57,6 +57,15 @@ func _lane(plant: Plant) -> GroundMark:
 			return child
 	return null
 
+## Every hazard the plants spawned so far (next to them, under the test root), oldest first.
+func _hazards() -> Array[Hazard]:
+	var out: Array[Hazard] = []
+	if _root != null:
+		for child in _root.get_children():
+			if child is Hazard:
+				out.append(child)
+	return out
+
 func _sleep(plant: Plant) -> void:
 	for i in Torpor.SLEEP_CHARGES:
 		plant.hit_by_tool(ToolData.Effect.TORPOR)
@@ -157,24 +166,23 @@ func test_charger_telegraphs_then_charges() -> void:
 	var plant := _spawn("croque_colere", Vector2(10, 10))
 	var threat := Vector2(14, 10)
 	var frames := 0
-	while not plant.is_telegraphing() and frames < 240:
+	while _lane(plant) == null and frames < 240:
 		plant.set_threat(threat, Vector2(-1, 0))
 		plant.step(DT)
 		frames += 1
-	assert_true(plant.is_telegraphing(), "winds up when the heroine is within 6 m")
-	assert_true(plant.telegraph_mark() != null and plant.telegraph_mark().visible, "lane shown on the ground")
+	assert_true(_lane(plant) != null and _lane(plant).visible, "winds up over a lane when the heroine is within 6 m")
 	var start := _xz(plant)
 	threat = Vector2(14, 16) # the heroine side-steps: the charge keeps its line
-	var still := 0
-	while plant.is_telegraphing() and still < 240:
+	var still := 0 # wind-up frames, plus the first charge frame that moves
+	while _xz(plant).distance_to(start) < 1e-4 and still < 240:
 		plant.set_threat(threat, Vector2(-1, 0))
 		plant.step(DT)
 		still += 1
-		if plant.is_telegraphing() and still % 10 == 0:
-			assert_true(_xz(plant).distance_to(start) < 1e-4, "still during the wind-up")
-	assert_true(still * DT >= Hazard.MIN_TELEGRAPH, "wind-up lasts >= 0.6 s (%.2f)" % (still * DT))
-	assert_near(still * DT, BehaviorCharger.WINDUP_TIME, 2.0 * DT, "wind-up lasts 0.8 s")
-	for i in int(0.2 / DT):
+	var windup := (still - 1) * DT
+	assert_true(windup >= Hazard.MIN_TELEGRAPH, "still for >= 0.6 s before charging (%.2f)" % windup)
+	assert_near(windup, BehaviorCharger.WINDUP_TIME, 2.0 * DT, "wind-up lasts 0.8 s")
+	assert_true(_lane(plant) != null, "the lane stays during the charge")
+	for i in int(0.2 / DT) - 1:
 		plant.set_threat(threat, Vector2(-1, 0))
 		plant.step(DT)
 	var d := _xz(plant) - start
@@ -183,7 +191,7 @@ func test_charger_telegraphs_then_charges() -> void:
 	for i in int(0.6 / DT):
 		plant.set_threat(threat, Vector2(-1, 0))
 		plant.step(DT)
-	assert_false(plant.is_charging(), "charge over")
+	assert_true(_lane(plant) == null, "charge over: lane gone")
 	assert_near((_xz(plant) - start).x, BehaviorCharger.CHARGE_DISTANCE, 0.3, "charge covers 6 m")
 	_cleanup()
 
@@ -197,8 +205,14 @@ func test_charger_hit_stops_charge() -> void:
 		frames += 1
 	assert_eq(heroine.lucidity.petals, 4, "the charge costs one petal")
 	assert_true(plant.is_stunned(), "croque stunned after its hit")
-	assert_false(plant.is_charging(), "the charge stops on the hit")
-	assert_false(plant.is_telegraphing(), "no wind-up while stunned")
+	assert_true(_lane(plant) == null, "the charge stops on the hit")
+	var at := _xz(plant)
+	for i in int(0.5 / DT):
+		plant.set_threat(_xz(heroine), Vector2(-1, 0))
+		plant.step(DT)
+	assert_true(plant.is_stunned(), "still stunned")
+	assert_true(_lane(plant) == null, "no wind-up while stunned")
+	assert_true(_xz(plant).distance_to(at) < 1e-4, "no move while stunned")
 	_cleanup()
 
 func test_charger_contact_hurts_only_during_charge() -> void:
@@ -229,7 +243,7 @@ func test_charger_asleep_never_charges() -> void:
 	for i in 120:
 		plant.set_threat(Vector2(13, 10), Vector2(-1, 0))
 		plant.step(DT)
-	assert_false(plant.is_telegraphing() or plant.is_charging(), "a sleeping croque does not attack")
+	assert_true(_lane(plant) == null, "a sleeping croque does not attack")
 	assert_true(_xz(plant).distance_to(Vector2(10, 10)) < 1e-4, "and does not move")
 	_cleanup()
 
@@ -261,11 +275,11 @@ func test_root_trap_casts_vine_ring_under_heroine() -> void:
 	var heroine := await _heroine(Vector2(15, 10))
 	var plant := _spawn("lierre_jalousie", Vector2(10, 10))
 	var rings: Array[Hazard] = []
-	plant.hazard_spawned.connect(func(h: Hazard) -> void: rings.append(h))
 	var t := 0.0
 	while rings.is_empty() and t < 5.0:
 		plant.set_threat(_xz(heroine), Vector2(-1, 0))
 		plant.step(DT)
+		rings = _hazards()
 		t += DT
 	assert_eq(rings.size(), 1, "casts a vine ring")
 	if rings.is_empty():
@@ -280,6 +294,7 @@ func test_root_trap_casts_vine_ring_under_heroine() -> void:
 	for i in int(11.0 / DT):
 		plant.set_threat(Vector2(15, 10), Vector2(-1, 0))
 		plant.step(DT)
+	rings = _hazards()
 	assert_eq(rings.size(), 3, "one ring every 5 s (%d)" % rings.size())
 	_cleanup()
 
@@ -294,13 +309,14 @@ func test_spitter_shadow_precedes_impact() -> void:
 	var shown_at: Array[float] = []
 	var struck_at: Array[float] = []
 	var t := [0.0]
-	plant.hazard_spawned.connect(func(h: Hazard) -> void:
-		thorns.append(h)
-		shown_at.append(t[0] if h.has_ground_mark() else INF)
-		h.struck.connect(func(_target: Node3D) -> void: struck_at.append(t[0])))
 	while struck_at.is_empty() and t[0] < 6.0:
 		plant.set_threat(_xz(heroine), Vector2(-1, 0))
 		plant.step(DT)
+		for h in _hazards():
+			if not thorns.has(h): # just spat
+				thorns.append(h)
+				shown_at.append(t[0] if h.has_ground_mark() else INF)
+				h.struck.connect(func(_target: Node3D) -> void: struck_at.append(t[0]))
 		for h in thorns:
 			if is_instance_valid(h) and not h.is_queued_for_deletion():
 				h.tick(DT)
@@ -317,16 +333,14 @@ func test_spitter_shadow_precedes_impact() -> void:
 
 func test_spitter_range_and_rhythm() -> void:
 	var plant := _spawn("ortie_regret", Vector2(10, 10))
-	var count: Array[int] = [0]
-	plant.hazard_spawned.connect(func(_h: Hazard) -> void: count[0] += 1)
 	for i in int(4.0 / DT):
 		plant.set_threat(Vector2(10 + BehaviorSpitter.RANGE + 0.5, 10), Vector2(-1, 0))
 		plant.step(DT)
-	assert_eq(count[0], 0, "no thorn beyond 7 m")
+	assert_eq(_hazards().size(), 0, "no thorn beyond 7 m")
 	for i in int(7.0 / DT):
 		plant.set_threat(Vector2(16, 10), Vector2(-1, 0))
 		plant.step(DT)
-	assert_eq(count[0], 3, "one thorn every 3 s within range (%d)" % count[0])
+	assert_eq(_hazards().size(), 3, "one thorn every 3 s within range (%d)" % _hazards().size())
 	assert_near(BehaviorSpitter.RANGE, 7.0, 1e-6, "range 7 m")
 	assert_near(BehaviorSpitter.COOLDOWN, 3.0, 1e-6, "every 3 s")
 	_cleanup()
@@ -358,11 +372,11 @@ func test_spore_slows_no_petal() -> void:
 	var heroine := await _heroine(Vector2(14, 10))
 	var plant := _spawn("champi_panique", Vector2(10, 10))
 	var clouds: Array[Hazard] = []
-	plant.hazard_spawned.connect(func(h: Hazard) -> void: clouds.append(h))
 	var t := 0.0
 	while clouds.is_empty() and t < 5.0:
 		plant.set_threat(_xz(heroine), Vector2(-1, 0))
 		plant.step(DT)
+		clouds = _hazards()
 		t += DT
 	assert_eq(clouds.size(), 1, "swells into a spore cloud")
 	if clouds.is_empty():
@@ -370,7 +384,7 @@ func test_spore_slows_no_petal() -> void:
 		return
 	var cloud := clouds[0]
 	assert_true(cloud is SporeCloud, "it is a spore cloud")
-	assert_true(plant.is_telegraphing(), "swells (telegraph) before bursting")
+	assert_true(cloud.is_telegraphing(), "swells (telegraph) before bursting")
 	assert_near(cloud.radius, 2.5, 1e-6, "cloud radius 2.5 m")
 	assert_true(cloud.telegraph_time >= Hazard.MIN_TELEGRAPH, "swelling announced >= 0.6 s")
 	var pos := _xz(plant)

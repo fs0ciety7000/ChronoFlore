@@ -61,18 +61,6 @@ func net_window(_plant: Plant) -> bool:
 func hover_height(_plant: Plant) -> float:
 	return 0.0
 
-## Hostiles: true while an attack is announced on the ground (wind-up, swelling).
-func is_telegraphing() -> bool:
-	return false
-
-## Croque-Colère: true while charging.
-func is_charging() -> bool:
-	return false
-
-## The ground sign the behavior owns (charge lane), or null.
-func telegraph_mark() -> GroundMark:
-	return null
-
 ## Hostiles: true while touching the heroine costs her a petal (Croque: only its charge).
 func contact_hurts() -> bool:
 	return true

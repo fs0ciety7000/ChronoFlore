@@ -29,15 +29,6 @@ var _disabled: bool = false ## asleep or pinned on the last tick
 func reset() -> void:
 	_end_attack()
 
-func is_telegraphing() -> bool:
-	return _phase == Phase.WINDUP
-
-func is_charging() -> bool:
-	return _phase == Phase.CHARGE
-
-func telegraph_mark() -> GroundMark:
-	return _lane
-
 func contact_hurts() -> bool:
 	return _phase == Phase.CHARGE
 
