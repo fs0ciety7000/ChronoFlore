@@ -153,3 +153,34 @@ func test_end_night_freezes_after_the_frame() -> void:
 	assert_eq(s.get_node("Fade").process_mode, Node.PROCESS_MODE_INHERIT, "fade keeps running")
 	assert_true(s.ended, "ended")
 	_end(s)
+
+## I4: the Web build has no shader cache; the ground-sign shader and the omni light pass are
+## drawn invisibly at night start, then freed.
+func test_night_start_prewarms_shaders() -> void:
+	var s: NightSession = await _session()
+	var nodes := s.prewarm_nodes()
+	assert_eq(nodes.size(), 3, "a disc, a lane and a light")
+	var marks := 0
+	for node in nodes:
+		if node is GroundMark:
+			marks += 1
+			assert_near(float((node as GroundMark).material().get_shader_parameter("opacity")), 0.0, 1e-6, "invisible sign")
+			assert_true(node.visible, "drawn (a hidden node compiles nothing)")
+		elif node is OmniLight3D:
+			assert_eq((node as OmniLight3D).light_color, Color.BLACK, "black light: adds nothing")
+			assert_true(node.visible, "light on")
+	assert_eq(marks, 2, "disc and lane")
+	for i in NightSession.PREWARM_FRAMES + 1:
+		await tree.process_frame
+	assert_eq(s.prewarm_nodes().size(), 0, "freed after a few frames")
+	assert_true(s.get_node_or_null("PrewarmLight") == null or s.get_node("PrewarmLight").is_queued_for_deletion(), "light gone")
+	_end(s)
+
+func test_plant_rim_variant_on_from_the_start() -> void:
+	var s: NightSession = await _session()
+	var plant := s.live_plants()[0]
+	var model := plant.get_node("Visual").get_child(0) as PlantModelVisual
+	for mat in model.materials():
+		assert_true(mat.rim_enabled, "rim on at 0 h (no recompile at 2 h)")
+		assert_near(mat.rim, 0.0, 1e-6, "but no rim by day")
+	_end(s)

@@ -95,7 +95,7 @@ func set_glow(value: float) -> void:
 		var tint := night * (OWN_GLOW_TINT if mat.resource_name.begins_with(OWN_GLOW_PREFIX) else 1.0)
 		mat.emission = mat.albedo_color.lerp(_night_tint(mat.albedo_color), tint)
 		mat.emission_energy_multiplier = maxf(_floors[i], value * Plant.GLOW_ENERGY)
-		mat.rim_enabled = night > 0.0
+		mat.rim_enabled = true # always on (rim 0 by day): no shader recompile when the night falls
 		mat.rim = NIGHT_RIM * night
 		mat.rim_tint = NIGHT_RIM_TINT
 	for i in _lights.size():

@@ -30,6 +30,11 @@ const DAWN_FADE_COLOR := Color(1.0, 0.82, 0.88)
 const WAKE_FADE_COLOR := Color(1.0, 1.0, 1.0)
 const HURT_FLASH_COLOR := Color(1.0, 0.55, 0.6, 0.35)
 const HURT_FLASH_DURATION := 0.25
+## Shader pre-warm at night start (Web: no shader cache, long WebGL compiles): a disc and a lane
+## ground sign at zero opacity plus a black omni light (the Lumiole's light pass) are drawn
+## on screen for this many frames, then freed, so the first hazard or night light never stalls.
+const PREWARM_FRAMES := 3
+const PREWARM_LIGHT_RANGE := 30.0
 
 ## Tests set this to false to stay on the night scene after it ends.
 @export var auto_change_scene := true
@@ -60,6 +65,8 @@ var _spawn_timer: float = 0.0
 var _plant_glow: float = 0.0
 var _flash_tween: Tween
 var _last_xz: PackedVector2Array = PackedVector2Array() ## players' XZ at the last leash check
+var _prewarm: Array[Node3D] = []
+var _prewarm_left: int = 0
 
 func _ready() -> void:
 	_rng.randomize()
@@ -83,7 +90,42 @@ func _ready() -> void:
 	camera.snap_to_target()
 
 	_fade.color = Color(WAKE_FADE_COLOR, 0.0)
+	_start_prewarm()
 	spawn_tick()
+
+func _process(_delta: float) -> void:
+	if _prewarm_left > 0:
+		_prewarm_left -= 1
+		if _prewarm_left == 0:
+			for node in _prewarm:
+				if is_instance_valid(node):
+					node.queue_free()
+			_prewarm.clear()
+
+## Invisible, on-screen copies of the shaders that would otherwise compile mid-night.
+func _start_prewarm() -> void:
+	var c := island.shape.centroid()
+	var at := Vector3(c.x, island.ground_height(), c.y)
+	var disc := GroundMark.disc(1.0, Color.WHITE, Color.WHITE)
+	var lane := GroundMark.lane(2.0, 1.0, Color.WHITE, Color.WHITE)
+	for mark in [disc, lane]:
+		mark.set_opacity(0.0)
+	var light := OmniLight3D.new()
+	light.light_color = Color.BLACK # a real light instance that adds exactly nothing
+	light.omni_range = PREWARM_LIGHT_RANGE
+	light.position = Vector3.UP
+	disc.name = "PrewarmDisc"
+	lane.name = "PrewarmLane"
+	light.name = "PrewarmLight"
+	for node: Node3D in [disc, lane, light]:
+		add_child(node)
+		node.global_position += at
+		_prewarm.append(node)
+	_prewarm_left = PREWARM_FRAMES
+
+## Pre-warm nodes still alive (tests).
+func prewarm_nodes() -> Array[Node3D]:
+	return _prewarm
 
 func _physics_process(delta: float) -> void:
 	if ended:

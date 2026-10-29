@@ -205,7 +205,8 @@ func test_night_glow_keeps_hue_and_adds_rim() -> void:
 	v.set_glow(0.0)
 	for mat in v.materials():
 		assert_true(mat.emission.is_equal_approx(mat.albedo_color), "%s day emission is the albedo" % mat.resource_name)
-		assert_false(mat.rim_enabled, "%s no rim by day" % mat.resource_name)
+		assert_true(mat.rim_enabled, "%s rim variant compiled from the start" % mat.resource_name)
+		assert_near(mat.rim, 0.0, 1e-6, "%s no rim by day" % mat.resource_name)
 	v.set_glow(1.0)
 	var deeper := 0
 	for mat in v.materials():
