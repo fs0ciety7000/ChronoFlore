@@ -258,7 +258,7 @@ func test_melancolys_hides_in_pond_and_ignores_tools() -> void:
 	plant.torpor.add_dart()
 	assert_false(plant.hit_by_tool(ToolData.Effect.CAPTURE), "net ignored even when slowed")
 	assert_true(plant.state != Plant.State.CAPTURED, "not captured in the water")
-	assert_false(Projectile._can_hit(plant), "projectiles fly over the hidden lily")
+	assert_false(plant.is_targetable(), "projectiles fly over the hidden lily")
 	var hidden_frames := 1
 	while plant.is_hidden() and hidden_frames < 600:
 		plant.set_threat(heroine, Vector2(1, 0))

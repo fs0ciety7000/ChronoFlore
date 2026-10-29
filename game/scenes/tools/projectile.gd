@@ -35,19 +35,15 @@ func step(delta: float) -> void:
 		var here := Vector2(global_position.x, global_position.z)
 		for node in get_tree().get_nodes_in_group("plants"):
 			var plant := node as Plant
-			if plant != null and _can_hit(plant) and plant.xz().distance_to(here) <= HIT_RADIUS:
+			if plant != null and plant.is_targetable() and plant.xz().distance_to(here) <= HIT_RADIUS:
 				_hit(plant)
 				return
 	if travelled >= tool_data.max_range - 1e-6:
 		_finish()
 
-static func _can_hit(plant: Plant) -> bool:
-	return plant.state != Plant.State.BURROWED and plant.state != Plant.State.CAPTURED \
-		and plant.state != Plant.State.ESCAPED and not plant.is_hidden()
-
 func _on_body_entered(body: Node3D) -> void:
 	var plant := body as Plant
-	if plant != null and not _done and _can_hit(plant):
+	if plant != null and not _done and plant.is_targetable():
 		_hit(plant)
 
 func _hit(plant: Plant) -> void:

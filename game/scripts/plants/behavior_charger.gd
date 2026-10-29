@@ -78,7 +78,7 @@ func _start_windup(plant: Plant, dir: Vector2) -> void:
 	_lane = GroundMark.lane(CHARGE_DISTANCE, LANE_WIDTH, LANE_RIM, LANE_FILL)
 	_lane.name = "ChargeLane"
 	plant.add_effect(_lane)
-	var p := plant.global_position if plant.is_inside_tree() else plant.position
+	var p := plant.ground_point()
 	if _lane.is_inside_tree():
 		_lane.global_position = p
 	else:

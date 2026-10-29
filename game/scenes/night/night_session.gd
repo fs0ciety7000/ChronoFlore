@@ -287,8 +287,7 @@ func live_plants() -> Array[Plant]:
 	var result: Array[Plant] = []
 	for child in plants_root.get_children():
 		var plant := child as Plant
-		if plant != null and not plant.is_queued_for_deletion() \
-				and plant.state != Plant.State.CAPTURED and plant.state != Plant.State.ESCAPED:
+		if plant != null and plant.is_in_play():
 			result.append(plant)
 	return result
 

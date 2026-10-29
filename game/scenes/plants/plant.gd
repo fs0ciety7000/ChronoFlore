@@ -186,9 +186,21 @@ func aim_dir() -> Vector2:
 func panic_time() -> float:
 	return _panic_time
 
+## Position on the ground (global in the tree; local before it, as tests and setup use).
+func ground_point() -> Vector3:
+	return global_position if is_inside_tree() else position
+
 func xz() -> Vector2:
-	var p := global_position if is_inside_tree() else position
+	var p := ground_point()
 	return Vector2(p.x, p.z)
+
+## Still in play: not captured, escaping or being freed (it may be burrowed or hidden).
+func is_in_play() -> bool:
+	return not is_queued_for_deletion() and state != State.CAPTURED and state != State.ESCAPED
+
+## In play and reachable by the tools: not burrowed nor hidden in the pond.
+func is_targetable() -> bool:
+	return is_in_play() and state != State.BURROWED and not is_hidden()
 
 ## Unit flee direction from the heroine (towards the edge in PANIC); zero without a threat.
 func flee_direction() -> Vector2:

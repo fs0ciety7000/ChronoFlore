@@ -391,3 +391,19 @@ func test_glow_set_before_setup_is_applied() -> void:
 	assert_true(total > 0, "visual has materials")
 	assert_eq(lit, total, "glow stored before setup is reapplied to the built visual")
 	_cleanup()
+
+## M5: one predicate for "in play" and "reachable by the tools".
+func test_targetable_and_in_play() -> void:
+	var plant := _spawn("revette", Vector2(10, 10))
+	assert_true(plant.is_in_play() and plant.is_targetable(), "wandering: in play, targetable")
+	assert_eq(plant.ground_point(), plant.global_position, "ground point in the tree")
+	plant.state = Plant.State.BURROWED
+	assert_true(plant.is_in_play(), "burrowed: still in play")
+	assert_false(plant.is_targetable(), "burrowed: not targetable")
+	plant.state = Plant.State.ESCAPED
+	assert_false(plant.is_in_play() or plant.is_targetable(), "escaped: out of play")
+	var free := (load(PLANT_SCENE) as PackedScene).instantiate() as Plant
+	free.position = Vector3(3, 0, 4)
+	assert_eq(free.ground_point(), Vector3(3, 0, 4), "outside the tree: local position")
+	free.free()
+	_cleanup()

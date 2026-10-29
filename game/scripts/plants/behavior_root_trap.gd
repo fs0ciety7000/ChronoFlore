@@ -29,7 +29,7 @@ func desired_velocity(plant: Plant, delta: float) -> Vector2:
 	if _cooldown <= 0.0 and dist <= CAST_RANGE:
 		_cooldown = COOLDOWN
 		_pause = CAST_PAUSE
-		var y := plant.global_position.y if plant.is_inside_tree() else plant.position.y
+		var y := plant.ground_point().y
 		plant.spawn_hazard(VINE_RING_SCENE.instantiate() as Hazard, Vector3(threat.x, y, threat.y), VineRing.TELEGRAPH)
 		plant.play_attack(VineRing.TELEGRAPH)
 	if _pause > 0.0 or dist <= KEEP_DISTANCE:

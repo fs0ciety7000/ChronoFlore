@@ -32,7 +32,7 @@ func desired_velocity(plant: Plant, delta: float) -> Vector2:
 	if _cooldown <= 0.0 and plant.xz().distance_to(threat) <= TRIGGER_DISTANCE:
 		_cooldown = COOLDOWN
 		_swell_left = SWELL_TIME
-		var base := plant.global_position if plant.is_inside_tree() else plant.position
+		var base := plant.ground_point()
 		plant.spawn_hazard(SPORE_SCENE.instantiate() as Hazard, base, SWELL_TIME)
 		plant.play_attack(SWELL_TIME)
 		return Vector2.ZERO

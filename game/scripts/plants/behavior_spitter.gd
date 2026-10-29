@@ -25,7 +25,7 @@ func desired_velocity(plant: Plant, delta: float) -> Vector2:
 	var target := plant.threat_xz()
 	if _cooldown <= 0.0 and from.distance_to(target) <= RANGE:
 		_cooldown = COOLDOWN
-		var base := plant.global_position if plant.is_inside_tree() else plant.position
+		var base := plant.ground_point()
 		var thorn := THORN_SCENE.instantiate() as ThornProjectile
 		plant.spawn_hazard(thorn, Vector3(target.x, base.y, target.y), ThornProjectile.FLIGHT_TIME)
 		thorn.set_origin(base)
