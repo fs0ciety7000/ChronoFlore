@@ -1,7 +1,8 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+# npm ci installs devDependencies too (needed by `astro build`).
+RUN npm ci
 COPY . .
 RUN npm run build
 
