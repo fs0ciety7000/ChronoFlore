@@ -8,9 +8,12 @@ const SELECT_SCENE := "res://scenes/ui/character_select.tscn"
 @onready var herbarium_button: Button = $Center/Box/HerbariumButton
 @onready var quit_button: Button = $Center/Box/QuitButton
 @onready var flower: ClockFlower = $Center/Box/Flower
+## Cream notice shown when the browser keeps no save (private window, blocked storage).
+@onready var save_notice: Control = $SaveNotice
 
 func _ready() -> void:
 	quit_button.visible = not OS.has_feature("web")
+	save_notice.visible = not GameState.persistence_available()
 	flower.show_label = false
 	flower.custom_minimum_size.y = 150.0
 	flower.set_state(0.12, Lucidity.MAX_PETALS, Lucidity.MAX_PETALS)

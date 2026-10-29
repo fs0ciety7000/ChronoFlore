@@ -24,6 +24,15 @@ func _ready() -> void:
 		debug_minutes_multiplier = parse_multiplier(_debug_multiplier_arg())
 	load_save()
 
+## Tests set this to true/false to stand in for OS.is_userfs_persistent(); null reads the OS.
+var persistence_override: Variant = null
+
+## False when user:// is not persistent (Web without IndexedDB): progress is lost on close.
+func persistence_available() -> bool:
+	if persistence_override is bool:
+		return persistence_override
+	return OS.is_userfs_persistent()
+
 ## Minutes a capture of `species` adds to the clock (debug multiplier applied in debug builds).
 func capture_minutes(species: PlantSpecies) -> int:
 	var minutes := species.minutes_reward()

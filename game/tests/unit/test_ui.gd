@@ -114,6 +114,20 @@ func test_title_focus_and_web_quit() -> void:
 	assert_eq(t.quit_button.visible, not OS.has_feature("web"), "quit hidden on web only")
 	t.free()
 
+## M12: without persistent storage the title says so in a small cream notice.
+func test_title_save_notice() -> void:
+	GameState.persistence_override = false
+	var t := await _add("res://scenes/ui/title.tscn")
+	assert_true(t.save_notice.visible, "notice shown without persistence")
+	assert_true((t.save_notice.get_node("Label") as Label).text.contains("Sauvegarde indisponible"), "notice text")
+	t.free()
+	GameState.persistence_override = true
+	var t2 := await _add("res://scenes/ui/title.tscn")
+	assert_false(t2.save_notice.visible, "no notice when saves persist")
+	t2.free()
+	GameState.persistence_override = null
+	assert_eq(GameState.persistence_available(), OS.is_userfs_persistent(), "reads the OS by default")
+
 func test_hud_toast_and_tool() -> void:
 	_begin()
 	var hud := await _add("res://scenes/ui/hud.tscn")
