@@ -1,6 +1,6 @@
 # ChronoFlore — Bestiaire de plantes faites maison : design
 
-Date : 2026-10-29 · Statut : principe validé par l'utilisateur, liste détaillée à confirmer · Complète `2026-10-29-tranche-verticale-design.md` (§5.4)
+Date : 2026-10-29 · Statut : validé par l'utilisateur · Complète `2026-10-29-tranche-verticale-design.md` (§5.4)
 
 ## 1. Intention
 
