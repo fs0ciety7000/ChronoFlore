@@ -5,14 +5,26 @@ import { expect, test } from '@playwright/test';
 test('poster.webp is a WebP of at most 200 KB', () => {
   const file = 'public/poster.webp';
   expect(statSync(file).size).toBeLessThanOrEqual(200 * 1024);
-  const head = readFileSync(file).subarray(0, 12);
+  const bytes = readFileSync(file);
+  const head = bytes.subarray(0, 12);
   expect(head.toString('ascii', 0, 4)).toBe('RIFF');
   expect(head.toString('ascii', 8, 12)).toBe('WEBP');
 });
 
+test('poster.webp dimensions match the hero <img> width/height', () => {
+  const hero = readFileSync('src/components/Hero.astro', 'utf8');
+  const img = hero.match(/<img[^>]*src="\/poster\.webp"[^>]*>/s)?.[0] ?? '';
+  const w = Number(img.match(/width="(\d+)"/)?.[1]);
+  const h = Number(img.match(/height="(\d+)"/)?.[1]);
+  const b = readFileSync('public/poster.webp');
+  expect(b.toString('ascii', 12, 16)).toBe('VP8X'); // alpha: extended format
+  expect(1 + b.readUIntLE(24, 3)).toBe(w);
+  expect(1 + b.readUIntLE(27, 3)).toBe(h);
+});
+
 test('og.png is exactly 1200x630', () => {
   const png = readFileSync('public/og.png');
-  expect(png.subarray(1, 4).toString('ascii')).toBe('PNG');
+  expect(png.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toBe(true);
   expect(png.readUInt32BE(16)).toBe(1200);
   expect(png.readUInt32BE(20)).toBe(630);
 });

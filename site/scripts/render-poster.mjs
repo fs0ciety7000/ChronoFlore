@@ -50,6 +50,7 @@ async function captureIsland(browser, progress) {
     await page.addInitScript(() => Object.defineProperty(window, 'scrollY', { get: () => 0, configurable: true }));
     await page.goto(ORIGIN, { waitUntil: 'load' });
     await page.waitForSelector('#diorama[data-state="live"]', { timeout: 60_000 });
+    const start = await page.evaluate(() => document.getElementById('diorama').dataset.island ?? '');
     await page.evaluate((f) => {
       const max = document.documentElement.scrollHeight - innerHeight;
       scrollTo({ top: max * f, behavior: 'instant' });
@@ -58,12 +59,25 @@ async function captureIsland(browser, progress) {
     await page.addStyleTag({
       content: '* { visibility: hidden !important } #diorama, #diorama canvas { visibility: visible !important } #diorama img { display: none }',
     });
-    // The scene eases toward the target progress; let it settle.
-    await page.waitForTimeout(4000);
-    const island = await page.evaluate(() => document.getElementById('diorama').dataset.island);
-    const [x, y, r] = island.split(',').map(Number);
-    // dataset.island is the island radius on screen; the poster square is the
-    // hero's --focus-size (the camera is framed on it, 31 m across).
+    // The scene eases toward the target progress. Settled = the published
+    // island geometry has moved off its start (when the target differs) and
+    // then stays unchanged for 2 s. Fails (throws) after 30 s.
+    const read = () => page.evaluate(() => document.getElementById('diorama').dataset.island ?? '');
+    let last = await read();
+    if (!last) throw new Error('#diorama has no data-island: the live scene did not publish its framing');
+    let stableSince = Date.now();
+    const deadline = Date.now() + 30_000;
+    while (Date.now() - stableSince < 2000 || (progress > 0 && last === start)) {
+      if (Date.now() > deadline) throw new Error(`diorama did not settle at progress ${progress} (island ${last})`);
+      await page.waitForTimeout(250);
+      const now = await read();
+      if (now !== last) {
+        last = now;
+        stableSince = Date.now();
+      }
+    }
+    const [x, y, r] = last.split(',').map(Number);
+    // The poster square is the hero's --focus-size (the camera is framed on it, 31 m across).
     const size = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('#diorama img')).width));
     const clip = { x: x - size / 2, y: y - size / 2, width: size, height: size };
     console.log(`progress ${progress}: island ${x},${y} r=${r}, square ${size}px`);
@@ -73,11 +87,34 @@ async function captureIsland(browser, progress) {
   }
 }
 
+/**
+ * The live canvas is full-bleed, so clouds continue past the square we crop.
+ * Fade the poster's alpha to 0 over the outer FEATHER of each side so the cut
+ * is invisible while the poster cross-fades into the live scene.
+ */
+const FEATHER = 0.14;
+async function feather(png) {
+  const { data, info } = await sharp(png).resize(POSTER_PX, POSTER_PX).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const edge = FEATHER * info.width;
+  const ramp = (d) => {
+    const t = Math.min(1, d / edge);
+    return t * t * (3 - 2 * t);
+  };
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      const d = Math.min(x, y, info.width - 1 - x, info.height - 1 - y);
+      data[(y * info.width + x) * 4 + 3] = Math.round(255 * ramp(d));
+    }
+  }
+  return { data, raw: { width: info.width, height: info.height, channels: 4 } };
+}
+
 async function writePoster(png) {
+  const feathered = await feather(png);
   let quality = 80;
   let buf;
   do {
-    buf = await sharp(png).resize(POSTER_PX, POSTER_PX).webp({ quality, effort: 6 }).toBuffer();
+    buf = await sharp(feathered.data, { raw: feathered.raw }).webp({ quality, effort: 6 }).toBuffer();
     quality -= 5;
   } while (buf.length > POSTER_BYTES && quality > 30);
   writeFileSync(join(publicDir, 'poster.webp'), buf);
@@ -111,7 +148,7 @@ body::before{content:'';position:absolute;inset:0;background:
 .plate{align-self:flex-start;background:#fff6e8;border-radius:22px;padding:16px 26px 16px 18px;box-shadow:0 10px 30px rgba(60,30,60,.22)}
 .plate img{display:block;height:64px}
 h1{font-weight:600;font-size:60px;line-height:1.06;letter-spacing:-.02em;text-wrap:balance}
-p{font-family:'Nunito',sans-serif;font-weight:700;font-size:25px;color:#3b2f4e}
+p{font-family:'Nunito',sans-serif;font-weight:700;font-size:25px;color:#2a2340}
 </style>
 <img class="island" src="${island}" alt="">
 <div class="copy">
@@ -133,7 +170,7 @@ p{font-family:'Nunito',sans-serif;font-weight:700;font-size:25px;color:#3b2f4e}
 }
 
 execFileSync('npm', ['run', 'build'], { cwd: siteDir, stdio: 'inherit' });
-const server = spawn('npx', ['astro', 'preview', '--port', String(PORT)], { cwd: siteDir, stdio: 'ignore' });
+const server = spawn(process.execPath, [join(siteDir, 'node_modules/astro/astro.js'), 'preview', '--port', String(PORT)], { cwd: siteDir, stdio: 'ignore' });
 let browser;
 try {
   await waitForServer();
