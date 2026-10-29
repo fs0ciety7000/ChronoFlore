@@ -634,6 +634,299 @@ def build_ronce_angoisse():
             "arms": [("arm.L", 1), ("arm.R", -1)], "sleep_arm": 4.0, "attack": True, "extra": None}
 
 
+# ---------------------------------------------------------------- species: Câlinette
+def build_calinette():
+    """Tendresse: cream face peeking out of a soft mint moss hood, leaf arms open for a hug,
+    a pink heart sprout on top."""
+    mat("CaliFace", "#fbf4e0", rough=0.85)
+    mat("CaliMoss", "#bfe8c6", rough=0.95)
+    mat("CaliTuft", "#d9f3d3", rough=0.95)
+    mat("CaliLeaf", "#9fd8ae", rough=0.85)
+    mat("CaliHeart", "#ffb1c5", rough=0.7)
+    mat("EyeDark", "#3a3346", rough=0.3)
+    mat("EyeWhite", "#ffffff", rough=0.3, emit=0.4)
+    mat("Mouth", "#8a3f52", rough=0.6)
+    mat("Blush", "#ff9fb9", rough=0.8)
+
+    bc = Vector((0, 0, 0.215))
+    br = Vector((0.2, 0.185, 0.195))
+    bone("root", (0, 0, 0), (0, 0, 0.06))
+    bone("body", (0, 0, 0.02), (0, 0, 0.4), "root")
+    bone("sprout", (0, 0.02, 0.43), (0, 0.02, 0.56), "body")
+    bone("arm.L", (0.19, -0.04, 0.17), (0.3, -0.12, 0.22), "body")
+    bone("arm.R", (-0.19, -0.04, 0.17), (-0.3, -0.12, 0.22), "body")
+
+    add_part("Body", ellipsoid(bc, br, 18, 10), "CaliFace", rigid("body"))
+    # moss hood: a lumpy shell over the back and top, open in front around the face
+    hood = ellipsoid(bc + Vector((0, 0.018, 0.012)), (br.x * 1.1, br.y * 1.1, br.z * 1.1), 22, 12)
+    hc = bc + Vector((0, 0.018, 0.012))
+    for vt in hood.verts:
+        d = (vt.co - hc).normalized()
+        a = math.atan2(d.x, d.y)
+        bump = 1.0 + 0.05 * math.sin(7 * a) * math.cos(5 * math.asin(max(-1.0, min(1.0, d.z))))
+        vt.co = hc + (vt.co - hc) * bump
+    face_hole = [f for f in hood.faces
+                 if (f.calc_center_median() - hc).normalized().y < -0.5
+                 and (f.calc_center_median() - hc).normalized().z < 0.62]
+    bottom = [f for f in hood.faces if (f.calc_center_median() - hc).normalized().z < -0.72]
+    bmesh.ops.delete(hood, geom=list(set(face_hole + bottom)), context="FACES")
+    add_part("Hood", hood, "CaliMoss", rigid("body"))
+    # a few fluffy tufts on the crown
+    for k, d in enumerate(fib_dirs(22)):
+        if d.z < 0.25 or d.y < -0.3:
+            continue
+        p = Vector((hc.x + d.x * br.x * 1.1, hc.y + d.y * br.y * 1.1, hc.z + d.z * br.z * 1.1))
+        x, y, n = frame(Vector((d.x / br.x, d.y / br.y, d.z / br.z)))
+        add_part("Tuft%d" % k, ellipsoid(p, (0.05, 0.05, 0.03), 7, 4, basis(x, y, n)),
+                 "CaliTuft" if k % 2 else "CaliMoss", rigid("body"))
+    # heart sprout: a short stem and two round pink leaves leaning together
+    top = Vector((0, 0.02, hc.z + br.z * 1.1 - 0.01))
+    add_part("SproutStem", tube([top, top + Vector((0, 0, 0.06))], [0.012, 0.009], sides=5), "CaliLeaf",
+             rigid("sprout"))
+    for s, S in ((1, "L"), (-1, "R")):
+        base = top + Vector((0, 0, 0.055))
+        add_part("Heart." + S, leaf(base, (s * 0.75, 0.0, 0.66), (0, -1, 0), 0.1, 0.085, 0.022, curl=0.0),
+                 "CaliHeart", rigid("sprout"))
+        # leaf arms reaching forward for a hug
+        add_part("Arm." + S, leaf((s * 0.185, -0.04, 0.17), (s * 0.7, -0.6, 0.3), (0, 0, 1), 0.13, 0.08, 0.022,
+                                  curl=0.025), "CaliLeaf", rigid("arm." + S))
+        add_part("Foot." + S, ellipsoid((s * 0.07, -0.03, 0.03), (0.05, 0.06, 0.032), 8, 5), "CaliMoss",
+                 rigid("root"))
+        face_eye(s, bc, br, 0.33, 0.06, 0.044, 0.056, "body")
+        face_decal("Blush." + S, bc, br, s * 0.6, -0.09, (0.04, 0.022, 0.006), "Blush", "body")
+    # soft ':3' smile
+    for s in (1, -1):
+        mouth(bc, br, -0.12, 0.016, 0.01, "body", yaw=s * 0.075)
+    return {"root": "root", "lower": "body", "upper": "sprout",
+            "arms": [("arm.L", 1), ("arm.R", -1)], "arm_rest": 0.5, "extra": cali_extra}
+
+
+def cali_extra(action, t):
+    s = math.sin(2 * math.pi * t)
+    if action == "Idle":  # the heart sprout sways like a wagging tail
+        return {"sprout": {"rot": (0, 0, 10 * s)}}
+    if action == "Move":
+        return {"sprout": {"rot": (-10, 0, 14 * math.sin(4 * math.pi * t))}}
+    if action == "Sleep":
+        return {"sprout": {"rot": (16, 0, 10)}}
+    return {}
+
+
+# ---------------------------------------------------------------- species: Souffloine
+def build_souffloine():
+    """Insouciance: dandelion clock, a pale-yellow flower face in a cream-white puff of seeds,
+    on a thin stem with leafy arms and feet."""
+    mat("SouffPuff", "#f7f2e4", rough=0.95)
+    mat("SouffSeed", "#ffffff", rough=0.9)
+    mat("SouffSpoke", "#e6dfca", rough=0.9)
+    mat("SouffFace", "#fff0a6", rough=0.8)
+    mat("SouffStem", "#b9e0a9", rough=0.85)
+    mat("SouffLeaf", "#a5d79a", rough=0.85)
+    mat("EyeDark", "#3d3346", rough=0.3)
+    mat("EyeWhite", "#ffffff", rough=0.3, emit=0.4)
+    mat("Mouth", "#8a4a45", rough=0.6)
+    mat("Blush", "#ffb5a3", rough=0.8)
+
+    hc = Vector((0, 0, 0.5))
+    core = 0.155
+    bone("root", (0, 0, 0), (0, 0, 0.06))
+    bone("stem", (0, 0, 0.03), (0, 0, 0.32), "root")
+    bone("head", (0, 0, 0.32), (0, 0, 0.78), "stem")
+    bone("seeds", (0, 0.02, hc.z), (0, 0.02, hc.z + 0.15), "head")
+    bone("arm.L", (0.02, 0, 0.2), (0.17, -0.02, 0.28), "stem")
+    bone("arm.R", (-0.02, 0, 0.2), (-0.17, -0.02, 0.28), "stem")
+
+    add_part("Puff", ellipsoid(hc + Vector((0, 0.02, 0)), (core, core, core), 12, 7), "SouffPuff",
+             rigid("head"))
+    for k, d in enumerate(fib_dirs(36)):
+        if d.y < -0.66 or d.z < -0.8:
+            continue  # the face, and where the stem goes in
+        p0 = hc + Vector((0, 0.02, 0)) + d * (core - 0.01)
+        p1 = hc + Vector((0, 0.02, 0)) + d * 0.25
+        add_part("Spoke%d" % k, tube([p0, p1], [0.006, 0.004], sides=3), "SouffSpoke", rigid("seeds"))
+        x, y, n = frame(d)
+        add_part("Seed%d" % k, ellipsoid(p1 + d * 0.01, (0.042, 0.042, 0.02), 6, 3, basis(x, y, n)),
+                 "SouffSeed", rigid("seeds"))
+    # flower face on the front of the puff
+    fc = hc + Vector((0, -0.11, -0.005))
+    fr = Vector((0.13, 0.06, 0.12))
+    add_part("Face", ellipsoid(fc, fr, 14, 7), "SouffFace", rigid("head"))
+    stem_prof = [(0.0, 0.38), (0.026, 0.37), (0.026, 0.25), (0.03, 0.12), (0.04, 0.05), (0.034, 0.025), (0.0, 0.02)]
+    add_part("Stem", lathe(stem_prof, 7), "SouffStem", along_z("stem", "head", 0.28, 0.38))
+    for s, S in ((1, "L"), (-1, "R")):
+        add_part("Arm." + S, leaf((s * 0.02, 0, 0.2), (s * 0.85, -0.1, 0.45), (0, -0.3, 1), 0.17, 0.07, 0.02,
+                                  curl=0.03), "SouffLeaf", rigid("arm." + S))
+        add_part("Foot." + S, leaf((s * 0.02, -0.01, 0.02), (s * 0.9, -0.35, 0.05), (0, 0, 1), 0.15, 0.075,
+                                   0.022, curl=0.02), "SouffLeaf", rigid("root"))
+        face_eye(s, fc, fr, 0.36, 0.1, 0.034, 0.044, "head")
+        face_decal("Blush." + S, fc, fr, s * 0.62, -0.18, (0.03, 0.017, 0.006), "Blush", "head")
+    # big carefree grin
+    p, x, y, n = mouth(fc, fr, -0.24, 0.032, 0.02, "head")
+    add_part("Tongue", ellipsoid(p - y * 0.012 + n * 0.002, (0.014, 0.008, 0.005), 8, 4, basis(x, y, n)),
+             "Mouth", rigid("head"))
+    return {"root": "root", "lower": "stem", "upper": "head",
+            "arms": [("arm.L", 1), ("arm.R", -1)], "arm_swing": 1.4, "extra": souff_extra}
+
+
+def souff_extra(action, t):
+    s = math.sin(2 * math.pi * t)
+    if action == "Idle":  # the puff turns lazily in the breeze
+        return {"seeds": {"rot": (0, 0, 8 * s)}}
+    if action == "Move":  # arms flap like wings, the puff spins
+        return {"seeds": {"rot": (0, 0, -90 * t)}}
+    if action == "Sleep":
+        return {"seeds": {"scale": (0.97, 0.97, 0.97)}}
+    return {}
+
+
+# ---------------------------------------------------------------- species: Mélancolys
+def build_melancolys():
+    """Mélancolie: pale-blue lily, a sleepy-sad face under droopy petals that hang like hair,
+    long leaves for sleeves; still cute (soft smile, blush)."""
+    mat("MelaBody", "#e3f1fb", rough=0.75)
+    mat("MelaPetalA", "#a9d2f2", rough=0.75)
+    mat("MelaPetalB", "#c4e1f8", rough=0.75)
+    mat("MelaInner", "#9fc6ea", rough=0.75)
+    mat("MelaStamen", "#f4e3a0", rough=0.7)
+    mat("MelaLeaf", "#b0d9c9", rough=0.85)
+    mat("MelaLid", "#d2e6f6", rough=0.75)
+    mat("EyeDark", "#363f58", rough=0.3)
+    mat("EyeWhite", "#ffffff", rough=0.3, emit=0.4)
+    mat("Brow", "#8aa4c8", rough=0.7)
+    mat("Tear", "#cdeeff", rough=0.2, emit=0.4)
+    mat("Mouth", "#5d5274", rough=0.6)
+    mat("Blush", "#f2c3d5", rough=0.8)
+
+    bc = Vector((0, 0, 0.2))
+    br = Vector((0.185, 0.17, 0.185))
+    top = Vector((0, 0.01, 0.36))
+    bone("root", (0, 0, 0), (0, 0, 0.06))
+    bone("body", (0, 0, 0.02), (0, 0, 0.36), "root")
+    bone("bloom", (0, 0.01, 0.36), (0, 0.01, 0.6), "body")
+    bone("arm.L", (0.17, -0.01, 0.24), (0.2, -0.03, 0.06), "body")
+    bone("arm.R", (-0.17, -0.01, 0.24), (-0.2, -0.03, 0.06), "body")
+
+    add_part("Body", ellipsoid(bc, br, 18, 10), "MelaBody", rigid("body"))
+    # lily cup and six droopy petals (none in front: the face stays clear)
+    cup_prof = [(0.0, 0.47), (0.05, 0.465), (0.075, 0.43), (0.07, 0.39), (0.04, 0.355), (0.0, 0.35)]
+    add_part("Cup", lathe(cup_prof, 12), "MelaInner", rigid("bloom"))
+    for k, deg in enumerate((62, 108, 154, 206, 252, 298)):  # hanging around the sides and back like hair
+        a = math.radians(deg)
+        out = Vector((math.sin(a), -math.cos(a), 0.0))
+        base = top + out * 0.055 + Vector((0, 0, 0.1))
+        direction = (out * 0.62 + Vector((0, 0, -0.78))).normalized()
+        add_part("Petal%d" % k, leaf(base, direction, Vector((0, 0, 1)), 0.27, 0.135, 0.03, curl=0.06, u=8, v=6),
+                 "MelaPetalA" if k % 2 == 0 else "MelaPetalB", rigid("bloom"))
+    for k in range(3):
+        a = math.radians(120 * k + 180)
+        out = Vector((math.sin(a), -math.cos(a), 0.0))
+        b0 = top + Vector((0, 0, 0.1))
+        pts = catmull([b0, b0 + Vector((0, 0, 0.07)) + out * 0.02, b0 + Vector((0, 0, 0.12)) + out * 0.06], 5)
+        add_part("Stamen%d" % k, tube(pts, [0.008, 0.007, 0.006, 0.005, 0.0], sides=4), "MelaLeaf",
+                 rigid("bloom"))
+        add_part("Anther%d" % k, ellipsoid(pts[-1], (0.018, 0.018, 0.012), 7, 4), "MelaStamen", rigid("bloom"))
+    for s, S in ((1, "L"), (-1, "R")):
+        # long leaves hanging like sleeves
+        add_part("Sleeve." + S, leaf((s * 0.165, -0.01, 0.26), (s * 0.35, -0.12, -1.0), (s * 1, -0.3, 0), 0.22,
+                                     0.085, 0.022, curl=-0.03), "MelaLeaf", rigid("arm." + S))
+        add_part("Foot." + S, ellipsoid((s * 0.07, -0.03, 0.03), (0.05, 0.06, 0.032), 8, 5), "MelaLeaf",
+                 rigid("root"))
+        center, x, y, n = face_eye(s, bc, br, 0.35, 0.1, 0.04, 0.05, "body", lid=("MelaLid", 0.4))
+        # worried brows: inner end raised
+        pi, ni = surf(bc, br, s * 0.15, 0.4)
+        po, no = surf(bc, br, s * 0.48, 0.33)
+        add_part("Brow." + S, tube([pi + ni * 0.008, po + no * 0.008], [0.007, 0.005], sides=5), "Brow",
+                 rigid("body"))
+        face_decal("Blush." + S, bc, br, s * 0.62, -0.06, (0.034, 0.018, 0.006), "Blush", "body")
+    # one tear pearl under the right eye, and a small brave smile
+    face_decal("Tear", bc, br, -0.4, -0.08, (0.012, 0.017, 0.008), "Tear", "body")
+    mouth(bc, br, -0.14, 0.018, 0.006, "body")
+    return {"root": "root", "lower": "body", "upper": "bloom",
+            "arms": [("arm.L", 1), ("arm.R", -1)], "arm_rest": 0.0, "arm_swing": 0.5, "extra": mela_extra}
+
+
+def mela_extra(action, t):
+    s = math.sin(2 * math.pi * t)
+    if action == "Idle":  # heavy sigh: the bloom nods
+        sigh = smoothstep(0.2, 0.45, t) * (1 - smoothstep(0.55, 0.85, t))
+        return {"bloom": {"rot": (8 * sigh, 0, 3 * s)}}
+    if action == "Move":
+        return {"bloom": {"rot": (6, 0, 6 * math.sin(4 * math.pi * t))}}
+    if action == "Sleep":
+        return {"bloom": {"rot": (14, 0, 6)}}
+    return {}
+
+
+# ---------------------------------------------------------------- species: Lumiole
+FIREFLIES = [(0.28, 0.42, 0.0), (0.24, 0.3, 1.6), (0.3, 0.52, 3.3), (0.22, 0.2, 4.7)]  # radius, height, phase
+
+
+def build_lumiole():
+    """Espoir: a glowing warm-white bulb with a peach heart, a tiny leaf cap and a dangling root;
+    a few fireflies orbit it. Floats (the plant lifts the model 0.8 m)."""
+    mat("GlowBulb", "#ffe4c6", rough=0.45, emit=0.4)
+    mat("GlowPeach", "#ffb08a", rough=0.5, emit=0.45)
+    mat("GlowFirefly", "#ffe170", rough=0.3, emit=1.2)
+    mat("LumiLeaf", "#a9dcb4", rough=0.85)
+    mat("LumiRoot", "#f2c3a5", rough=0.8)
+    mat("EyeDark", "#4a3a3e", rough=0.3)
+    mat("EyeWhite", "#ffffff", rough=0.3, emit=0.4)
+    mat("Mouth", "#a0525a", rough=0.6)
+    mat("Blush", "#ffa8a8", rough=0.8)
+
+    bc = Vector((0, 0, 0.3))
+    br = Vector((0.175, 0.165, 0.17))
+    bone("root", (0, 0, 0), (0, 0, 0.06))
+    bone("body", (0, 0, 0.1), (0, 0, 0.48), "root")
+    bone("cap", (0, 0.01, 0.46), (0, 0.01, 0.6), "body")
+    bone("tail", (0, 0, 0.14), (0, 0, 0.0), "body")
+    for i, (r, h, ph) in enumerate(FIREFLIES):
+        bone("fly.%d" % i, (0, 0, 0.3), (0, 0, 0.42), "root")
+
+    add_part("Bulb", ellipsoid(bc, br, 18, 10), "GlowBulb", rigid("body"))
+    # glowing peach cup under the bulb, like the base of a light bulb
+    cup = [(0.0, 0.2), (0.1, 0.19), (0.09, 0.155), (0.072, 0.125), (0.045, 0.105), (0.0, 0.1)]
+    add_part("BulbCup", lathe(cup, 14), "GlowPeach", rigid("body"))
+    tail = catmull([Vector((0, 0, 0.11)), Vector((0.03, 0.01, 0.075)), Vector((-0.02, 0.02, 0.04)),
+                    Vector((0.02, 0.03, 0.01))], 7)
+    add_part("Tail", tube(tail, [0.022, 0.02, 0.017, 0.014, 0.011, 0.007, 0.0], sides=5), "LumiRoot",
+             along_z("tail", "body", 0.08, 0.16))
+    capb = bc + Vector((0, 0.01, br.z - 0.012))
+    add_part("CapNub", ellipsoid(capb, (0.03, 0.03, 0.022), 8, 4), "LumiLeaf", rigid("cap"))
+    for s, S in ((1, "L"), (-1, "R")):
+        add_part("CapLeaf." + S, leaf(capb, (s * 0.8, 0.15, 0.55), (0, 0, 1), 0.12, 0.065, 0.02, curl=0.025),
+                 "LumiLeaf", rigid("cap"))
+        face_eye(s, bc, br, 0.34, 0.08, 0.04, 0.052, "body")
+        face_decal("Blush." + S, bc, br, s * 0.62, -0.12, (0.036, 0.02, 0.006), "Blush", "body")
+    # hopeful open smile
+    p, x, y, n = mouth(bc, br, -0.17, 0.026, 0.014, "body")
+    for i, (r, h, ph) in enumerate(FIREFLIES):
+        c = Vector((math.cos(ph) * r, math.sin(ph) * r, h))
+        add_part("Firefly%d" % i, ellipsoid(c, (0.02, 0.02, 0.02), 8, 5), "GlowFirefly", rigid("fly.%d" % i))
+    return {"root": "root", "lower": "body", "upper": "cap", "arms": [], "extra": lumi_extra}
+
+
+def lumi_extra(action, t):
+    pose = {}
+    speed = {"Idle": 1.0, "Move": 2.0, "Sleep": 0.25}.get(action, 0.0)
+    for i, (r, h, ph) in enumerate(FIREFLIES):
+        turns = (1 if i % 2 == 0 else -1) * speed * (2 if action == "Move" else 1)
+        bob = 0.02 * math.sin(2 * math.pi * (t * 2 + i * 0.25))
+        pose["fly.%d" % i] = {"rot": (0, 360 * turns * t, 0), "loc": (0, bob, 0)}
+    s = math.sin(2 * math.pi * t)
+    if action == "Idle":  # floats up and down
+        pose["root"] = {"loc": (0, 0.035 * s, 0)}
+        pose["tail"] = {"rot": (8 * s, 0, 6 * math.cos(2 * math.pi * t))}
+        pose["cap"] = {"rot": (0, 0, 6 * s)}
+    elif action == "Move":
+        pose["tail"] = {"rot": (-30, 0, 12 * math.sin(4 * math.pi * t))}
+        pose["cap"] = {"rot": (-12, 0, 0)}
+    elif action == "Sleep":
+        pose["tail"] = {"rot": (0, 0, 10)}
+        pose["cap"] = {"rot": (10, 0, 8)}
+    return pose
+
+
 # ---------------------------------------------------------------- rig + animation
 def build_armature(name):
     arm_data = bpy.data.armatures.new(name + "Rig")
@@ -816,6 +1109,10 @@ SPECIES = {
     "nostalgerbe": ("Nostalgerbe", build_nostalgerbe),
     "timidelle": ("Timidelle", build_timidelle),
     "ronce_angoisse": ("RonceAngoisse", build_ronce_angoisse),
+    "calinette": ("Calinette", build_calinette),
+    "souffloine": ("Souffloine", build_souffloine),
+    "melancolys": ("Melancolys", build_melancolys),
+    "lumiole": ("Lumiole", build_lumiole),
 }
 
 IMPORT_TEMPLATE = """[remap]

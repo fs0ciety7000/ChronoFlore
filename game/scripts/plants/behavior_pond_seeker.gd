@@ -21,7 +21,7 @@ const SHORE_SAMPLES := 24
 ## After coming out it flees normally this long before heading for the water again.
 const EMERGE_REST := 2.5
 ## Model sinks this deep while hidden: only the lily crown floats on the water.
-const HIDDEN_SINK := 0.32
+const HIDDEN_SINK := 0.26
 
 var _hidden_left: float = 0.0
 var _rest_left: float = 0.0

@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/plants/visuals/lumiole.tscn" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -11,6 +12,7 @@ rarity = 2
 capturable = true
 base_speed = 6.0
 min_hour = 4.0
+visual_scene = ExtResource("2")
 behavior = 7
 panic_after = 8.0
 fragment = "(provisoire) Une petite lumière apparue au cœur de la nuit, quand tout semblait trop loin. Elle file à toute allure et laisse derrière elle une traînée de lucioles. La suivre, c'est déjà avancer."

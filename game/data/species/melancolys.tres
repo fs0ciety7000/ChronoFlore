@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/plants/visuals/melancolys.tscn" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -11,6 +12,7 @@ rarity = 1
 capturable = true
 base_speed = 2.2
 min_hour = 3.0
+visual_scene = ExtResource("2")
 behavior = 6
 panic_after = 10.0
 fragment = "(provisoire) Une tristesse douce, de celles qu'on garde parce qu'elles ressemblent à quelqu'un. Elle marche lentement vers l'eau pour s'y cacher. Dans l'étang, plus rien ne l'atteint."

@@ -8,9 +8,16 @@ extends Node3D
 const LIGHT_LIFT := 0.2
 const BLEND := 0.15
 const ONE_SHOTS: Array[StringName] = [&"Attack"]
+## Materials named Glow* (Lumiole's bulb, fireflies) keep their own emission as the floor.
+const OWN_GLOW_PREFIX := "Glow"
+## Lights carried by a model (Lumiole) shine at this fraction of their energy by day.
+const LIGHT_DAY_FACTOR := 0.0
 
 var _anim: AnimationPlayer
 var _materials: Array[StandardMaterial3D] = []
+var _floors: Array[float] = [] ## emission floor per material (LIGHT_LIFT, or its own for Glow*)
+var _lights: Array[Light3D] = []
+var _light_energy: Array[float] = []
 var _wanted: StringName = &"Idle"
 var _glow: float = 0.0
 
@@ -58,10 +65,27 @@ func play_attack() -> void:
 func set_glow(value: float) -> void:
 	_glow = value
 	_setup()
-	for mat in _materials:
+	var night := clampf(value, 0.0, 1.0)
+	for i in _materials.size():
+		var mat := _materials[i]
 		mat.emission_enabled = true
 		mat.emission = mat.albedo_color
-		mat.emission_energy_multiplier = maxf(LIGHT_LIFT, value * Plant.GLOW_ENERGY)
+		mat.emission_energy_multiplier = maxf(_floors[i], value * Plant.GLOW_ENERGY)
+	for i in _lights.size():
+		_lights[i].light_energy = _light_energy[i] * lerpf(LIGHT_DAY_FACTOR, 1.0, night)
+		_lights[i].visible = _lights[i].light_energy > 0.001
+
+## Imported emission strength relative to the albedo (glTF folds strengths <= 1 into the
+## emissive colour and keeps strengths > 1 in the energy).
+static func _own_emission(mat: StandardMaterial3D) -> float:
+	if not mat.emission_enabled:
+		return 0.0
+	var e := mat.emission.srgb_to_linear()
+	var a := mat.albedo_color.srgb_to_linear()
+	var a_max := maxf(a.r, maxf(a.g, a.b))
+	if a_max < 1e-4:
+		return mat.emission_energy_multiplier
+	return mat.emission_energy_multiplier * maxf(e.r, maxf(e.g, e.b)) / a_max
 
 func _setup() -> void:
 	if _anim != null:
@@ -80,6 +104,11 @@ func _setup() -> void:
 			var copy := mat.duplicate() as StandardMaterial3D
 			mi.set_surface_override_material(s, copy)
 			_materials.append(copy)
+			var own := _own_emission(mat)
+			_floors.append(maxf(LIGHT_LIFT, own) if mat.resource_name.begins_with(OWN_GLOW_PREFIX) else LIGHT_LIFT)
+	for node in find_children("*", "Light3D", true, false):
+		_lights.append(node as Light3D)
+		_light_energy.append((node as Light3D).light_energy)
 	set_glow(_glow)
 
 func _play(anim_name: StringName) -> void:

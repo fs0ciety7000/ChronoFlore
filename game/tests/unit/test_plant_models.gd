@@ -139,3 +139,22 @@ func test_model_glow_keeps_light_lift() -> void:
 	for mat in mats:
 		assert_near(mat.emission_energy_multiplier, Plant.GLOW_ENERGY, 0.001, "full glow")
 	v.free()
+
+func test_lumiole_glow_parts_keep_their_light() -> void:
+	var v := _species("lumiole").visual_scene.instantiate() as PlantModelVisual
+	tree.root.add_child(v)
+	v.set_glow(0.0)
+	var glow_parts := 0
+	for mat in v.materials():
+		if mat.resource_name.begins_with("Glow"):
+			glow_parts += 1
+			assert_true(mat.emission_energy_multiplier > PlantModelVisual.LIGHT_LIFT + 0.1,
+				"%s keeps its own glow by day" % mat.resource_name)
+	assert_true(glow_parts >= 2, "lumiole has glowing parts (bulb, fireflies)")
+	var lights := v.find_children("*", "OmniLight3D", true, false)
+	assert_eq(lights.size(), 1, "lumiole carries a small light")
+	if lights.size() == 1:
+		var day := (lights[0] as OmniLight3D).light_energy
+		v.set_glow(1.0)
+		assert_true((lights[0] as OmniLight3D).light_energy > day, "its light grows at night")
+	v.free()
