@@ -6,7 +6,7 @@ extends Node3D
 const PITCH_DEG := -35.264
 const YAW_DEG := 45.0
 const DISTANCE := 40.0
-const ORTHO_SIZE := 8.5
+const ORTHO_SIZE := 10.0
 const FOLLOW_RATE := 6.0
 
 @export var target_path: NodePath

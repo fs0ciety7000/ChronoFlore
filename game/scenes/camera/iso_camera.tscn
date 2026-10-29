@@ -7,6 +7,6 @@ script = ExtResource("1_cam")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 projection = 1
-size = 22.0
+size = 10.0
 current = true
 far = 120.0
