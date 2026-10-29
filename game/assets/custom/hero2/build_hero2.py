@@ -969,6 +969,17 @@ def make_action(arm, name, keys):
     return act
 
 
+# Right-arm shoulder carry (Idle, Walk, start/end of Swing): upper arm hanging a little forward,
+# forearm folded up so the wrist sits by the right collarbone (~(-0.185, -0.09, 0.52)) and the
+# hand grips the net handle that rests over the shoulder. Solved numerically, then rounded.
+def CARRY_UPPER_R(bob):
+    return (19 + bob, 0, 8)
+
+
+def CARRY_LOWER_R(bob):
+    return (128 + bob, 0, 0)
+
+
 def build_actions(arm):
     # Idle: 2 s breathing / bob loop (a touch heavier and calmer than the heroine)
     def idle(t):
@@ -980,9 +991,10 @@ def build_actions(arm):
             "chest": {"rot": (-1.8 * s, 0, 0)},
             "head": {"rot": (-2.0 * s, 0, 2.5 * c)},
             "upper_arm.L": {"rot": (2 * s, 0, -6 - 2 * s)},
-            "upper_arm.R": {"rot": (2 * s, 0, 6 + 2 * s)},
+            # right arm: shoulder carry, the hand grips the net handle by the collarbone
+            "upper_arm.R": {"rot": CARRY_UPPER_R(1.5 * s)},
             "lower_arm.L": {"rot": (8, 0, 0)},
-            "lower_arm.R": {"rot": (8, 0, 0)},
+            "lower_arm.R": {"rot": CARRY_LOWER_R(0.0)},
         }
     n = 120
     make_action(arm, "Idle", [(f, idle(f / n)) for f in range(0, n + 1, 15)])
@@ -1006,9 +1018,9 @@ def build_actions(arm):
             "foot.L": {"rot": (20 * lift_l - 10 * max(0, s), 0, 0)},
             "foot.R": {"rot": (20 * lift_r - 10 * max(0, -s), 0, 0)},
             "upper_arm.L": {"rot": (30 * s, 0, -10)},
-            "upper_arm.R": {"rot": (-30 * s, 0, 10)},
+            "upper_arm.R": {"rot": CARRY_UPPER_R(3.0 * s)},
             "lower_arm.L": {"rot": (18 + 10 * max(0, s), 0, 0)},
-            "lower_arm.R": {"rot": (18 + 10 * max(0, -s), 0, 0)},
+            "lower_arm.R": {"rot": CARRY_LOWER_R(4.0 * bounce)},
         }
     n = 36
     make_action(arm, "Walk", [(f, walk(f / n)) for f in range(0, n + 1, 3)])
