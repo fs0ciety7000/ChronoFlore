@@ -19,8 +19,8 @@ void fragment() {
 	if (shape == 0) {
 		float r = length(UV * 2.0 - 1.0);
 		float inside = 1.0 - smoothstep(0.97, 1.0, r);
-		rim = smoothstep(0.80, 0.86, r) * inside;
-		base = 0.22 * inside;
+		rim = smoothstep(0.86, 0.9, r) * inside;
+		base = 0.16 * inside;
 		fill = (1.0 - smoothstep(progress - 0.04, progress, r)) * inside;
 	} else {
 		float x = abs(UV.x * 2.0 - 1.0);
@@ -33,7 +33,7 @@ void fragment() {
 		rim = max(rim, smoothstep(0.0, 0.08, chevron) * (1.0 - smoothstep(0.16, 0.24, chevron)) * inside * 0.8);
 	}
 	vec3 col = mix(fill_color.rgb, rim_color.rgb, rim);
-	float a = max(base, max(rim * pulse, fill * 0.55));
+	float a = max(base, max(rim * pulse, fill * 0.6));
 	ALBEDO = col;
 	ALPHA = clamp(a * opacity, 0.0, 1.0);
 }

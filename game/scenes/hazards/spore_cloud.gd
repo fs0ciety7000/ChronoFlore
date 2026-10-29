@@ -9,7 +9,9 @@ const SLOW_FACTOR := 0.5
 const SLOW_TIME := 2.0
 const CLOUD_TIME := 2.5
 const PUFF_COUNT := 14
-const PUFF_COLOR := Color(0.86, 0.76, 0.95, 0.55)
+const PUFF_COLOR := Color(0.86, 0.52, 0.92, 0.5)
+## The ring stays this visible while the cloud lingers (the slow zone must read at night).
+const LINGER_RING_OPACITY := 0.7
 ## Seconds for the cloud to puff out to full size.
 const PUFF_TIME := 0.25
 
@@ -19,8 +21,8 @@ var _struck_once: bool = false
 func _init() -> void:
 	radius = RADIUS
 	linger = CLOUD_TIME
-	rim_color = Color(0.68, 0.45, 0.88)
-	fill_color = Color(0.88, 0.78, 0.98)
+	rim_color = Color(0.7, 0.42, 0.9)
+	fill_color = Color(0.8, 0.6, 0.95)
 
 func _ready() -> void:
 	super._ready()
@@ -43,7 +45,7 @@ func _linger_tick(_delta: float) -> void:
 func _update_visual(progress: float) -> void:
 	super._update_visual(progress)
 	if mark != null and has_impacted():
-		mark.set_opacity(0.35 * (1.0 - clampf((elapsed - telegraph_time) / linger, 0.0, 1.0)))
+		mark.set_opacity(LINGER_RING_OPACITY * clampf((linger - (elapsed - telegraph_time)) / (linger * 0.3), 0.0, 1.0))
 	var size := 0.0
 	var fade := 1.0
 	if has_impacted():

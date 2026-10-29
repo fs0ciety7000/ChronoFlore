@@ -53,7 +53,7 @@ func _build_vines() -> void:
 	stem.albedo_color = VINE_COLOR
 	stem.emission_enabled = true
 	stem.emission = VINE_COLOR
-	stem.emission_energy_multiplier = 0.25
+	stem.emission_energy_multiplier = 0.55
 	var leaf_mat := stem.duplicate() as StandardMaterial3D
 	leaf_mat.albedo_color = LEAF_COLOR
 	leaf_mat.emission = LEAF_COLOR

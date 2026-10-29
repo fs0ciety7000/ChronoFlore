@@ -68,8 +68,8 @@ func _build_thorn() -> void:
 		return
 	var cone := CylinderMesh.new()
 	cone.top_radius = 0.0
-	cone.bottom_radius = 0.07
-	cone.height = 0.36
+	cone.bottom_radius = 0.1
+	cone.height = 0.5
 	cone.radial_segments = 8
 	cone.rings = 1
 	var m := StandardMaterial3D.new()
