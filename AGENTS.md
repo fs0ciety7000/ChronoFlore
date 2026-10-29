@@ -28,7 +28,7 @@ Règles communes à tous les agents de code (Claude Code, Codex, Cursor, etc.). 
 ```bash
 # Jeu (Godot 4.7.2, binaire `godot` dans le PATH ; export Web : templates 4.7.2 installés)
 import:  godot --headless --path game --import
-test:    godot --headless --path game --script res://tests/test_runner.gd
+test:    godot --headless --path game --import && godot --headless --path game --script res://tests/test_runner.gd
 run:     godot --path game
 build:   mkdir -p build/web && godot --headless --path game --export-release "Web" ../build/web/index.html
 
