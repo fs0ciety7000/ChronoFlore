@@ -1,45 +1,8 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" uid="uid://ba0qprg4dv8u1" path="res://scenes/heroine/heroine_visual.gd" id="1_vis"]
 [ext_resource type="PackedScene" uid="uid://q8lcsouudidx" path="res://assets/custom/heroine/heroine.glb" id="2_model"]
-
-[sub_resource type="StandardMaterial3D" id="Mat_handle"]
-albedo_color = Color(0.752941, 0.541176, 0.352941, 1)
-roughness = 0.8
-
-[sub_resource type="CylinderMesh" id="Mesh_handle"]
-material = SubResource("Mat_handle")
-top_radius = 0.014
-bottom_radius = 0.014
-height = 0.55
-radial_segments = 8
-rings = 1
-
-[sub_resource type="StandardMaterial3D" id="Mat_hoop"]
-albedo_color = Color(0.941176, 0.541176, 0.658824, 1)
-roughness = 0.5
-
-[sub_resource type="TorusMesh" id="Mesh_hoop"]
-material = SubResource("Mat_hoop")
-inner_radius = 0.105
-outer_radius = 0.125
-rings = 24
-ring_segments = 6
-
-[sub_resource type="StandardMaterial3D" id="Mat_bag"]
-transparency = 1
-cull_mode = 2
-albedo_color = Color(1, 0.98, 0.94, 0.55)
-roughness = 0.9
-
-[sub_resource type="CylinderMesh" id="Mesh_bag"]
-material = SubResource("Mat_bag")
-top_radius = 0.11
-bottom_radius = 0.02
-height = 0.16
-radial_segments = 12
-rings = 1
-cap_top = false
+[ext_resource type="PackedScene" path="res://scenes/heroine/hand_tools.tscn" id="3_tools"]
 
 [node name="HeroineVisual" type="Node3D"]
 script = ExtResource("1_vis")
@@ -50,17 +13,4 @@ script = ExtResource("1_vis")
 bone_name = "hand.R"
 bone_idx = 14
 
-[node name="Net" type="Node3D" parent="Model/Heroine/Skeleton3D/HandR"]
-transform = Transform3D(-0.18020943, 0.9407209, -0.28734788, -0.98214144, -0.18814418, 0, -0.05406283, 0.28221628, 0.9578263, 0, 0.045, 0)
-
-[node name="Handle" type="MeshInstance3D" parent="Model/Heroine/Skeleton3D/HandR/Net"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.205, 0)
-mesh = SubResource("Mesh_handle")
-
-[node name="Hoop" type="MeshInstance3D" parent="Model/Heroine/Skeleton3D/HandR/Net"]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.6, 0)
-mesh = SubResource("Mesh_hoop")
-
-[node name="Bag" type="MeshInstance3D" parent="Model/Heroine/Skeleton3D/HandR/Net"]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.6, -0.08)
-mesh = SubResource("Mesh_bag")
+[node name="HandTools" parent="Model/Heroine/Skeleton3D/HandR" instance=ExtResource("3_tools")]

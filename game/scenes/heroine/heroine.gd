@@ -33,6 +33,9 @@ func _ready() -> void:
 	var belt := get_node_or_null("ToolBelt") as ToolBelt
 	if belt != null and _visual != null and _visual.has_method("play_swing"):
 		belt.tool_used.connect(func(_tool: ToolData) -> void: _visual.call("play_swing"))
+	if belt != null and _visual != null and _visual.has_method("set_tool"):
+		belt.tool_changed.connect(func(tool: ToolData) -> void: _visual.call("set_tool", tool))
+		_visual.call("set_tool", belt.current())
 
 ## Screen-space input (x right, y down, as Input.get_vector) to a unit-or-shorter XZ vector.
 static func screen_to_world(v: Vector2) -> Vector2:

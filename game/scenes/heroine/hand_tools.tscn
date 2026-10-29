@@ -1,0 +1,164 @@
+[gd_scene load_steps=19 format=3]
+
+[sub_resource type="StandardMaterial3D" id="Mat_handle"]
+albedo_color = Color(0.752941, 0.541176, 0.352941, 1)
+roughness = 0.8
+
+[sub_resource type="CylinderMesh" id="Mesh_handle"]
+material = SubResource("Mat_handle")
+top_radius = 0.014
+bottom_radius = 0.014
+height = 0.55
+radial_segments = 8
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="Mat_hoop"]
+albedo_color = Color(0.941176, 0.541176, 0.658824, 1)
+roughness = 0.5
+
+[sub_resource type="TorusMesh" id="Mesh_hoop"]
+material = SubResource("Mat_hoop")
+inner_radius = 0.105
+outer_radius = 0.125
+rings = 24
+ring_segments = 6
+
+[sub_resource type="StandardMaterial3D" id="Mat_bag"]
+transparency = 1
+cull_mode = 2
+albedo_color = Color(1, 0.98, 0.94, 0.55)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="Mesh_bag"]
+material = SubResource("Mat_bag")
+top_radius = 0.11
+bottom_radius = 0.02
+height = 0.16
+radial_segments = 12
+rings = 1
+cap_top = false
+
+[sub_resource type="StandardMaterial3D" id="Mat_gun"]
+albedo_color = Color(0.701961, 0.611765, 0.85098, 1)
+roughness = 0.6
+
+[sub_resource type="BoxMesh" id="Mesh_gun_body"]
+material = SubResource("Mat_gun")
+size = Vector3(0.05, 0.055, 0.15)
+
+[sub_resource type="BoxMesh" id="Mesh_gun_grip"]
+material = SubResource("Mat_gun")
+size = Vector3(0.07, 0.035, 0.04)
+
+[sub_resource type="StandardMaterial3D" id="Mat_brass"]
+albedo_color = Color(0.909804, 0.756863, 0.411765, 1)
+metallic = 0.4
+roughness = 0.4
+
+[sub_resource type="CylinderMesh" id="Mesh_gun_barrel"]
+material = SubResource("Mat_brass")
+top_radius = 0.013
+bottom_radius = 0.013
+height = 0.1
+radial_segments = 8
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="Mat_tuft"]
+albedo_color = Color(0.941176, 0.541176, 0.658824, 1)
+roughness = 0.7
+
+[sub_resource type="SphereMesh" id="Mesh_gun_tuft"]
+material = SubResource("Mat_tuft")
+radius = 0.02
+height = 0.04
+radial_segments = 8
+rings = 4
+
+[sub_resource type="CylinderMesh" id="Mesh_harpoon_shaft"]
+material = SubResource("Mat_handle")
+top_radius = 0.013
+bottom_radius = 0.013
+height = 0.62
+radial_segments = 8
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="Mat_steel"]
+albedo_color = Color(0.72549, 0.807843, 0.85098, 1)
+metallic = 0.5
+roughness = 0.35
+
+[sub_resource type="CylinderMesh" id="Mesh_harpoon_tip"]
+material = SubResource("Mat_steel")
+top_radius = 0.0
+bottom_radius = 0.035
+height = 0.11
+radial_segments = 6
+rings = 1
+
+[sub_resource type="BoxMesh" id="Mesh_harpoon_barb"]
+material = SubResource("Mat_steel")
+size = Vector3(0.09, 0.03, 0.012)
+
+[sub_resource type="CylinderMesh" id="Mesh_harpoon_rope"]
+material = SubResource("Mat_tuft")
+top_radius = 0.018
+bottom_radius = 0.018
+height = 0.05
+radial_segments = 8
+rings = 1
+
+[node name="HandTools" type="Node3D"]
+
+[node name="Net" type="Node3D" parent="."]
+transform = Transform3D(-0.18020943, 0.9407209, -0.28734788, -0.98214144, -0.18814418, 0, -0.05406283, 0.28221628, 0.9578263, 0, 0.045, 0)
+
+[node name="Handle" type="MeshInstance3D" parent="Net"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.205, 0)
+mesh = SubResource("Mesh_handle")
+
+[node name="Hoop" type="MeshInstance3D" parent="Net"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.6, 0)
+mesh = SubResource("Mesh_hoop")
+
+[node name="Bag" type="MeshInstance3D" parent="Net"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.6, -0.08)
+mesh = SubResource("Mesh_bag")
+
+[node name="DartGun" type="Node3D" parent="."]
+visible = false
+transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, 0, 0.045, 0)
+
+[node name="Grip" type="MeshInstance3D" parent="DartGun"]
+mesh = SubResource("Mesh_gun_grip")
+
+[node name="Body" type="MeshInstance3D" parent="DartGun"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.045, -0.01, 0.045)
+mesh = SubResource("Mesh_gun_body")
+
+[node name="Barrel" type="MeshInstance3D" parent="DartGun"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.045, -0.015, 0.165)
+mesh = SubResource("Mesh_gun_barrel")
+
+[node name="Tuft" type="MeshInstance3D" parent="DartGun"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.045, -0.015, 0.22)
+mesh = SubResource("Mesh_gun_tuft")
+
+[node name="Harpoon" type="Node3D" parent="."]
+visible = false
+transform = Transform3D(-0.18020943, 0.9407209, -0.28734788, -0.98214144, -0.18814418, 0, -0.05406283, 0.28221628, 0.9578263, 0, 0.045, 0)
+
+[node name="Shaft" type="MeshInstance3D" parent="Harpoon"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17, 0)
+mesh = SubResource("Mesh_harpoon_shaft")
+
+[node name="Rope" type="MeshInstance3D" parent="Harpoon"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+mesh = SubResource("Mesh_harpoon_rope")
+
+[node name="Tip" type="MeshInstance3D" parent="Harpoon"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.53, 0)
+mesh = SubResource("Mesh_harpoon_tip")
+
+[node name="Barb" type="MeshInstance3D" parent="Harpoon"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.49, 0)
+mesh = SubResource("Mesh_harpoon_barb")
