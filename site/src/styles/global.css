@@ -195,13 +195,15 @@ html.lenis body {
 /*
  * Scroll reveals (scripts/reveal.ts): titles and cards rise 16px and fade in
  * once, 500ms, 60ms cascade. Hidden only under html.reveal-on, which the script
- * adds (never with reduced motion), so no-JS visitors see everything.
+ * adds (never with reduced motion), so no-JS visitors see everything. The
+ * transition lives on the transient .is-revealing class, removed on
+ * transitionend, so it never overrides a component's own transitions.
  */
 .reveal-on [data-reveal]:not(.is-revealed) {
   opacity: 0;
   transform: translateY(16px);
 }
-.reveal-on [data-reveal].is-revealed {
+.reveal-on [data-reveal].is-revealing {
   transition:
     opacity 500ms var(--ease-out),
     transform 500ms var(--ease-out);
@@ -223,8 +225,14 @@ html.lenis body {
 .has-cursor-net * {
   cursor: none !important;
 }
-.has-cursor-net :is(input, textarea, [contenteditable='']),
-.has-cursor-net :is(input, textarea, [contenteditable='true']) * {
+/* Same text fields as TEXT_FIELD in cursor.ts. */
+.has-cursor-net
+  :is(
+    input:not([type='button'], [type='submit'], [type='reset'], [type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file']),
+    textarea,
+    [contenteditable=''],
+    [contenteditable='true']
+  ) {
   cursor: auto !important;
 }
 .cursor-net {

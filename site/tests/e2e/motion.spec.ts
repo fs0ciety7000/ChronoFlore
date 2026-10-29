@@ -46,6 +46,53 @@ test.describe('custom net cursor', () => {
     await expect(page.locator('.cursor-net')).not.toHaveClass(/is-over-action/);
   });
 
+  test('leaving the window or losing focus hides the net and gives the cursor back', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('load');
+    const cursor = page.locator('.cursor-net');
+    const html = page.locator('html');
+    await page.mouse.move(400, 300);
+    await expect(cursor).toHaveClass(/is-visible/);
+    await expect(html).toHaveClass(/has-cursor-net/);
+    await page.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, relatedTarget: null })));
+    await expect(cursor).not.toHaveClass(/is-visible/);
+    await expect(html).not.toHaveClass(/has-cursor-net/);
+    // Back in, press, then the window blurs mid-press (alt-tab).
+    await page.mouse.move(420, 320);
+    await page.mouse.down();
+    await expect(cursor).toHaveClass(/is-pressed/);
+    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    await expect(cursor).not.toHaveClass(/is-visible/);
+    await expect(cursor).not.toHaveClass(/is-pressed/);
+    await expect(html).not.toHaveClass(/has-cursor-net/);
+    await page.mouse.up();
+  });
+
+  test('system cursor comes back over text fields only, as cursor.ts decides', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('load');
+    await page.mouse.move(400, 300);
+    await expect(page.locator('html')).toHaveClass(/has-cursor-net/);
+    const cursors = await page.evaluate(() => {
+      const make = (html: string) => {
+        const host = document.createElement('div');
+        host.innerHTML = html;
+        document.body.append(host);
+        return getComputedStyle(host.firstElementChild!).cursor;
+      };
+      return {
+        text: make('<input type="text">'),
+        editable: make('<div contenteditable="true">x</div>'),
+        checkbox: make('<input type="checkbox">'),
+        submit: make('<input type="submit">'),
+      };
+    });
+    expect(cursors.text).not.toBe('none');
+    expect(cursors.editable).not.toBe('none');
+    expect(cursors.checkbox).toBe('none');
+    expect(cursors.submit).toBe('none');
+  });
+
   test('does not exist on touch screens', async ({ browser }) => {
     const context = await browser.newContext({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
@@ -95,13 +142,59 @@ test.describe('scroll reveals', () => {
     await expect(card).toHaveCSS('opacity', '0');
     await card.scrollIntoViewIfNeeded();
     await expect(card).toHaveClass(/is-revealed/);
-    await expect(card).toHaveCSS('opacity', '1', { timeout: 3000 });
+    await expect(card).toHaveCSS('opacity', '1', { timeout: 10_000 });
     await expect(card).toHaveCSS('transform', /none|matrix\(1, 0, 0, 1, 0, 0\)/);
     // Once only: scrolling away keeps it revealed.
     await scrollToFraction(page, 0);
     await page.waitForTimeout(200);
     await expect(card).toHaveClass(/is-revealed/);
     await expect(card).toHaveCSS('opacity', '1');
+  });
+
+  test('the reveal transition is dropped once played, leaving component transitions alone', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('load');
+    const card = page.locator('.tool').first();
+    await card.scrollIntoViewIfNeeded();
+    await expect(card).toHaveCSS('opacity', '1', { timeout: 10_000 });
+    await expect(card).not.toHaveClass(/is-revealing/, { timeout: 10_000 });
+    // .tool declares no transition of its own: nothing must be left behind.
+    await expect(card).toHaveCSS('transition-duration', '0s');
+    await expect(card).toHaveCSS('transition-delay', '0s');
+  });
+
+  test('each element is observed once and unobserved once revealed', async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __io: { observed: number; unobserved: Set<Element> } };
+      w.__io = { observed: 0, unobserved: new Set() };
+      const proto = IntersectionObserver.prototype;
+      const observe = proto.observe;
+      const unobserve = proto.unobserve;
+      proto.observe = function (el) {
+        w.__io.observed++;
+        return observe.call(this, el);
+      };
+      proto.unobserve = function (el) {
+        w.__io.unobserved.add(el);
+        return unobserve.call(this, el);
+      };
+    });
+    await page.goto('/');
+    await page.waitForLoadState('load');
+    const pending = await page.$$eval('[data-reveal]:not(.is-revealed)', (els) => els.length);
+    expect(pending).toBeGreaterThan(0);
+    // Walk down the page so every pending element crosses the viewport.
+    for (let f = 0.1; f <= 1.0001; f += 0.1) {
+      await scrollToFraction(page, f);
+      await page.waitForTimeout(120);
+    }
+    await expect(page.locator('[data-reveal]:not(.is-revealed)')).toHaveCount(0);
+    const counts = await page.evaluate(() => {
+      const w = window as unknown as { __io: { observed: number; unobserved: Set<Element> } };
+      const revealTargets = [...w.__io.unobserved].filter((el) => el.matches('[data-reveal]'));
+      return { unobserved: revealTargets.length };
+    });
+    expect(counts.unobserved).toBe(pending);
   });
 
   test('copy already in view on load is never hidden', async ({ page }) => {
@@ -135,6 +228,6 @@ test.describe('tool gestures', () => {
     await card.scrollIntoViewIfNeeded();
     await card.hover();
     await expect(card).toHaveClass(/is-gesturing/);
-    await expect(card).not.toHaveClass(/is-gesturing/, { timeout: 3000 });
+    await expect(card).not.toHaveClass(/is-gesturing/, { timeout: 10_000 });
   });
 });

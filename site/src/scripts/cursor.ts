@@ -60,5 +60,8 @@ export function initCursor(env: Env): void {
   });
   window.addEventListener('pointerdown', () => setState('is-pressed', true), { passive: true });
   window.addEventListener('pointerup', () => setState('is-pressed', false), { passive: true });
-  window.addEventListener('blur', () => show(false));
+  window.addEventListener('blur', () => {
+    show(false);
+    setState('is-pressed', false); // the pointerup may land in another window
+  });
 }

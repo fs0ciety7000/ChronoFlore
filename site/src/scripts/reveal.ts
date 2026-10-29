@@ -19,11 +19,12 @@ export function initReveal(env: Env): void {
   if (!items.length) return;
 
   // Whatever is already on screen (or scrolled past) stays as it is: no flash.
-  const pending: HTMLElement[] = [];
-  for (const el of items) {
-    if (el.getBoundingClientRect().top < innerHeight) el.classList.add('is-revealed');
-    else pending.push(el);
-  }
+  // All reads first, then all writes, so layout is computed once.
+  const tops = items.map((el) => el.getBoundingClientRect().top);
+  const pending = items.filter((_, i) => tops[i] >= innerHeight);
+  items.forEach((el, i) => {
+    if (tops[i] < innerHeight) el.classList.add('is-revealed');
+  });
   document.documentElement.classList.add('reveal-on');
 
   const io = new IntersectionObserver(
@@ -35,12 +36,17 @@ export function initReveal(env: Env): void {
           const el = e.target as HTMLElement;
           io.unobserve(el);
           const delay = revealDelay(i);
-          if (delay) {
-            el.style.transitionDelay = `${delay}ms`;
-            // Drop the delay afterwards so it never lags later transitions.
-            el.addEventListener('transitionend', () => el.style.removeProperty('transition-delay'), { once: true });
-          }
-          el.classList.add('is-revealed');
+          if (delay) el.style.transitionDelay = `${delay}ms`;
+          // .is-revealing carries the reveal transition only while it plays;
+          // afterwards the element's own transitions apply untouched.
+          const done = (t: TransitionEvent) => {
+            if (t.target !== el || t.propertyName !== 'transform') return;
+            el.removeEventListener('transitionend', done);
+            el.classList.remove('is-revealing');
+            el.style.removeProperty('transition-delay');
+          };
+          el.addEventListener('transitionend', done);
+          el.classList.add('is-revealing', 'is-revealed');
         });
     },
     // Trigger a little before the element is fully in, so it is moving as it lands.
