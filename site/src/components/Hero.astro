@@ -6,6 +6,7 @@
 // that the sections keep free (--lane in global.css). On small screens the
 // stage scrolls away with the hero. The hero copy is kept clear of the island
 // by geometry (max-width below vs focusRect in diorama/framing.ts).
+import Downloads from './Downloads.astro';
 ---
 
 <section id="top" class="hero wrap" data-scene="opening" aria-labelledby="hero-title">
@@ -21,6 +22,7 @@
       <a class="btn btn--quiet" href="#reve">Découvrir l'histoire</a>
       <a class="btn btn--soft" href="/jouer/">Jouer au prototype</a>
     </div>
+    <Downloads />
   </div>
   <div id="diorama" class="stage" data-state="poster">
     <img

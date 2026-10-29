@@ -1,0 +1,217 @@
+# Builds the desktop versions of the game and publishes them on the rolling
+# prerelease `game-desktop-latest`:
+#   ChronoFlore-windows.exe   single file (PCK embedded), unsigned
+#   ChronoFlore-linux.deb     /opt/chronoflore + /usr/bin/chronoflore launcher
+#   ChronoFlore-linux.tar.gz  the bare x86_64 binary (PCK embedded)
+#   ChronoFlore-macos.dmg     universal .app, ad-hoc signed, not notarized
+#   chronoflore-desktop.json  {version, commit, date}
+# The site build (site/scripts/fetch-downloads.mjs) copies them into
+# /telecharger/: the repo is private, release assets are not public.
+#
+# Separate from game-web.yml on purpose: a slow or failing macOS runner never
+# delays or breaks the Web build, and each has its own templates cache.
+# Everything runs on Linux except the .dmg step: macOS runners bill 10x the
+# minutes on a private repo, so that job only downloads the exported .app and
+# runs hdiutil (no checkout, no Godot).
+name: Game desktop builds
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'game/**'
+      - '.github/workflows/game-desktop.yml'
+      - '.github/scripts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: game-desktop
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2
+  RELEASE_TAG: game-desktop-latest
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: version
+        run: echo "version=0.1.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux.x86_64
+
+      - name: Download Godot
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/godot
+          curl -fsSL --retry 3 -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          mv "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" ~/godot/godot
+          chmod +x ~/godot/godot
+          rm -rf /tmp/godot /tmp/godot.zip
+
+      - name: Put Godot on the PATH
+        run: echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      # Only the release templates of the three desktop presets are kept
+      # (~300 MB instead of the ~1.3 GB .tpz).
+      - name: Cache export templates
+        id: cache-templates
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-templates-desktop-${{ env.GODOT_VERSION }}
+
+      - name: Download export templates
+        if: steps.cache-templates.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          dest="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$dest"
+          curl -fsSL --retry 3 -o /tmp/templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q -j -o /tmp/templates.tpz \
+            templates/linux_release.x86_64 templates/windows_release_x86_64.exe \
+            templates/macos.zip templates/version.txt -d "$dest"
+          rm /tmp/templates.tpz
+          ls -l "$dest"
+
+      - name: Import project
+        run: godot --headless --path game --import
+
+      - name: Run game tests
+        run: godot --headless --path game --script res://tests/test_runner.gd
+
+      - name: Export Linux, Windows and macOS
+        run: |
+          set -euo pipefail
+          mkdir -p build/linux build/windows build/macos
+          godot --headless --path game --export-release "Linux" ../build/linux/ChronoFlore.x86_64
+          godot --headless --path game --export-release "Windows Desktop" ../build/windows/ChronoFlore.exe
+          godot --headless --path game --export-release "macOS" ../build/macos/ChronoFlore.zip
+          # embed_pck=true: no .pck next to the binaries.
+          test ! -e build/linux/ChronoFlore.pck
+          test ! -e build/windows/ChronoFlore.pck
+          ls -l build/linux build/windows build/macos
+
+      - name: Smoke test the Linux binary
+        run: |
+          set -euo pipefail
+          dir=$(mktemp -d)
+          cp build/linux/ChronoFlore.x86_64 "$dir/"
+          "$dir/ChronoFlore.x86_64" --headless --quit
+
+      - name: Package Linux (.deb and .tar.gz) and Windows
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          godot --headless --script .github/scripts/render-icon.gd -- game/icon.svg /tmp/chronoflore-256.png 256
+          .github/scripts/build-deb.sh build/linux/ChronoFlore.x86_64 /tmp/chronoflore-256.png "$VERSION" dist/ChronoFlore-linux.deb
+          dpkg-deb -I dist/ChronoFlore-linux.deb
+          tar -czf dist/ChronoFlore-linux.tar.gz -C build/linux ChronoFlore.x86_64
+          cp build/windows/ChronoFlore.exe dist/ChronoFlore-windows.exe
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux-windows
+          path: dist/
+          retention-days: 1
+          compression-level: 0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-app
+          path: build/macos/ChronoFlore.zip
+          retention-days: 1
+          compression-level: 0
+
+  dmg:
+    needs: export
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-app
+
+      - name: Build the .dmg
+        run: |
+          set -euo pipefail
+          mkdir stage
+          ditto -x -k ChronoFlore.zip stage
+          # Ad-hoc signature (no Apple identity): required for Apple Silicon to
+          # launch it at all. Gatekeeper still asks: right-click > Open.
+          codesign --force --deep --sign - stage/ChronoFlore.app
+          codesign --verify --deep --strict stage/ChronoFlore.app
+          ln -s /Applications stage/Applications
+          hdiutil create -volname ChronoFlore -srcfolder stage -ov -format UDZO ChronoFlore-macos.dmg
+          ls -l ChronoFlore-macos.dmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: ChronoFlore-macos.dmg
+          retention-days: 1
+          compression-level: 0
+
+  publish:
+    needs: [export, dmg]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Write the build info
+        env:
+          VERSION: ${{ needs.export.outputs.version }}
+        run: |
+          set -euo pipefail
+          jq -n --arg v "$VERSION" --arg c "$GITHUB_SHA" --arg d "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{version: $v, commit: $c, date: $d}' > dist/chronoflore-desktop.json
+          rm -f dist/ChronoFlore.zip
+          ls -l dist
+
+      - name: Publish to the rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.export.outputs.version }}
+        run: |
+          set -euo pipefail
+          notes="Builds bureau automatiques du jeu (dernier commit de ${GITHUB_REF_NAME}), version ${VERSION}.
+          Non signés : sur macOS, clic droit > Ouvrir ; sur Windows, Informations complémentaires > Exécuter quand même.
+
+          Commit : ${GITHUB_SHA}
+          Run : ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --prerelease --title "Jeu bureau (dernier build)" --notes "$notes"
+          else
+            gh release create "$RELEASE_TAG" --prerelease --target "$GITHUB_SHA" \
+              --title "Jeu bureau (dernier build)" --notes "$notes"
+          fi
+          gh release upload "$RELEASE_TAG" --clobber \
+            dist/ChronoFlore-windows.exe dist/ChronoFlore-linux.deb dist/ChronoFlore-linux.tar.gz \
+            dist/ChronoFlore-macos.dmg dist/chronoflore-desktop.json

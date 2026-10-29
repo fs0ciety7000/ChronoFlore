@@ -44,6 +44,7 @@ deploy:  push sur la branche suivie par Coolify -> build du Dockerfile de site/
 - Coolify : `site/Dockerfile` (build Astro puis nginx). Variables d'API dans `.env` (voir `.env.example`).
 - DNS : enregistrement Cloudflare `chronoflore.cardormedia.com` vers `COOLIFY_SERVER_IP`.
 - Jeu Web (`/jouer/`) : construit par `.github/workflows/game-web.yml` (release `game-web-latest`), téléchargé au build du site par `npm run fetch:game` avec `GAME_RELEASE_TOKEN` = variable de *build* Coolify, PAT fine-grained `Contents: read` sur ce dépôt (sans lui : page « Le jeu arrive bientôt »).
+- Jeu bureau (`/telecharger/`) : `.github/workflows/game-desktop.yml` exporte Windows (`.exe` unique, PCK intégré), Linux (`.deb` via `.github/scripts/build-deb.sh` + `.tar.gz`) et macOS (`.app` universel exporté sous Linux, `.dmg` fait par `hdiutil` sur un runner `macos-latest` minimal, minutes ×10) vers la release `game-desktop-latest`. `npm run fetch:downloads` (même jeton) les copie dans `public/telecharger/` + `manifest.json` lu par `Downloads.astro` (sans eux : « bientôt disponibles », aucun lien). Builds non signés : ne pas promettre le contraire sur le site.
 
 ## Structure du dépôt
 

@@ -19,10 +19,24 @@ export default defineConfig({
     ...devices['Desktop Chrome'],
     launchOptions: { executablePath },
   },
-  webServer: {
-    command: 'npm run build && npx astro preview --port 4321',
-    url: 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      // Desktop downloads not fetched: the "bientôt disponible" state.
+      command: 'npm run build && npx astro preview --port 4321',
+      url: 'http://localhost:4321',
+      env: { DOWNLOADS_MANIFEST: 'tests/e2e/fixtures/downloads-empty.json' },
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      // Same site built with a fixture manifest (tests/e2e/downloads.spec.ts).
+      // Started after the first one (Playwright sets servers up in order).
+      command:
+        'npx astro build --outDir .e2e-downloads && npx vite preview --outDir .e2e-downloads --port 4322 --strictPort',
+      url: 'http://localhost:4322',
+      env: { DOWNLOADS_MANIFEST: 'tests/e2e/fixtures/downloads.json' },
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
 });
