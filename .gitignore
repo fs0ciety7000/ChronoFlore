@@ -30,3 +30,6 @@ site/public/models/polyfork/
 
 # Web build of the game: downloaded at build time (npm run fetch:game), never committed
 site/public/jouer/
+
+# Desktop builds of the game: downloaded at build time (npm run fetch:downloads), never committed
+site/public/telecharger/
