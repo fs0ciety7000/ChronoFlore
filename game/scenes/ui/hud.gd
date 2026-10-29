@@ -43,6 +43,8 @@ func bind(session: NightSession, belt: ToolBelt) -> void:
 	_lucidity.petal_lost.connect(func(_p: int) -> void: _refresh_flower())
 	_lucidity.petal_regrown.connect(func(_p: int) -> void: _refresh_flower())
 	tool_bar.setup(GameState.catalog, belt.tools)
+	# set_tools() (a new tool list) also emits tool_changed: refresh the locks first.
+	belt.tool_changed.connect(func(_t: ToolData) -> void: tool_bar.set_available(belt.tools))
 	belt.tool_changed.connect(set_tool)
 	session.capture_registered.connect(show_capture)
 	set_tool(belt.current())

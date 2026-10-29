@@ -143,3 +143,12 @@ func test_first_night_hint_once() -> void:
 	assert_false(s2.hud.tool_hint.visible, "not shown again")
 	_end(s2)
 	GameState.tool_hint_shown = keep
+
+func test_bar_follows_a_new_tool_list() -> void:
+	var s: NightSession = await _session()
+	var belt := s.heroine.get_node("ToolBelt") as ToolBelt
+	belt.set_tools(GameState.catalog.tools.duplicate())
+	assert_false(s.hud.tool_bar.is_locked(2), "harpoon slot opens when the belt gets it")
+	belt.select(2)
+	assert_eq(s.hud.tool_bar.selected_index(), 2, "and can be highlighted")
+	_end(s)
