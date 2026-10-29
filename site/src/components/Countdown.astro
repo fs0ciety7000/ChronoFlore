@@ -2,15 +2,14 @@
 import Logo from './Logo.astro';
 ---
 
-<section class="countdown" data-scene="countdown" aria-label="Temps restant avant le réveil">
+<section class="countdown" data-scene="countdown" aria-label="Horloge du sommeil">
   <div class="countdown__inner wrap">
     <div class="countdown__clock">
       <span class="countdown__mark" aria-hidden="true"><Logo variant="symbol" size={72} animatedHand /></span>
-      <output id="countdown" aria-live="off">08:00:00</output>
+      <output id="countdown" aria-live="off">00:00:00</output>
     </div>
     <p>
-      Une run, c'est une nuit. Le compte à rebours ne s'arrête jamais : quand le réveil sonne,
-      l'herbier se referme.
+      Une run, c'est une nuit. Chaque plante capturée fait avancer l'heure ; si la lucidité s'éteint avant l'aube, le réveil sonne trop tôt.
     </p>
   </div>
 </section>

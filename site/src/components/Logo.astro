@@ -2,7 +2,7 @@
 // Inline "Fleur-horloge" logo. Geometry comes from src/brand/geometry.mjs and the
 // vectorised Fredoka wordmark from src/brand/wordmark.json (npm run brand).
 // The leaf-hand carries `data-logo-hand`; its CSS pivot is the dial centre so
-// `transform: rotate(...)` turns it like a clock hand (see the countdown, Task 8).
+// `transform: rotate(...)` turns it like a clock hand (see the sleep clock, Task 8).
 import { logoLayout, symbolMarkup } from '../brand/geometry.mjs';
 import wordmark from '../brand/wordmark.json';
 
@@ -10,7 +10,7 @@ interface Props {
   variant?: 'symbol' | 'horizontal' | 'stacked';
   /** Rendered height in CSS pixels. */
   size?: number;
-  /** Marks the leaf-hand as driven by script (countdown). */
+  /** Marks the leaf-hand as driven by script (sleep clock). */
   animatedHand?: boolean;
   label?: string;
   class?: string;

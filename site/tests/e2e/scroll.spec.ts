@@ -38,17 +38,17 @@ async function textContrast(page: Page, selector: string): Promise<number> {
   }, selector);
 }
 
-test.describe('scroll drives palette and countdown', () => {
-  test('top: day palette and 08:00:00', async ({ page }) => {
+test.describe('scroll drives palette and sleep clock', () => {
+  test('top: day palette and 00:00:00', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#countdown')).toHaveText('08:00:00');
+    await expect(page.locator('#countdown')).toHaveText('00:00:00');
     expect(await bgOf(page)).toBe('#f6f1e7');
   });
 
-  test('bottom: dawn palette and 00:00:00', async ({ page }) => {
+  test('bottom: dawn palette and 08:00:00', async ({ page }) => {
     await page.goto('/');
     await scrollToFraction(page, 1);
-    await expect(page.locator('#countdown')).toHaveText('00:00:00');
+    await expect(page.locator('#countdown')).toHaveText('08:00:00');
     await expect.poll(() => bgOf(page)).toBe('#fbeee9');
   });
 
@@ -58,16 +58,16 @@ test.describe('scroll drives palette and countdown', () => {
     await expect.poll(() => bgOf(page)).toBe('#22203a');
   });
 
-  test('stays at 00:00:00 after resizing 1280 -> 375 at the bottom', async ({ page }) => {
+  test('stays at 08:00:00 after resizing 1280 -> 375 at the bottom', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await scrollToFraction(page, 1);
-    await expect(page.locator('#countdown')).toHaveText('00:00:00');
+    await expect(page.locator('#countdown')).toHaveText('08:00:00');
     await page.setViewportSize({ width: 375, height: 800 });
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
-    await expect(page.locator('#countdown')).toHaveText('00:00:00');
+    await expect(page.locator('#countdown')).toHaveText('08:00:00');
     await page.waitForTimeout(500); // let ScrollTrigger refresh settle
-    await expect(page.locator('#countdown')).toHaveText('00:00:00');
+    await expect(page.locator('#countdown')).toHaveText('08:00:00');
     expect(await bgOf(page)).toBe('#fbeee9');
   });
 
@@ -144,7 +144,7 @@ test.describe('reduced motion', () => {
     await scrollToFraction(page, 0.78);
     await expect.poll(() => bgOf(page)).toBe('#22203a');
     await scrollToFraction(page, 1);
-    await expect(page.locator('#countdown')).toHaveText('00:00:00');
+    await expect(page.locator('#countdown')).toHaveText('08:00:00');
   });
 });
 

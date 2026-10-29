@@ -19,7 +19,7 @@ test.describe('static one-page layout', () => {
     await expect(page.locator('[data-specimen]')).toHaveCount(4);
     await expect(page.locator('#chasseuse [data-heroine]')).toHaveText(HEROINE_PLACEHOLDER);
 
-    await expect(page.locator('output#countdown')).toHaveText('08:00:00');
+    await expect(page.locator('output#countdown')).toHaveText('00:00:00');
     const diorama = page.locator('div#diorama');
     await expect(diorama).toHaveAttribute('data-state', 'poster');
     await expect(diorama.locator('img[src="/poster.webp"]')).toHaveAttribute('alt', '');

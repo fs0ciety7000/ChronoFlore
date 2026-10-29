@@ -50,11 +50,11 @@ export function paletteAt(p: number): Palette {
   return { bg, ink, accent: mix('accent'), surface: mix('surface') };
 }
 
-/** Remaining time of the 8h night as `HH:MM:SS`. */
-export function countdownAt(p: number): string {
-  const left = Math.round(TOTAL_SECONDS * (1 - clampProgress(p)));
+/** Elapsed time of the 8h night as `HH:MM:SS` (counts up). */
+export function sleepClockAt(p: number): string {
+  const elapsed = Math.round(TOTAL_SECONDS * clampProgress(p));
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(Math.floor(left / 3600))}:${pad(Math.floor((left % 3600) / 60))}:${pad(left % 60)}`;
+  return `${pad(Math.floor(elapsed / 3600))}:${pad(Math.floor((elapsed % 3600) / 60))}:${pad(elapsed % 60)}`;
 }
 
 /**

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PALETTES,
   clampProgress,
-  countdownAt,
+  sleepClockAt,
   dawnFactor,
   mutedTones,
   nightFactor,
@@ -32,13 +32,13 @@ describe('clampProgress', () => {
   });
 });
 
-describe('countdownAt', () => {
-  it('formats HH:MM:SS from 8h', () => {
-    expect(countdownAt(0)).toBe('08:00:00');
-    expect(countdownAt(1)).toBe('00:00:00');
-    expect(countdownAt(0.5)).toBe('04:00:00');
-    expect(countdownAt(-3)).toBe('08:00:00');
-    expect(countdownAt(NaN)).toBe('08:00:00');
+describe('sleepClockAt', () => {
+  it('counts up HH:MM:SS to 8h', () => {
+    expect(sleepClockAt(0)).toBe('00:00:00');
+    expect(sleepClockAt(1)).toBe('08:00:00');
+    expect(sleepClockAt(0.5)).toBe('04:00:00');
+    expect(sleepClockAt(-3)).toBe('00:00:00');
+    expect(sleepClockAt(NaN)).toBe('00:00:00');
   });
 });
 
