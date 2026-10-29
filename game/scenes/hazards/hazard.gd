@@ -73,9 +73,6 @@ func is_telegraphing() -> bool:
 func has_impacted() -> bool:
 	return _impacted
 
-func time_to_impact() -> float:
-	return maxf(telegraph_time - elapsed, 0.0)
-
 func has_ground_mark() -> bool:
 	return mark != null and mark.visible
 
@@ -96,11 +93,6 @@ func targets_in_radius() -> Array[Node3D]:
 		if h.distance_to(center_xz()) <= radius:
 			out.append(player)
 	return out
-
-## The first player within `radius`, else null.
-func target_in_radius() -> Node3D:
-	var targets := targets_in_radius()
-	return targets[0] if not targets.is_empty() else null
 
 ## Strikes every player within `radius` (each on their own invulnerability window).
 func _strike_all() -> void:

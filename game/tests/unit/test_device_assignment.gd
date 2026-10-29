@@ -25,6 +25,15 @@ func _key(physical: Key, location: KeyLocation = KEY_LOCATION_UNSPECIFIED) -> In
 	e.pressed = true
 	return e
 
+## 0 or 1 for the player whose actions match the event, -1 when nobody's do.
+func _player_for_event(event: InputEvent) -> int:
+	for i in 2:
+		for base in DeviceAssignment.BASES:
+			var action := StringName("p%d_%s" % [i + 1, base])
+			if InputMap.has_action(action) and InputMap.event_is_action(event, action):
+				return i
+	return -1
+
 func _stick(device: int, axis: JoyAxis, value: float) -> InputEventJoypadMotion:
 	var e := InputEventJoypadMotion.new()
 	e.device = device
@@ -109,29 +118,29 @@ func test_reassign_solo_or_fresh() -> void:
 
 func test_solo_bindings_match_the_project() -> void:
 	DeviceAssignment.apply(DeviceAssignment.assign(_pads([]), false))
-	assert_eq(DeviceAssignment.player_for_event(_key(KEY_W)), 0, "W -> P1")
-	assert_eq(DeviceAssignment.player_for_event(_key(KEY_UP)), 0, "arrows -> P1 in solo")
-	assert_eq(DeviceAssignment.player_for_event(_stick(3, JOY_AXIS_LEFT_X, 1.0)), 0, "any pad -> P1 in solo")
-	assert_eq(DeviceAssignment.player_for_event(_click()), 0, "mouse -> P1")
+	assert_eq(_player_for_event(_key(KEY_W)), 0, "W -> P1")
+	assert_eq(_player_for_event(_key(KEY_UP)), 0, "arrows -> P1 in solo")
+	assert_eq(_player_for_event(_stick(3, JOY_AXIS_LEFT_X, 1.0)), 0, "any pad -> P1 in solo")
+	assert_eq(_player_for_event(_click()), 0, "mouse -> P1")
 	_restore()
 
 func test_shared_keyboard_split() -> void:
 	DeviceAssignment.apply(DeviceAssignment.assign(_pads([]), true))
-	assert_eq(DeviceAssignment.player_for_event(_key(KEY_W)), 0, "W -> P1")
-	assert_eq(DeviceAssignment.player_for_event(_key(KEY_A)), 0, "A (Q on AZERTY) -> P1")
-	assert_eq(DeviceAssignment.player_for_event(_key(KEY_F)), 0, "F -> P1 tool")
+	assert_eq(_player_for_event(_key(KEY_W)), 0, "W -> P1")
+	assert_eq(_player_for_event(_key(KEY_A)), 0, "A (Q on AZERTY) -> P1")
+	assert_eq(_player_for_event(_key(KEY_F)), 0, "F -> P1 tool")
 	assert_true(InputMap.event_is_action(_key(KEY_F), &"p1_use_tool"), "F uses P1's tool")
 	assert_true(InputMap.event_is_action(_key(KEY_R), &"p1_next_tool"), "R cycles P1's tool")
-	assert_eq(DeviceAssignment.player_for_event(_key(KEY_UP)), 1, "arrows -> P2 only")
+	assert_eq(_player_for_event(_key(KEY_UP)), 1, "arrows -> P2 only")
 	assert_false(InputMap.event_is_action(_key(KEY_LEFT), &"p1_move_left"), "arrows no longer move P1")
 	assert_true(InputMap.event_is_action(_key(KEY_ENTER), &"p2_use_tool"), "Enter -> P2 tool")
 	assert_true(InputMap.event_is_action(_key(KEY_KP_0), &"p2_use_tool"), "keypad 0 -> P2 tool")
 	assert_true(InputMap.event_is_action(_key(KEY_PERIOD), &"p2_next_tool"), "Period -> P2 next tool")
 	assert_true(InputMap.event_is_action(_key(KEY_KP_PERIOD), &"p2_next_tool"), "keypad period -> P2 next tool")
-	assert_eq(DeviceAssignment.player_for_event(_key(KEY_ENTER)), 1, "Enter is P2's only")
-	assert_eq(DeviceAssignment.player_for_event(_key(KEY_PERIOD)), 1, "Period is P2's only")
-	assert_eq(DeviceAssignment.player_for_event(_stick(0, JOY_AXIS_LEFT_X, 1.0)), -1, "no pad bound")
-	assert_eq(DeviceAssignment.player_for_event(_click()), -1, "nobody reads the mouse")
+	assert_eq(_player_for_event(_key(KEY_ENTER)), 1, "Enter is P2's only")
+	assert_eq(_player_for_event(_key(KEY_PERIOD)), 1, "Period is P2's only")
+	assert_eq(_player_for_event(_stick(0, JOY_AXIS_LEFT_X, 1.0)), -1, "no pad bound")
+	assert_eq(_player_for_event(_click()), -1, "nobody reads the mouse")
 	_restore()
 
 ## Web: a held modifier turns P1's W/Q/Z into Ctrl+W (close tab) or Ctrl+Q; Shift x5 opens
@@ -145,20 +154,20 @@ func test_p2_keys_are_not_modifiers() -> void:
 
 func test_one_pad_split() -> void:
 	DeviceAssignment.apply(DeviceAssignment.assign(_pads([0]), true))
-	assert_eq(DeviceAssignment.player_for_event(_key(KEY_UP)), 0, "keyboard (arrows too) -> P1")
-	assert_eq(DeviceAssignment.player_for_event(_click()), 0, "mouse -> P1")
-	assert_eq(DeviceAssignment.player_for_event(_stick(0, JOY_AXIS_LEFT_X, 1.0)), 1, "pad 0 -> P2")
+	assert_eq(_player_for_event(_key(KEY_UP)), 0, "keyboard (arrows too) -> P1")
+	assert_eq(_player_for_event(_click()), 0, "mouse -> P1")
+	assert_eq(_player_for_event(_stick(0, JOY_AXIS_LEFT_X, 1.0)), 1, "pad 0 -> P2")
 	assert_true(InputMap.event_is_action(_stick(0, JOY_AXIS_TRIGGER_RIGHT, 1.0), &"p2_use_tool"), "RT -> P2 tool")
 	assert_true(InputMap.event_is_action(_stick(0, JOY_AXIS_RIGHT_X, 1.0), &"p2_aim_right"), "right stick -> P2 aim")
 	assert_false(InputMap.event_is_action(_stick(0, JOY_AXIS_LEFT_X, 1.0), &"p1_move_right"), "pad 0 no longer moves P1")
-	assert_eq(DeviceAssignment.player_for_event(_stick(1, JOY_AXIS_LEFT_X, 1.0)), -1, "pad 1 unbound")
+	assert_eq(_player_for_event(_stick(1, JOY_AXIS_LEFT_X, 1.0)), -1, "pad 1 unbound")
 	_restore()
 
 func test_two_pads_split() -> void:
 	DeviceAssignment.apply(DeviceAssignment.assign(_pads([0, 1]), true))
-	assert_eq(DeviceAssignment.player_for_event(_stick(0, JOY_AXIS_LEFT_Y, -1.0)), 0, "pad 0 -> P1")
-	assert_eq(DeviceAssignment.player_for_event(_stick(1, JOY_AXIS_LEFT_Y, -1.0)), 1, "pad 1 -> P2")
-	assert_eq(DeviceAssignment.player_for_event(_button(1, JOY_BUTTON_RIGHT_SHOULDER)), 1, "RB pad 1 -> P2")
+	assert_eq(_player_for_event(_stick(0, JOY_AXIS_LEFT_Y, -1.0)), 0, "pad 0 -> P1")
+	assert_eq(_player_for_event(_stick(1, JOY_AXIS_LEFT_Y, -1.0)), 1, "pad 1 -> P2")
+	assert_eq(_player_for_event(_button(1, JOY_BUTTON_RIGHT_SHOULDER)), 1, "RB pad 1 -> P2")
 	assert_true(InputMap.event_is_action(_button(0, JOY_BUTTON_RIGHT_SHOULDER), &"p1_next_tool"), "RB pad 0 -> P1 next tool")
 	assert_true(InputMap.has_action(&"pause"), "pause untouched")
 	assert_true(InputMap.event_is_action(_button(1, JOY_BUTTON_START), &"pause"), "any pad pauses")
@@ -167,9 +176,9 @@ func test_two_pads_split() -> void:
 func test_unplugged_player_moves_on_keyboard() -> void:
 	var a := DeviceAssignment.reassign(DeviceAssignment.assign(_pads([0, 1]), true), _pads([1]), true)
 	DeviceAssignment.apply(a)
-	assert_eq(DeviceAssignment.player_for_event(_key(KEY_W)), 0, "P1 walks with W after losing pad 0")
-	assert_eq(DeviceAssignment.player_for_event(_stick(1, JOY_AXIS_LEFT_X, 1.0)), 1, "P2 keeps pad 1")
-	assert_eq(DeviceAssignment.player_for_event(_stick(0, JOY_AXIS_LEFT_X, 1.0)), -1, "pad 0 gone")
+	assert_eq(_player_for_event(_key(KEY_W)), 0, "P1 walks with W after losing pad 0")
+	assert_eq(_player_for_event(_stick(1, JOY_AXIS_LEFT_X, 1.0)), 1, "P2 keeps pad 1")
+	assert_eq(_player_for_event(_stick(0, JOY_AXIS_LEFT_X, 1.0)), -1, "pad 0 gone")
 	_restore()
 
 func test_reassign_two_pads_at_once_from_keyboard() -> void:

@@ -1,8 +1,6 @@
 extends Node
 ## Autoload `GameState`: the catalog, the persistent Herbarium and the last night's result.
 
-signal herbarium_changed
-
 ## Who plays the night. Only the heroine dreams: the hero is a figure of her dream.
 enum Mode { SOLO_HEROINE, SOLO_HERO, COOP }
 
@@ -51,7 +49,6 @@ func _debug_multiplier_arg() -> String:
 
 func load_save() -> void:
 	herbarium = SaveStore.load_or_new(save_path)
-	herbarium_changed.emit()
 
 ## Clears the per-night bookkeeping (called when a night session starts).
 func begin_night() -> void:
@@ -65,7 +62,6 @@ func record(species: PlantSpecies) -> Dictionary:
 		_night_discoveries.append(species.id)
 	if bool(result["new_species"]) or int(result["new_detail"]) >= 0:
 		_save()
-	herbarium_changed.emit()
 	return result
 
 ## Applies records and milestones, saves, stores and returns the night summary.
@@ -83,7 +79,6 @@ func finish_night(minutes: int, full: bool, captures: Array[StringName]) -> Dict
 		"best_minutes": herbarium.best_minutes,
 	}
 	_night_discoveries.clear()
-	herbarium_changed.emit()
 	return last_night
 
 ## Starts a night with the current mode (the wake screen's "next night").

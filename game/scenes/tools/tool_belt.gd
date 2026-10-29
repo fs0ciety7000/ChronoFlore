@@ -4,7 +4,6 @@ extends Node
 
 signal tool_changed(tool: ToolData)
 signal tool_used(tool: ToolData)
-signal plant_captured(plant: Plant)
 
 const PROJECTILE_SCENE := preload("res://scenes/tools/projectile.tscn")
 const NET_SWING_SCENE := preload("res://scenes/tools/net_swing.tscn")
@@ -48,10 +47,6 @@ func tick(delta: float) -> void:
 		else:
 			_cooldowns[id] = left
 
-func is_ready() -> bool:
-	var tool := current()
-	return tool != null and not _cooldowns.has(tool.id)
-
 ## False while the tool is on cooldown (or there is no tool).
 func try_use(origin: Vector3, aim_dir: Vector2) -> bool:
 	var tool := current()
@@ -88,7 +83,6 @@ func _use_net(tool: ToolData, origin: Vector3, dir: Vector2) -> void:
 	_spawn_swing(origin, dir)
 	for plant in in_reach:
 		if plant.hit_by_tool(tool.effect):
-			plant_captured.emit(plant)
 			return
 
 func _fire(tool: ToolData, origin: Vector3, dir: Vector2) -> void:

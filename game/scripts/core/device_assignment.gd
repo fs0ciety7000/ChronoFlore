@@ -133,15 +133,6 @@ static func events_for(base: String, kind: Kind, device: int) -> Array[InputEven
 				out.append_array(_pad_events(left, device))
 	return out
 
-## 0 or 1 for the player whose actions match the event, -1 when nobody's do.
-static func player_for_event(event: InputEvent) -> int:
-	for i in 2:
-		for base in BASES:
-			var action := StringName("p%d_%s" % [i + 1, base])
-			if InputMap.has_action(action) and InputMap.event_is_action(event, action):
-				return i
-	return -1
-
 static func _pad_events(events: Array[InputEvent], device: int) -> Array[InputEvent]:
 	var out: Array[InputEvent] = []
 	for e in events:

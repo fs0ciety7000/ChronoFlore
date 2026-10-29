@@ -76,12 +76,10 @@ func test_net_captures_slowed_plant() -> void:
 	var plant := _plant_at(0.0, 1.5)
 	plant.torpor.add_dart()
 	plant.torpor.add_dart()
-	var got: Array[int] = [0, 0]
-	belt.plant_captured.connect(func(_p: Plant) -> void: got[0] += 1)
-	plant.captured.connect(func(_p: Plant) -> void: got[1] += 1)
+	var got: Array[int] = [0]
+	plant.captured.connect(func(_p: Plant) -> void: got[0] += 1)
 	assert_true(belt.try_use(Vector3.ZERO, Vector2(0, 1)), "net used")
-	assert_eq(got[0], 1, "belt plant_captured emitted")
-	assert_eq(got[1], 1, "plant captured emitted")
+	assert_eq(got[0], 1, "plant captured emitted")
 	_cleanup()
 
 func test_net_miss_startles_fleeing_plant() -> void:
@@ -99,7 +97,7 @@ func test_net_ignores_plant_outside_cone() -> void:
 	plant.torpor.add_dart()
 	plant.torpor.add_dart()
 	var got: Array[int] = [0]
-	belt.plant_captured.connect(func(_p: Plant) -> void: got[0] += 1)
+	plant.captured.connect(func(_p: Plant) -> void: got[0] += 1)
 	belt.try_use(Vector3.ZERO, Vector2(0, 1))
 	assert_eq(got[0], 0, "behind the heroine: not captured")
 	_cleanup()

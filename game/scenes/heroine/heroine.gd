@@ -50,8 +50,7 @@ var _mouse_moved: bool = false
 var _own_time: float = 0.0 ## physics seconds ticked by tick_status
 @onready var _visual: Node = $Visual
 
-func _ready() -> void:
-	add_to_group("heroine")
+func _ready() -> void: # group "heroine" comes from heroine.tscn
 	if visual_scene != null:
 		_apply_visual_scene()
 	_apply_facing()

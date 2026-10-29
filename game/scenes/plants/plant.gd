@@ -8,7 +8,6 @@ enum State { WANDER, ALERT, FLEE, PANIC, BURROWED, EMERGING, CAPTURED, ESCAPED }
 
 signal captured(plant: Plant)
 signal escaped(plant: Plant)
-signal fell_asleep(plant: Plant) ## relays Torpor.fell_asleep
 
 ## Heroine closer than this alerts a wandering plant: a careful approach to ~4 m is possible.
 const ALERT_RADIUS := 4.0
@@ -87,7 +86,6 @@ var _hidden: bool = false ## last is_hidden(), to switch the collider when it ch
 
 func _init() -> void:
 	torpor = Torpor.new()
-	torpor.fell_asleep.connect(func() -> void: fell_asleep.emit(self))
 	_rng.randomize()
 	_presenter = PlantPresenter.new(self, _rng)
 	_attack = HostileAttack.new(self, _presenter)
