@@ -1,0 +1,39 @@
+---
+// Section heading with its herbarium caption (« Planche I » ... in Fraunces italic).
+interface Props {
+  plate: string;
+  id: string;
+}
+const { plate, id } = Astro.props;
+---
+
+<hgroup class="plate-heading" data-reveal>
+  <p class="plate-heading__caption">Planche {plate}</p>
+  <h2 id={id}><slot /></h2>
+</hgroup>
+
+<style>
+  .plate-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+  }
+  .plate-heading__caption {
+    margin: 0;
+    font-family: var(--font-plate);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(1.125rem, 1rem + 0.4vw, 1.3125rem);
+    color: var(--caption);
+  }
+  h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--step-h2);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+</style>
