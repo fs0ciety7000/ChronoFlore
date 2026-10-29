@@ -331,6 +331,25 @@ func test_spitter_range_and_rhythm() -> void:
 	assert_near(BehaviorSpitter.COOLDOWN, 3.0, 1e-6, "every 3 s")
 	_cleanup()
 
+func test_spitter_faces_heroine_at_rest() -> void:
+	var plant := _spawn("ortie_regret", Vector2(10, 10))
+	var visual := plant.get_node("Visual") as Node3D
+	visual.rotation.y = 1.0
+	for i in 30:
+		plant.step(DT)
+	assert_near(visual.rotation.y, 1.0, 1e-6, "no threat: keeps its heading (no snap to 0)")
+	for i in 5:
+		plant.set_threat(Vector2(15, 10), Vector2(-1, 0))
+		plant.step(DT)
+	assert_true(_xz(plant).distance_to(Vector2(10, 10)) < 1e-4, "rooted")
+	assert_near(visual.rotation.y, PI / 2.0, 1e-4, "turns to the heroine without moving")
+	_sleep(plant)
+	for i in 5:
+		plant.set_threat(Vector2(10, 15), Vector2(-1, 0))
+		plant.step(DT)
+	assert_near(visual.rotation.y, PI / 2.0, 1e-4, "asleep: stops tracking her")
+	_cleanup()
+
 # --- Champi-Panique (SPORE) --------------------------------------------------------------------
 
 func test_spore_slows_no_petal() -> void:

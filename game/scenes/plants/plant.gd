@@ -435,24 +435,32 @@ func _wander(delta: float) -> Vector2:
 
 func _move(motion: Vector2) -> void:
 	_moving = motion.length_squared() > 1e-10
-	if not _moving:
-		return
-	var m3 := Vector3(motion.x, 0.0, motion.y)
-	if is_inside_tree():
-		var col := move_and_collide(m3)
-		if col != null:
-			var rest := col.get_remainder().slide(col.get_normal())
-			rest.y = 0.0
-			move_and_collide(rest)
-		global_position.y = 0.0
-	else:
-		position += m3
+	if _moving:
+		var m3 := Vector3(motion.x, 0.0, motion.y)
+		if is_inside_tree():
+			var col := move_and_collide(m3)
+			if col != null:
+				var rest := col.get_remainder().slide(col.get_normal())
+				rest.y = 0.0
+				move_and_collide(rest)
+			global_position.y = 0.0
+		else:
+			position += m3
+	_face(motion)
+
+## Turns the model towards its motion, or towards the heroine for behaviors that watch her
+## (even standing still, like a rooted Ortie). With nothing to face it keeps its heading.
+func _face(motion: Vector2) -> void:
 	var visual := get_node_or_null("Visual") as Node3D
-	if visual != null:
-		var face := motion
-		if _has_threat and _behavior != null and _behavior.faces_threat() and _threat != xz():
-			face = _threat - xz()
-		visual.rotation.y = atan2(face.x, face.y)
+	if visual == null:
+		return
+	var face := motion
+	var watching := _has_threat and _behavior != null and _behavior.faces_threat() and _threat != xz()
+	if watching and (_moving or can_attack()): # asleep or pinned, it stops tracking her
+		face = _threat - xz()
+	if face.length_squared() <= 1e-10:
+		return
+	visual.rotation.y = atan2(face.x, face.y)
 
 ## Outside PANIC the plant is clamped inside the outline; in PANIC, reaching the edge means a jump.
 func _keep_on_island() -> void:
