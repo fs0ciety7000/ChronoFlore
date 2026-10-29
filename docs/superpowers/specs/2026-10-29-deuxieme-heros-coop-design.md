@@ -1,6 +1,6 @@
 # ChronoFlore — Deuxième héros, choix du personnage et coop locale : design
 
-Date : 2026-10-29 · Statut : brouillon à valider · Complète `2026-10-29-tranche-verticale-design.md`
+Date : 2026-10-29 · Statut : validé par l'utilisateur · Complète `2026-10-29-tranche-verticale-design.md`
 
 ## 1. Intention
 
