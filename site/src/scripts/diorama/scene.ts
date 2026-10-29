@@ -197,6 +197,7 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
   let glideTarget = 0;
   let glide = 0;
   let lastRender = 0;
+  let frames = 0;
   let islandAttr = '';
   const pointerTarget = new THREE.Vector2();
   const pointer = new THREE.Vector2();
@@ -464,6 +465,8 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
     timer.update(time);
     const dt = Math.min(Math.max(timer.getDelta(), 0), 0.1);
     render(dt);
+    // Published every 10 frames for the e2e tests (proof the loop is running).
+    if (++frames % 10 === 0) host.dataset.frame = String(frames);
     schedule();
   }
 
@@ -621,8 +624,6 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
         m.dispose();
       }
       petals.dispose();
-      footGeo.dispose();
-      footMat.dispose();
       sun.shadow.dispose();
       dot.dispose();
       renderer.dispose();

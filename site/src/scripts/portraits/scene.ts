@@ -61,7 +61,7 @@ export function createPortraits(cards: HTMLElement[], opts: Options): Portraits 
   const phone = matchMedia('(pointer: coarse)').matches || window.innerWidth < 768;
   const dpr = () => Math.min(window.devicePixelRatio || 1, phone ? 1.5 : 2);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.toneMapping = THREE.NoToneMapping; // same colour pipeline as the diorama
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.setClearColor(0x000000, 0);
@@ -76,6 +76,8 @@ export function createPortraits(cards: HTMLElement[], opts: Options): Portraits 
   const timer = new THREE.Timer();
   timer.connect(document);
   let raf = 0;
+  let lastRender = 0;
+  const drawSize = new THREE.Vector2();
   let disposed = false;
   let ready = false;
 
@@ -124,7 +126,7 @@ export function createPortraits(cards: HTMLElement[], opts: Options): Portraits 
       slot.canvas.width = w;
       slot.canvas.height = h;
     }
-    const size = renderer.getSize(new THREE.Vector2());
+    const size = renderer.getSize(drawSize);
     if (size.x !== w || size.y !== h) renderer.setSize(w, h, false);
     if (slot.camera.aspect !== w / h) {
       slot.camera.aspect = w / h;
@@ -150,6 +152,12 @@ export function createPortraits(cards: HTMLElement[], opts: Options): Portraits 
   function frame(time: number) {
     raf = 0;
     if (disposed) return;
+    // ~30 fps: plenty for a slow idle and turn, half the GPU work.
+    if (time - lastRender < 32) {
+      schedule();
+      return;
+    }
+    lastRender = time;
     timer.update(time);
     const dt = Math.min(Math.max(timer.getDelta(), 0), 0.1);
     const now = timer.getElapsed();
