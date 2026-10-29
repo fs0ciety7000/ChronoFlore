@@ -49,6 +49,9 @@ def hexcol(h, lighten=0.0):
 
 
 MATS = {}
+# Self-lit share of every albedo (glTF emissive) so she stays readable under the game's weak
+# night sun and ambient light without flattening the shading.
+LIGHT_LIFT = 0.2
 
 
 def mat(name, hexc, alpha=1.0, rough=0.8, lighten=0.0, emit=0.0):
@@ -62,6 +65,7 @@ def mat(name, hexc, alpha=1.0, rough=0.8, lighten=0.0, emit=0.0):
     bsdf.inputs["Base Color"].default_value = (*col, 1.0)
     bsdf.inputs["Roughness"].default_value = rough
     bsdf.inputs["Metallic"].default_value = 0.0
+    emit = max(emit, LIGHT_LIFT)
     if emit > 0.0:
         bsdf.inputs["Emission Color"].default_value = (*col, 1.0)
         bsdf.inputs["Emission Strength"].default_value = emit
