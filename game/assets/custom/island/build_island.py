@@ -33,7 +33,7 @@ SCENE_PATH = os.path.normpath(os.path.join(HERE, "..", "..", "..", "scenes", "is
 ISLAND_RADIUS = 21.0
 SEGMENTS = 72
 RIM_BAND = 1.4          # width of the lighter rim band
-WALK_INSET = 3.2        # walkable outline = island edge minus this
+WALK_INSET = 3.2        # walkable outline = island edge minus this (= IslandShape.drop_inset)
 OUTLINE_POINTS = 20
 POND_CENTER = (7.0, -6.0)
 POND_RADIUS = 3.0
@@ -471,7 +471,8 @@ def write_shape():
         'script = ExtResource("1_shape")\n'
         'outline = PackedVector2Array(%s)\n'
         'obstacles = PackedVector3Array(%g, %g, %g)\n'
-    ) % (", ".join(pts), POND_CENTER[0], POND_CENTER[1], POND_OBSTACLE_RADIUS)
+        'drop_inset = %g\n'
+    ) % (", ".join(pts), POND_CENTER[0], POND_CENTER[1], POND_OBSTACLE_RADIUS, WALK_INSET)
     with open(SHAPE_PATH, "w") as f:
         f.write(text)
 

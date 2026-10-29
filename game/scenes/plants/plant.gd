@@ -21,8 +21,11 @@ const ALERT_DURATION := 0.25
 const EDGE_MARGIN := 0.3
 ## A panicked plant this close to the edge (or outside) jumps off.
 const ESCAPE_EDGE_DISTANCE := 0.2
+## Seconds of falling (after the visible edge) before the plant is freed.
 const FALL_DURATION := 1.0
 const FALL_GRAVITY := 12.0
+## Minimum ground speed while running off the island.
+const ESCAPE_MIN_SPEED := 2.5
 const BURROW_DURATION := 1.2
 const EMERGE_DURATION := 1.0
 const EMERGE_MIN_DISTANCE := 4.0
@@ -79,6 +82,7 @@ var _wander_has_target: bool = false
 var _wander_pause: float = 0.0
 var _fall_speed: float = 0.0
 var _fall_dir: Vector2 = Vector2.ZERO
+var _fall_travel: float = 0.0 ## ground distance run outward since the escape
 var _anim_t: float = 0.0
 var _moving: bool = false
 var _stun_left: float = 0.0
@@ -272,16 +276,28 @@ func _capture() -> void:
 func _escape() -> void:
 	_fall_dir = island.outward_normal(xz()) if island != null else Vector2.ZERO
 	_fall_speed = 0.0
+	_fall_travel = 0.0
 	state = State.ESCAPED
 	escaped.emit(self)
 
+## Runs outward on the ground until past the visible cliff edge (island.drop_inset), then drops.
 func _fall(delta: float) -> void:
+	var step_len := maxf(species.base_speed, ESCAPE_MIN_SPEED) * delta
+	position += Vector3(_fall_dir.x, 0.0, _fall_dir.y) * step_len
+	_fall_travel += step_len
+	var drop_inset := island.drop_inset if island != null else 0.0
+	if _fall_travel < drop_inset:
+		_state_time = 0.0 # the fall timer starts at the edge
+		return
 	_state_time += delta
 	_fall_speed += FALL_GRAVITY * delta
-	position += Vector3(_fall_dir.x, 0.0, _fall_dir.y) * species.base_speed * delta
 	position.y -= _fall_speed * delta
 	if _state_time >= FALL_DURATION and not is_queued_for_deletion():
 		queue_free()
+
+## Ground distance run outward since the escape.
+func fall_travel() -> float:
+	return _fall_travel
 
 func _emerge() -> void:
 	var dir := flee_direction()

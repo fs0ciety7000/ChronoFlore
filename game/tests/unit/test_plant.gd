@@ -172,6 +172,27 @@ func test_panic_then_escape() -> void:
 	assert_true(plant.is_queued_for_deletion(), "freed after 1 s")
 	_cleanup()
 
+func test_escape_runs_to_visible_edge_before_falling() -> void:
+	var plant := _spawn("revette", Vector2(19.9, 10))
+	plant.island.drop_inset = 2.0
+	plant.state = Plant.State.PANIC
+	plant.set_threat(Vector2(15, 10), Vector2(1, 0))
+	plant.step(DT)
+	assert_eq(plant.state, Plant.State.ESCAPED, "escapes at the walkable edge")
+	var start_x := plant.position.x
+	while plant.fall_travel() < 2.0 - 0.1:
+		plant.step(DT)
+		assert_near(plant.position.y, 0.0, 0.0001, "stays on the ground before the visible edge")
+	assert_true(plant.position.x > start_x + 1.8, "ran outward (east)")
+	assert_false(plant.is_queued_for_deletion(), "not freed while running")
+	for i in 20:
+		plant.step(DT)
+	assert_true(plant.fall_travel() > 2.0, "passed the visible edge")
+	assert_true(plant.position.y < 0.0, "drops once past the visible edge")
+	_steps(plant, int(1.0 / DT) + 2)
+	assert_true(plant.is_queued_for_deletion(), "freed about 1 s after the drop")
+	_cleanup()
+
 func test_calm_down_resets_panic() -> void:
 	var plant := _spawn("revette", Vector2(10, 10))
 	plant.state = Plant.State.FLEE

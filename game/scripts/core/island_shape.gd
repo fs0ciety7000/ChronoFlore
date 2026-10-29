@@ -6,6 +6,9 @@ extends Resource
 ## Circular obstacles inside the outline, one Vector3(x, z, radius) each (the pond): never a
 ## spawn or landing point. Bodies are kept out of them by their colliders.
 @export var obstacles: PackedVector3Array = PackedVector3Array()
+## Distance from the walkable outline out to the visible cliff edge: an escaping plant runs on
+## the ground this far before it drops.
+@export var drop_inset: float = 0.0
 
 func contains(p: Vector2) -> bool:
 	return Geometry2D.is_point_in_polygon(p, outline)
