@@ -56,3 +56,22 @@ export function countdownAt(p: number): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(Math.floor(left / 3600))}:${pad(Math.floor((left % 3600) / 60))}:${pad(left % 60)}`;
 }
+
+/**
+ * Muted text tones derived from a palette. A fixed colour-mix cannot hold 4.5:1
+ * near the day/night crossover (the ink itself only just reaches it there), so
+ * each tone starts at its design weight and moves back toward the ink until it
+ * is readable on the background.
+ */
+export function mutedTones(palette: Palette): { inkSoft: string; caption: string } {
+  const { bg, ink, accent } = palette;
+  const readable = (tone: (t: number) => string, from: number) => {
+    let color = tone(from);
+    for (let t = from; t >= 0 && contrast(color, bg) < MIN_CONTRAST; t -= 0.04) color = tone(Math.max(0, t));
+    return contrast(color, bg) >= MIN_CONTRAST ? color : ink;
+  };
+  return {
+    inkSoft: readable((t) => mixHex(bg, ink, 1 - t), 0.24), // 76% ink at best
+    caption: readable((t) => mixHex(ink, accent, t), 0.32),
+  };
+}

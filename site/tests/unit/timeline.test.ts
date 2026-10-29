@@ -4,6 +4,7 @@ import {
   clampProgress,
   countdownAt,
   dawnFactor,
+  mutedTones,
   nightFactor,
   paletteAt,
 } from '../../src/scripts/timeline';
@@ -58,6 +59,17 @@ describe('paletteAt', () => {
     for (let i = 0; i <= 100; i++) {
       const p = paletteAt(i / 100);
       expect(contrast(p.ink, p.bg), `p=${i / 100}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
+describe('mutedTones', () => {
+  it('keeps both muted tones at >= 4.5:1 for every progress', () => {
+    for (let i = 0; i <= 1000; i++) {
+      const palette = paletteAt(i / 1000);
+      const { inkSoft, caption } = mutedTones(palette);
+      expect(contrast(inkSoft, palette.bg), `inkSoft ${i / 1000}`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(caption, palette.bg), `caption ${i / 1000}`).toBeGreaterThanOrEqual(4.5);
     }
   });
 });

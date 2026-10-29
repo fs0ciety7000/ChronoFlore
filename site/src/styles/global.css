@@ -145,3 +145,31 @@ a {
     transform: none;
   }
 }
+
+/* Lenis: let it own smooth scrolling (native smooth scroll would fight it). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+/*
+ * Reduced motion: the palette steps between three discrete states (day, night,
+ * dawn) and fades over 600ms. :where() keeps specificity at zero so component
+ * transitions still win. Never needed in the normal path: --ink flips at the
+ * crossover and must not be transitioned.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :where(*) {
+    transition:
+      background-color 600ms ease,
+      color 600ms ease,
+      border-color 600ms ease,
+      fill 600ms ease;
+  }
+}

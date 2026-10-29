@@ -27,3 +27,10 @@ import Footer from '../components/Footer.astro';
   </main>
   <Footer />
 </Base>
+
+<script>
+  import { readEnv } from '../scripts/env';
+  import { initScroll } from '../scripts/scroll';
+
+  initScroll(readEnv());
+</script>
