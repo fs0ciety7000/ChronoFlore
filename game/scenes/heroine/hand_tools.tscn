@@ -18,8 +18,8 @@ roughness = 0.5
 
 [sub_resource type="TorusMesh" id="Mesh_hoop"]
 material = SubResource("Mat_hoop")
-inner_radius = 0.105
-outer_radius = 0.125
+inner_radius = 0.126
+outer_radius = 0.15
 rings = 24
 ring_segments = 6
 
@@ -31,9 +31,9 @@ roughness = 0.9
 
 [sub_resource type="CylinderMesh" id="Mesh_bag"]
 material = SubResource("Mat_bag")
-top_radius = 0.11
-bottom_radius = 0.02
-height = 0.16
+top_radius = 0.132
+bottom_radius = 0.024
+height = 0.192
 radial_segments = 12
 rings = 1
 cap_top = false
@@ -117,11 +117,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.205, 0)
 mesh = SubResource("Mesh_handle")
 
 [node name="Hoop" type="MeshInstance3D" parent="Net"]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.6, 0)
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.63, 0)
 mesh = SubResource("Mesh_hoop")
 
 [node name="Bag" type="MeshInstance3D" parent="Net"]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.6, -0.08)
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.63, -0.096)
 mesh = SubResource("Mesh_bag")
 
 [node name="DartGun" type="Node3D" parent="."]
