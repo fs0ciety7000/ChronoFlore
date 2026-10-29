@@ -5,6 +5,7 @@ import Hero from '../components/Hero.astro';
 import Countdown from '../components/Countdown.astro';
 import Dream from '../components/Dream.astro';
 import Hunter from '../components/Hunter.astro';
+import Companion from '../components/Companion.astro';
 import Tools from '../components/Tools.astro';
 import Herbarium from '../components/Herbarium.astro';
 import Share from '../components/Share.astro';
@@ -22,6 +23,7 @@ import SleepDock from '../components/SleepDock.astro';
     <Countdown />
     <Dream />
     <Hunter />
+    <Companion />
     <Tools />
     <Herbarium />
     <Share />
@@ -35,6 +37,7 @@ import SleepDock from '../components/SleepDock.astro';
   import { initScroll } from '../scripts/scroll';
   import { initShare } from '../scripts/share';
   import { mountDiorama } from '../scripts/diorama/loader';
+  import { mountPortraits } from '../scripts/portraits/loader';
   import { initClockHand } from '../scripts/clock-hand';
   import { initSleepDock } from '../scripts/sleep-dock';
   import { initReveal } from '../scripts/reveal';
@@ -48,4 +51,5 @@ import SleepDock from '../components/SleepDock.astro';
   initReveal(env);
   initCursor(env);
   mountDiorama(env, scroll);
+  mountPortraits(env);
 </script>

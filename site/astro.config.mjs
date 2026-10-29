@@ -24,5 +24,11 @@ export default defineConfig({
   site: 'https://chronoflore.cardormedia.com',
   integrations: [requireModels()],
   // three.js is one deferred chunk (~660 kB min, ~170 kB gzip), loaded after idle.
-  vite: { build: { chunkSizeWarningLimit: 700 } },
+  // three.js gets its own named chunk, shared by the diorama and the portraits.
+  vite: {
+    build: {
+      chunkSizeWarningLimit: 700,
+      rollupOptions: { output: { manualChunks: (id) => (id.includes('/node_modules/three/') ? 'three' : undefined) } },
+    },
+  },
 });

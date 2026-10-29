@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-const ANCHORS = ['top', 'reve', 'chasseuse', 'outils', 'herbier', 'partager'];
-const HEROINE_PLACEHOLDER = "[Rendu 3D de l'héroïne — à venir]";
+const ANCHORS = ['top', 'reve', 'chasseuse', 'compagnon', 'outils', 'herbier', 'partager'];
 
 test.describe('static one-page layout', () => {
-  test('renders the opening, all sections and the placeholders', async ({ page }) => {
+  test('renders the opening, all sections and the portraits', async ({ page }) => {
     await page.goto('/');
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
@@ -16,8 +15,9 @@ test.describe('static one-page layout', () => {
       await expect(section).toHaveAttribute('data-scene', /.*/);
     }
 
-    await expect(page.locator('[data-specimen]')).toHaveCount(4);
-    await expect(page.locator('#chasseuse [data-heroine]')).toHaveText(HEROINE_PLACEHOLDER);
+    await expect(page.locator('[data-specimen]')).toHaveCount(12);
+    await expect(page.locator('#chasseuse [data-portrait="heroine"]')).toHaveCount(1);
+    await expect(page.locator('#compagnon [data-portrait="companion"]')).toHaveCount(1);
 
     await expect(page.locator('output#countdown')).toHaveText('00:00:00');
     // Served as the poster; the live 3D scene may already have replaced it.
@@ -79,6 +79,115 @@ test.describe('static one-page layout', () => {
     const share = seen.indexOf('Partager le rêve');
     expect(reve, `focus order: ${seen.join(' | ')}`).toBeGreaterThanOrEqual(0);
     expect(share).toBeGreaterThan(reve);
+  });
+});
+
+const BESTIARY = [
+  ['001', 'Rêvette', 'joie légère', 'commune', 'Rêvette, plante de la joie légère'],
+  ['002', 'Nostalgerbe', 'nostalgie', 'commune', 'Nostalgerbe, plante de la nostalgie'],
+  ['003', 'Câlinette', 'tendresse', 'commune', 'Câlinette, plante de la tendresse'],
+  ['004', 'Souffloine', 'insouciance', 'peu commune', "Souffloine, plante de l'insouciance"],
+  ['005', 'Timidelle', 'timidité', 'peu commune', 'Timidelle, plante de la timidité'],
+  ['006', 'Mélancolys', 'mélancolie', 'peu commune', 'Mélancolys, plante de la mélancolie'],
+  ['007', 'Lumiole', 'espoir', 'rare', "Lumiole, plante de l'espoir"],
+  ['008', 'Ronce-Angoisse', 'angoisse', 'commune', "Ronce-Angoisse, plante de l'angoisse"],
+  ['009', 'Croque-Colère', 'colère', 'peu commune', 'Croque-Colère, plante de la colère'],
+  ['010', 'Lierre-Jalousie', 'jalousie', 'peu commune', 'Lierre-Jalousie, plante de la jalousie'],
+  ['011', 'Ortie-Regret', 'regret', 'rare', 'Ortie-Regret, plante du regret'],
+  ['012', 'Champi-Panique', 'panique', 'rare', 'Champi-Panique, plante de la panique'],
+] as const;
+
+test.describe('herbarium bestiary', () => {
+  test('lists the 12 plants in order, 7 gentle then 5 hostile', async ({ page }) => {
+    await page.goto('/');
+    const herbier = page.locator('#herbier');
+    await expect(herbier.locator('.herbarium__note')).toHaveText('Textes provisoires — le bestiaire pousse avec le jeu');
+    await expect(herbier).not.toContainText("Espèces d'exemple");
+    await expect(herbier.locator('svg.plate__drawing')).toHaveCount(0);
+
+    const gentle = herbier.locator('[data-group="gentle"]');
+    const hostile = herbier.locator('[data-group="hostile"]');
+    await expect(gentle.locator('h3')).toHaveText('Les douces — à cueillir au filet');
+    await expect(hostile.locator('h3')).toHaveText('Les monstres plantes — à endormir avant de les cueillir');
+    await expect(gentle.locator('[data-specimen]')).toHaveCount(7);
+    await expect(hostile.locator('[data-specimen]')).toHaveCount(5);
+    await expect(hostile.locator('[data-specimen][data-hostile]')).toHaveCount(5);
+    await expect(gentle.locator('[data-hostile]')).toHaveCount(0);
+
+    const cards = herbier.locator('[data-specimen]');
+    for (const [i, [n, name, emotion, rarity]] of BESTIARY.entries()) {
+      const card = cards.nth(i);
+      await expect(card.locator('.plate__number')).toHaveText(`N° ${n}`);
+      await expect(card.locator('h4')).toHaveText(name);
+      await expect(card.locator('.plate__emotion')).toHaveText(emotion);
+      await expect(card.locator('.plate__rarity')).toHaveText(rarity);
+    }
+    await expect(cards.nth(0).locator('.plate__hour')).toHaveText('dès la tombée du sommeil');
+    await expect(cards.nth(6).locator('.plate__hour')).toHaveText('dès 4 h');
+    await expect(cards.nth(11).locator('.plate__hour')).toHaveText('dès 5 h');
+  });
+
+  test('each card has a sized, lazy WebP thumbnail with the right alt', async ({ page }) => {
+    await page.goto('/');
+    const cards = page.locator('#herbier [data-specimen]');
+    for (const [i, [, , , , alt]] of BESTIARY.entries()) {
+      const img = cards.nth(i).locator('img');
+      await expect(img).toHaveAttribute('alt', alt);
+      await expect(img).toHaveAttribute('width', /^\d+$/);
+      await expect(img).toHaveAttribute('height', /^\d+$/);
+      await expect(img).toHaveAttribute('loading', 'lazy');
+      await expect(img).toHaveAttribute('src', /^\/herbier\/[a-z_]+\.webp$/);
+    }
+  });
+
+  test('thumbnails are served as small WebP files', async ({ page }) => {
+    await page.goto('/');
+    const srcs = await page.locator('#herbier img').evaluateAll((is) => is.map((i) => i.getAttribute('src')!));
+    expect(srcs).toHaveLength(12);
+    for (const src of srcs) {
+      const res = await page.request.get(src);
+      expect(res.status(), src).toBe(200);
+      expect(res.headers()['content-type'], src).toContain('image/webp');
+      expect((await res.body()).length, src).toBeLessThanOrEqual(15 * 1024);
+    }
+  });
+
+  test('images reserve their space: no layout shift while they load', async ({ page }) => {
+    await page.goto('/');
+    const boxes = await page.locator('#herbier img').evaluateAll((is) =>
+      is.map((i) => {
+        const r = i.getBoundingClientRect();
+        return { w: i.getAttribute('width'), h: i.getAttribute('height'), rw: r.width, rh: r.height };
+      }),
+    );
+    for (const { w, h, rw, rh } of boxes) {
+      expect(Number(w)).toBeGreaterThan(0);
+      expect(w).toBe(h); // square thumbnails, same aspect as the files
+      expect(Math.abs(rw - rh)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test('"Lire la page" opens with the keyboard and shows the fragment', async ({ page }) => {
+    await page.goto('/');
+    const card = page.locator('#herbier [data-specimen]').first();
+    const details = card.locator('details');
+    await expect(details).not.toHaveAttribute('open', '');
+    await expect(details.locator('summary')).toHaveText('Lire la page');
+    await expect(details.locator('p')).toBeHidden();
+    await details.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(details).toHaveAttribute('open', '');
+    await expect(details.locator('p')).toBeVisible();
+    await expect(details.locator('p')).toContainText("Une petite joie qui ne pesait rien");
+    await expect(details.locator('p')).not.toContainText('provisoire');
+    await page.keyboard.press('Space');
+    await expect(details).not.toHaveAttribute('open', '');
+  });
+
+  test('keeps the grid inside the viewport on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
 });
 

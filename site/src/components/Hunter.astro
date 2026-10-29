@@ -1,58 +1,11 @@
 ---
-import PlateHeading from './PlateHeading.astro';
+import CharacterPlate from './CharacterPlate.astro';
 ---
 
-<section id="chasseuse" class="hunter wrap section" data-scene="chasseuse" aria-labelledby="chasseuse-title">
-  <div class="hunter__portrait" data-heroine data-reveal>[Rendu 3D de l'héroïne — à venir]</div>
-  <div class="hunter__text">
-    <PlateHeading plate="II" id="chasseuse-title">La chasseuse</PlateHeading>
-    <p>
-      Ses lunettes roses, ses longues tresses, son haut à rayures : dans le rêve elle garde tout ça,
-      et y ajoute un carnet d'herbier et une besace pleine d'outils.
-    </p>
-    <p>Elle n'est pas là pour détruire. Elle capture pour garder.</p>
-  </div>
-</section>
-
-<style>
-  .hunter {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: center;
-    gap: 2rem 4rem;
-  }
-  @media (min-width: 56rem) {
-    .hunter {
-      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-    }
-  }
-  .hunter__portrait {
-    display: grid;
-    place-items: center;
-    width: 100%;
-    max-width: 28rem;
-    aspect-ratio: 4 / 5;
-    padding: 1.5rem;
-    border-radius: 2rem;
-    background: var(--field);
-    color: var(--on-field);
-    font-weight: 700;
-    text-align: center;
-    text-wrap: balance;
-  }
-  .hunter__text {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    max-width: 34rem;
-    font-size: var(--step-lead);
-    line-height: 1.55;
-  }
-  .hunter__text > p {
-    margin: 0;
-    text-wrap: pretty;
-  }
-  .hunter__text > :global(.plate-heading) {
-    margin-bottom: 0.5rem;
-  }
-</style>
+<CharacterPlate id="chasseuse" plate="II" title="La chasseuse" character="heroine">
+  <p>
+    Ses lunettes roses, ses longues tresses, son haut à rayures : dans le rêve elle garde tout ça,
+    et y ajoute un carnet d'herbier et une besace pleine d'outils.
+  </p>
+  <p>Elle n'est pas là pour détruire. Elle capture pour garder.</p>
+</CharacterPlate>

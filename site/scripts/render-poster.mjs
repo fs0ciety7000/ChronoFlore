@@ -1,6 +1,9 @@
-// Renders the two raster assets from the live 3D diorama:
+// Renders the raster assets from the live 3D scenes:
 //   public/poster.webp  the island at progress 0 (the poster shown before the 3D loads)
 //   public/og.png       1200x630 share card: the island at dusk + logo + title
+//   src/assets/portraits/{heroine,companion}.webp
+//                       still portraits (Idle, three-quarter) shown without 3D;
+//                       run `npm run build` again afterwards to ship them
 // Builds the site, serves it with `astro preview`, drives headless Chromium
 // with software WebGL (swiftshader) and waits for data-state="live".
 // Run: npm run poster
@@ -121,6 +124,47 @@ async function writePoster(png) {
   console.log(`poster.webp ${buf.length} bytes (quality ${quality + 5})`);
 }
 
+const PORTRAIT_SIZE = { width: 720, height: 900 }; // the 4:5 card
+const PORTRAIT_BYTES = 80 * 1024;
+
+/**
+ * Captures each live portrait canvas in still mode (frozen Idle pose at the
+ * base angle, see src/scripts/portraits/scene.ts) on a transparent background,
+ * so the image sits on the card's --field colour at any hour.
+ */
+async function writePortraits(browser) {
+  const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 2 });
+  try {
+    await page.addInitScript(() =>
+      document.addEventListener('DOMContentLoaded', () => document.documentElement.setAttribute('data-portrait-still', '')),
+    );
+    await page.goto(ORIGIN, { waitUntil: 'load' });
+    for (const key of ['heroine', 'companion']) {
+      const card = page.locator(`[data-portrait="${key}"]`);
+      await card.scrollIntoViewIfNeeded();
+      await page.waitForSelector(`[data-portrait="${key}"][data-state="live"]`, { timeout: 60_000 });
+      await page.waitForTimeout(500);
+      const style = await page.addStyleTag({
+        content:
+          'html, body { background: transparent !important } * { visibility: hidden !important } .portrait__canvas { visibility: visible !important; animation: none !important }',
+      });
+      const png = await card.locator('canvas').screenshot({ type: 'png', omitBackground: true });
+      await style.evaluate((el) => el.remove());
+      let quality = 86;
+      let buf;
+      do {
+        buf = await sharp(png).resize(PORTRAIT_SIZE.width, PORTRAIT_SIZE.height).webp({ quality, alphaQuality: 90, effort: 6 }).toBuffer();
+        quality -= 4;
+      } while (buf.length > PORTRAIT_BYTES && quality > 30);
+      if (buf.length > PORTRAIT_BYTES) throw new Error(`${key}.webp is ${buf.length} bytes (> ${PORTRAIT_BYTES})`);
+      writeFileSync(join(siteDir, 'src', 'assets', 'portraits', `${key}.webp`), buf);
+      console.log(`portraits/${key}.webp ${buf.length} bytes (quality ${quality + 4})`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
 const font = (pkg, file, weight, style) => {
   const data = readFileSync(require.resolve(`${pkg}/files/${file}`)).toString('base64');
   return `@font-face{font-family:'${pkg.split('/')[1] === 'fredoka' ? 'Fredoka' : 'Nunito'}';font-weight:${weight};font-style:${style};src:url(data:font/woff2;base64,${data}) format('woff2')}`;
@@ -177,6 +221,7 @@ try {
   browser = await chromium.launch({ executablePath, args: WEBGL_ARGS });
   await writePoster(await captureIsland(browser, 0));
   await writeOg(browser, await captureIsland(browser, DUSK_PROGRESS));
+  await writePortraits(browser);
   console.log(`done: ${statSync(join(publicDir, 'poster.webp')).size} / ${statSync(join(publicDir, 'og.png')).size} bytes`);
 } finally {
   await browser?.close();

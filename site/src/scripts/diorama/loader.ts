@@ -5,7 +5,7 @@ import type { ScrollHandle } from '../scroll';
 
 type Progress = Pick<ScrollHandle, 'onProgress'>;
 
-function whenIdle(cb: () => void) {
+export function whenIdle(cb: () => void) {
   const idle = () => {
     if ('requestIdleCallback' in window) requestIdleCallback(cb, { timeout: 3000 });
     else setTimeout(cb, 1000);
