@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/plants/visuals/lierre_jalousie.tscn" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -12,6 +13,7 @@ capturable = true
 hostile = true
 base_speed = 1.0
 min_hour = 3.0
+visual_scene = ExtResource("2")
 behavior = 9
 fragment = "(provisoire) Un petit lierre acide qui regarde toujours ce que les autres ont. Il ne court pas, il s'accroche : des lianes jaillissent sous les pieds pour retenir, juste un instant, ce qui allait partir."
 details = PackedStringArray("(provisoire) Ses feuilles virent au vert citron quand quelqu'un d'autre est applaudi.", "(provisoire) Endormi, il s'enroule autour de lui-même, comme pour se tenir compagnie.")

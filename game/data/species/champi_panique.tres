@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/plants/visuals/champi_panique.tscn" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -12,6 +13,7 @@ capturable = true
 hostile = true
 base_speed = 1.4
 min_hour = 5.0
+visual_scene = ExtResource("2")
 behavior = 11
 fragment = "(provisoire) Un petit champignon aux yeux qui tournent, qui arrive tard dans la nuit, quand tout s'accélère. Il gonfle, gonfle, puis éclate en nuage. Dedans, les jambes deviennent lourdes ; il suffit d'attendre que ça passe."
 details = PackedStringArray("(provisoire) Il compte ses spores pour se calmer, et se trompe toujours.", "(provisoire) Endormi, il dégonfle doucement, comme une longue respiration.")

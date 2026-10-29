@@ -927,6 +927,395 @@ def lumi_extra(action, t):
     return pose
 
 
+# ---------------------------------------------------------------- hostile helpers
+def brow(name, c, r, s, inner, outer, parent, mat_name="Brow", thick=(0.011, 0.017, 0.009), lift=0.012):
+    """Thick brow from inner (yaw, el) to outer (yaw, el), mirrored by side s. Frown: inner el lower."""
+    pi, ni = surf(c, r, s * inner[0], inner[1])
+    po, no = surf(c, r, s * outer[0], outer[1])
+    pm, nm = surf(c, r, s * (inner[0] + outer[0]) / 2, (inner[1] + outer[1]) / 2 + 0.01)
+    add_part(name, tube([pi + ni * lift, pm + nm * (lift + 0.004), po + no * lift], list(thick), sides=5),
+             mat_name, rigid(parent))
+
+
+def fang(name, base, direction, length, radius, parent, mat_name="Teeth"):
+    d = Vector(direction).normalized()
+    add_part(name, tube([Vector(base) - d * 0.004, Vector(base) + d * length], [radius, 0.0], sides=5),
+             mat_name, rigid(parent))
+
+
+# ---------------------------------------------------------------- species: Croque-Colère
+def build_croque_colere():
+    """Colère (hostile): a coral flytrap head with a big grumpy mouth and tiny fangs, frowning eyes
+    on top, spiky leaf collar, on a short stem with leaf arms. Snaps its jaw when it charges."""
+    mat("CroqueJaw", "#f58b8e", rough=0.7)
+    mat("CroqueJawLow", "#ec7a86", rough=0.7)
+    mat("CroqueSpot", "#ffcfc4", rough=0.75)
+    mat("CroqueMouth", "#a9465f", rough=0.6)
+    mat("CroqueTongue", "#ff9db2", rough=0.6)
+    mat("CroqueStem", "#9fd193", rough=0.85)
+    mat("CroqueLeaf", "#b9e09d", rough=0.85)
+    mat("CroqueSclera", "#fff3d4", rough=0.35)
+    mat("EyeDark", "#3b2632", rough=0.3)
+    mat("EyeWhite", "#ffffff", rough=0.3, emit=0.4)
+    mat("Brow", "#87324a", rough=0.7)
+    mat("Teeth", "#fffaf2", rough=0.4)
+    mat("Blush", "#ff9cae", rough=0.8)
+
+    uc = Vector((0, 0, 0.56))
+    ur = Vector((0.27, 0.25, 0.15))
+    lc = Vector((0, -0.005, 0.345))
+    lr = Vector((0.245, 0.23, 0.085))
+    bone("root", (0, 0, 0), (0, 0, 0.06))
+    bone("stem", (0, 0, 0.02), (0, 0, 0.3), "root")
+    bone("head", (0, 0, 0.3), (0, 0, 0.75), "stem")
+    bone("jaw", (0, 0.16, 0.36), (0, -0.12, 0.36), "head", roll=Vector((0, 0, 1)))
+    bone("arm.L", (0.1, -0.02, 0.17), (0.28, -0.08, 0.24), "stem")
+    bone("arm.R", (-0.1, -0.02, 0.17), (-0.28, -0.08, 0.24), "stem")
+
+    add_part("UpperJaw", ellipsoid(uc, ur, 16, 9), "CroqueJaw", rigid("head"))
+    add_part("LowerJaw", ellipsoid(lc, lr, 14, 7), "CroqueJawLow", rigid("jaw"))
+    # the dark mouth fills the gap between the jaws (recessed a little)
+    add_part("MouthIn", ellipsoid((0, 0.02, 0.43), (0.225, 0.2, 0.06), 14, 6), "CroqueMouth",
+             along_z("jaw", "head", 0.4, 0.46))
+    add_part("Tongue", ellipsoid((0, -0.06, 0.4), (0.09, 0.08, 0.025), 10, 5), "CroqueTongue", rigid("jaw"))
+    # upper fangs along the front rim, lower fangs pointing up
+    for k, yaw in enumerate((-0.62, -0.22, 0.22, 0.62)):
+        p, n = surf(uc, ur, yaw, -0.78)
+        fang("Fang%d" % k, p + Vector((0, 0, 0.012)), (n.x * 0.25, n.y * 0.25, -1), 0.05, 0.018, "head")
+    for k, yaw in enumerate((-0.42, 0.42)):
+        p, n = surf(lc, lr, yaw, 0.62)
+        fang("LowFang%d" % k, p - Vector((0, 0, 0.008)), (n.x * 0.2, n.y * 0.2, 1), 0.035, 0.015, "jaw")
+    # light spots on the crown
+    for k, (yaw, el, rr) in enumerate(((2.3, 0.75, 0.045), (-2.5, 0.6, 0.04), (1.6, 0.3, 0.036))):
+        face_decal("Spot%d" % k, uc, ur, yaw, el, (rr, rr * 0.9, 0.008), "CroqueSpot", "head")
+    # spiky leaf collar behind the head
+    for k in range(5):
+        a = math.radians(110 + 35 * k)
+        out = Vector((math.sin(a), -math.cos(a), 0.0))
+        base = Vector((0, 0, 0.42)) + out * 0.16
+        add_part("Collar%d" % k, leaf(base, (out * 0.8 + Vector((0, 0, 0.45))).normalized(), Vector((0, 0, 1)),
+                                      0.22, 0.09, 0.025, curl=0.03, u=6, v=5), "CroqueLeaf", rigid("head"))
+    stem_prof = [(0.0, 0.34), (0.06, 0.33), (0.07, 0.24), (0.075, 0.12), (0.09, 0.05), (0.08, 0.02), (0.0, 0.015)]
+    add_part("Stem", lathe(stem_prof, 10), "CroqueStem", along_z("stem", "head", 0.26, 0.34))
+    for s, S in ((1, "L"), (-1, "R")):
+        add_part("Arm." + S, leaf((s * 0.07, -0.01, 0.17), (s * 0.85, -0.3, 0.42), (0, -0.2, 1), 0.2, 0.1, 0.024,
+                                  curl=0.04), "CroqueLeaf", rigid("arm." + S))
+        add_part("Foot." + S, ellipsoid((s * 0.08, -0.03, 0.032), (0.055, 0.07, 0.034), 8, 5), "CroqueStem",
+                 rigid("root"))
+        face_eye(s, uc, ur, 0.36, 0.42, 0.05, 0.056, "head", sclera="CroqueSclera", pupil_shift=(-0.16, -0.18))
+        brow("Brow." + S, uc, ur, s, (0.12, 0.72), (0.56, 0.86), "head")
+        face_decal("Blush." + S, uc, ur, s * 0.72, 0.02, (0.04, 0.02, 0.006), "Blush", "head")
+    return {"root": "root", "lower": "stem", "upper": "head",
+            "arms": [("arm.L", 1), ("arm.R", -1)], "sleep_arm": -18.0, "attack": True,
+            "extra": croque_extra, "attack_extra": croque_attack}
+
+
+def croque_extra(action, t):
+    s = math.sin(2 * math.pi * t)
+    if action == "Idle":  # grumpy chomping
+        chomp = max(0.0, math.sin(4 * math.pi * t)) ** 2
+        return {"jaw": {"rot": (-10 * chomp, 0, 0)}}
+    if action == "Move":
+        return {"jaw": {"rot": (-14 * max(0.0, math.sin(4 * math.pi * t)), 0, 0)}}
+    if action == "Sleep":
+        return {"jaw": {"rot": (-6 - 2 * s, 0, 0)}}
+    return {}
+
+
+def croque_attack(phase):
+    return {"windup": {"jaw": {"rot": (-32, 0, 0)}, "head": {"rot": (-14, 0, 0)}},
+            "lunge": {"jaw": {"rot": (2, 0, 0)}},
+            "settle": {"jaw": {"rot": (-8, 0, 0)}}}.get(phase, {})
+
+
+# ---------------------------------------------------------------- species: Lierre-Jalousie
+IVY_LEAVES = [  # yaw (deg, 0 = front), elevation (rad), size, material
+    (100, 0.15, 0.15, "LierreLeafA"), (140, 0.4, 0.16, "LierreLeafB"), (180, 0.2, 0.17, "LierreLeafA"),
+    (220, 0.4, 0.16, "LierreLeafC"), (260, 0.15, 0.15, "LierreLeafB"), (160, -0.2, 0.15, "LierreLeafC"),
+    (200, -0.2, 0.15, "LierreLeafB"), (120, -0.15, 0.14, "LierreLeafC"), (240, -0.15, 0.14, "LierreLeafA"),
+    (180, 0.75, 0.15, "LierreLeafB"),
+]
+
+
+def build_lierre_jalousie():
+    """Jalousie (hostile): a sour lime bulb wrapped in ivy leaves, side-eyeing from under heavy
+    lids with a pout and one tiny fang; curly tendril arms and a corkscrew sprout."""
+    mat("LierreBody", "#dbeb8e", rough=0.8)
+    mat("LierreLid", "#c8df74", rough=0.8)
+    mat("LierreLeafA", "#9fcb57", rough=0.85)
+    mat("LierreLeafB", "#86ba4a", rough=0.85)
+    mat("LierreLeafC", "#b6d964", rough=0.85)
+    mat("LierreVine", "#79a843", rough=0.85)
+    mat("LierreSclera", "#f6f8d8", rough=0.35)
+    mat("EyeDark", "#33361f", rough=0.3)
+    mat("EyeWhite", "#ffffff", rough=0.3, emit=0.4)
+    mat("Brow", "#4f6a26", rough=0.7)
+    mat("Mouth", "#5d4a2a", rough=0.6)
+    mat("Teeth", "#fffaf2", rough=0.4)
+    mat("Blush", "#e7c86c", rough=0.8)
+
+    bc = Vector((0, 0, 0.27))
+    br = Vector((0.215, 0.195, 0.235))
+    bone("root", (0, 0, 0), (0, 0, 0.06))
+    bone("body", (0, 0, 0.03), (0, 0, 0.5), "root")
+    bone("sprout", (0, 0.03, 0.5), (0, 0.03, 0.66), "body")
+    bone("arm.L", (0.2, -0.02, 0.22), (0.36, -0.08, 0.3), "body")
+    bone("arm.R", (-0.2, -0.02, 0.22), (-0.36, -0.08, 0.3), "body")
+
+    add_part("Body", ellipsoid(bc, br, 16, 9), "LierreBody", rigid("body"))
+    for k, (yaw, el, size, mname) in enumerate(IVY_LEAVES):
+        p, n = surf(bc, br, math.radians(yaw), el)
+        x, y, n = frame(n)
+        direction = (y * 0.8 + n * 0.45).normalized()
+        add_part("Ivy%d" % k, leaf(p - n * 0.01, direction, n, size, size * 0.85, 0.025, curl=0.03, u=6, v=5),
+                 mname, rigid("body"))
+    # corkscrew sprout
+    top = bc + Vector((0, 0.03, br.z - 0.015))
+    spiral = [top + Vector((0.035 * math.sin(i * 1.1), 0.035 * (1 - math.cos(i * 1.1)), 0.022 * i))
+              for i in range(9)]
+    add_part("Sprout", tube(spiral, [0.016] * 8 + [0.0], sides=5), "LierreVine", rigid("sprout"))
+    add_part("SproutLeaf", leaf(spiral[-2], (0.3, -0.2, 0.9), (0, -1, 0.2), 0.1, 0.08, 0.02, curl=0.02, u=6, v=4),
+             "LierreLeafC", rigid("sprout"))
+    for s, S in ((1, "L"), (-1, "R")):
+        # curly tendril arms
+        p0, n0 = surf(bc, br, s * 1.5, -0.1)
+        side = Vector((s, 0, 0))
+        ctrl = [p0 - n0 * 0.01, p0 + side * 0.08 + Vector((0, -0.03, 0.02)), p0 + side * 0.15 + Vector((0, -0.05, 0.08)),
+                p0 + side * 0.13 + Vector((0, -0.08, 0.15)), p0 + side * 0.07 + Vector((0, -0.07, 0.15)),
+                p0 + side * 0.07 + Vector((0, -0.05, 0.1))]
+        pts = catmull(ctrl, 10)
+        add_part("Arm." + S, tube(pts, [0.024 - 0.016 * i / 9 for i in range(9)] + [0.0], sides=5), "LierreVine",
+                 rigid("arm." + S))
+        add_part("ArmLeaf." + S, leaf(pts[3], (s * 0.6, -0.2, 0.6), (0, -1, 0.3), 0.09, 0.07, 0.018, curl=0.02),
+                 "LierreLeafA", rigid("arm." + S))
+        add_part("Foot." + S, ellipsoid((s * 0.08, -0.03, 0.03), (0.055, 0.065, 0.032), 8, 5), "LierreLeafB",
+                 rigid("root"))
+        # side-eye: both pupils glance to the same side, under heavy envious lids
+        face_eye(s, bc, br, 0.33, 0.14, 0.046, 0.054, "body", sclera="LierreSclera",
+                 pupil_shift=(0.34 * s, -0.12), lid=("LierreLid", 0.4))
+        brow("Brow." + S, bc, br, s, (0.1, 0.36), (0.48, 0.44) if s > 0 else (0.48, 0.5), "body")
+        face_decal("Blush." + S, bc, br, s * 0.62, -0.06, (0.034, 0.018, 0.006), "Blush", "body")
+    p, x, y, n = mouth(bc, br, -0.14, 0.03, -0.012, "body", thick=0.009, yaw=0.05)
+    fang("Fang", p + x * 0.012 + n * 0.006 - y * 0.004, -y + n * 0.1, 0.022, 0.01, "body")
+    return {"root": "root", "lower": "body", "upper": "sprout",
+            "arms": [("arm.L", 1), ("arm.R", -1)], "arm_rest": 0.3, "attack": True,
+            "extra": lierre_extra, "attack_extra": lierre_attack}
+
+
+def lierre_extra(action, t):
+    s = math.sin(2 * math.pi * t)
+    if action == "Idle":
+        return {"sprout": {"rot": (0, 25 * s, 6 * s)}}
+    if action == "Move":
+        return {"sprout": {"rot": (-12, 40 * math.sin(4 * math.pi * t), 0)}}
+    if action == "Sleep":
+        return {"sprout": {"rot": (18, 0, 8)}}
+    return {}
+
+
+def lierre_attack(phase):
+    return {"windup": {"sprout": {"rot": (-20, 60, 0)}, "arm.L": {"rot": (0, 0, 80)}, "arm.R": {"rot": (0, 0, -80)}},
+            "lunge": {"sprout": {"rot": (14, -30, 0)}, "arm.L": {"rot": (0, 0, -30)}, "arm.R": {"rot": (0, 0, 30)}},
+            }.get(phase, {})
+
+
+# ---------------------------------------------------------------- species: Ortie-Regret
+ORTIE_LEAVES = [  # height, yaw (deg), length, material
+    (0.2, 100, 0.2, "OrtieLeafA"), (0.2, -100, 0.2, "OrtieLeafA"),
+    (0.32, 160, 0.18, "OrtieLeafB"), (0.32, -160, 0.18, "OrtieLeafB"),
+    (0.43, 60, 0.17, "OrtieLeafA"), (0.43, -60, 0.17, "OrtieLeafA"),
+]
+
+
+def build_ortie_regret():
+    """Regret (hostile): a rooted grey-teal nettle, droopy serrated leaves hanging along its stem,
+    a sulky bulb head with heavy lids, frowning brows and a tiny fang; spits thorns."""
+    mat("OrtieHead", "#b6d3cf", rough=0.8)
+    mat("OrtieLid", "#9fc2bd", rough=0.8)
+    mat("OrtieStem", "#7fa7a2", rough=0.85)
+    mat("OrtieLeafA", "#8db5b0", rough=0.85)
+    mat("OrtieLeafB", "#a2c5c0", rough=0.85)
+    mat("OrtieHair", "#e8f4f1", rough=0.6)
+    mat("OrtieRoot", "#a69aa6", rough=0.9)
+    mat("OrtieSclera", "#eef6f2", rough=0.35)
+    mat("EyeDark", "#28343a", rough=0.3)
+    mat("EyeWhite", "#ffffff", rough=0.3, emit=0.4)
+    mat("Brow", "#3f5a5c", rough=0.7)
+    mat("Mouth", "#3e4650", rough=0.6)
+    mat("Teeth", "#fffaf2", rough=0.4)
+    mat("Blush", "#c9b6cf", rough=0.8)
+
+    hc = Vector((0, 0, 0.68))
+    hr = Vector((0.185, 0.17, 0.175))
+    bone("root", (0, 0, 0), (0, 0, 0.06))
+    bone("stem", (0, 0, 0.02), (0, 0, 0.52), "root")
+    bone("head", (0, 0, 0.52), (0, 0, 0.85), "stem")
+    bone("arm.L", (0.03, 0, 0.42), (0.2, -0.05, 0.36), "stem")
+    bone("arm.R", (-0.03, 0, 0.42), (-0.2, -0.05, 0.36), "stem")
+    bone("ear.L", (0.1, 0.02, 0.76), (0.22, 0.02, 0.7), "head")
+    bone("ear.R", (-0.1, 0.02, 0.76), (-0.22, 0.02, 0.7), "head")
+
+    add_part("Head", ellipsoid(hc, hr, 18, 10), "OrtieHead", rigid("head"))
+    stem_prof = [(0.0, 0.56), (0.035, 0.55), (0.04, 0.4), (0.045, 0.25), (0.055, 0.1), (0.075, 0.03), (0.0, 0.02)]
+    add_part("Stem", lathe(stem_prof, 8), "OrtieStem", along_z("stem", "head", 0.5, 0.56))
+    hair = 0
+    for k, (h, yaw, length, mname) in enumerate(ORTIE_LEAVES):
+        a = math.radians(yaw)
+        out = Vector((math.sin(a), -math.cos(a), 0.0))
+        base = Vector((0, 0, h)) + out * 0.035
+        direction = (out + Vector((0, 0, -0.32))).normalized()  # droopy
+        bone_name = "arm.L" if k == 4 else "arm.R" if k == 5 else "stem"
+        bm = leaf(base, direction, Vector((0, 0, 1)), length, length * 0.68, 0.024, curl=-0.06, u=10, v=5)
+        # serrated edge: zigzag the rim
+        y = direction
+        for vt in bm.verts:
+            rel = vt.co - base
+            along = rel.dot(y)
+            side = rel - y * along
+            if side.length > 0.02:
+                vt.co = vt.co + side.normalized() * 0.008 * math.sin(along * 90)
+        add_part("Leaf%d" % k, bm, mname, rigid(bone_name))
+        for j in (0.35, 0.65):  # little stinging hairs
+            hp = base + direction * length * j + Vector((0, 0, 0.012))
+            fang("Hair%d" % hair, hp, (0, 0, 1), 0.025, 0.006, bone_name, "OrtieHair")
+            hair += 1
+    for s, S in ((1, "L"), (-1, "R")):
+        # droopy ear leaves on the head
+        p, n = surf(hc, hr, s * 1.35, 0.55)
+        add_part("Ear." + S, leaf(p - n * 0.01, (s * 0.7, 0.1, -0.45), (0, 0, 1), 0.17, 0.1, 0.022, curl=-0.04),
+                 "OrtieLeafB", rigid("ear." + S))
+        face_eye(s, hc, hr, 0.33, 0.06, 0.04, 0.046, "head", sclera="OrtieSclera", pupil_shift=(-0.1, -0.2),
+                 lid=("OrtieLid", 0.38))
+        brow("Brow." + S, hc, hr, s, (0.1, 0.3), (0.5, 0.42), "head", thick=(0.009, 0.014, 0.008))
+        face_decal("Blush." + S, hc, hr, s * 0.6, -0.16, (0.03, 0.016, 0.006), "Blush", "head")
+    p, x, y, n = mouth(hc, hr, -0.24, 0.026, -0.012, "head", thick=0.008)
+    fang("Fang", p - x * 0.01 + n * 0.006 - y * 0.003, -y + n * 0.1, 0.02, 0.009, "head")
+    # rooted: splayed roots instead of feet
+    for k in range(5):
+        a = math.radians(36 + 72 * k)
+        d = Vector((math.sin(a), -math.cos(a), 0))
+        pts = [d * 0.04 + Vector((0, 0, 0.06)), d * 0.1 + Vector((0, 0, 0.028)), d * 0.16 + Vector((0, 0, 0.012)),
+               d * 0.2 + Vector((0, 0, 0.006))]
+        add_part("Root%d" % k, tube(pts, [0.034, 0.026, 0.016, 0.0], sides=5), "OrtieRoot", rigid("root"))
+    return {"root": "root", "lower": "stem", "upper": "head",
+            "arms": [("arm.L", 1), ("arm.R", -1)], "arm_rest": -1.0, "arm_swing": 0.5, "sleep_arm": -10.0,
+            "attack": True, "extra": ortie_extra, "attack_extra": ortie_attack, "rooted": True}
+
+
+def ortie_extra(action, t):
+    s = math.sin(2 * math.pi * t)
+    if action == "Idle":
+        return {"ear.L": {"rot": (0, 0, -6 + 4 * s)}, "ear.R": {"rot": (0, 0, 6 - 4 * s)}}
+    if action == "Sleep":
+        return {"ear.L": {"rot": (0, 0, -16)}, "ear.R": {"rot": (0, 0, 16)}}
+    return {}
+
+
+def ortie_attack(phase):
+    return {"windup": {"head": {"rot": (-24, 0, 0)}, "stem": {"rot": (-8, 0, 0)},
+                       "ear.L": {"rot": (0, 0, 20)}, "ear.R": {"rot": (0, 0, -20)}},
+            "lunge": {"head": {"rot": (22, 0, 0)}, "stem": {"rot": (8, 0, 0)}},
+            "settle": {"head": {"rot": (6, 0, 0)}}}.get(phase, {})
+
+
+# ---------------------------------------------------------------- species: Champi-Panique
+CHAMPI_SPOTS = [(0.0, 0.9, 0.05), (0.9, 0.55, 0.045), (-0.9, 0.55, 0.045), (2.2, 0.6, 0.05), (-2.2, 0.6, 0.05),
+                (3.14, 0.45, 0.05)]  # yaw, elevation, radius
+
+
+def build_champi_panique():
+    """Panique (hostile): a lilac mushroom whose cream body is all face: huge nervous eyes with tiny
+    pupils, worried-cross brows, a wobbly zigzag mouth with two little fangs, a sweat drop.
+    Its cap is pushed back so the face shows from above. Puffs up before bursting into spores."""
+    mat("ChampiCap", "#c7a3e0", rough=0.7)
+    mat("ChampiSpot", "#f3e6fb", rough=0.75)
+    mat("ChampiGill", "#e8d6f0", rough=0.85)
+    mat("ChampiBody", "#f5ecf6", rough=0.8)
+    mat("ChampiFoot", "#dccbe6", rough=0.8)
+    mat("ChampiSweat", "#bfe4f6", rough=0.3, emit=0.3)
+    mat("EyeDark", "#3a2846", rough=0.3)
+    mat("EyeWhite", "#ffffff", rough=0.3, emit=0.4)
+    mat("ChampiSclera", "#ffffff", rough=0.35)
+    mat("Brow", "#6b4683", rough=0.7)
+    mat("Mouth", "#6b3a5c", rough=0.6)
+    mat("Teeth", "#fffaf2", rough=0.4)
+    mat("Blush", "#f0a6d0", rough=0.8)
+
+    bc = Vector((0, 0, 0.2))
+    br = Vector((0.19, 0.175, 0.19))
+    pivot = Vector((0, 0.02, 0.37))
+    tilt = Matrix.Rotation(math.radians(-24), 3, "X")  # cap pushed back, like a hat off the eyes
+    bone("root", (0, 0, 0), (0, 0, 0.06))
+    bone("body", (0, 0, 0.02), (0, 0, 0.37), "root")
+    bone("cap", (0, 0.02, 0.37), (0, 0.02, 0.7), "body")
+    bone("arm.L", (0.17, -0.02, 0.15), (0.26, -0.06, 0.12), "body")
+    bone("arm.R", (-0.17, -0.02, 0.15), (-0.26, -0.06, 0.12), "body")
+
+    def tilted(bm):
+        for vt in bm.verts:
+            vt.co = tilt @ (vt.co - pivot) + pivot
+        return bm
+
+    add_part("Body", ellipsoid(bc, br, 18, 10), "ChampiBody", rigid("body"))
+    cap_prof = [(0.0, 0.64), (0.07, 0.63), (0.14, 0.605), (0.2, 0.565), (0.245, 0.505), (0.265, 0.45),
+                (0.26, 0.415), (0.235, 0.4), (0.0, 0.395)]
+
+    def wavy(a, row):
+        return 1.0 + (0.035 * math.sin(6 * a) if row >= 4 else 0.0)
+    add_part("Cap", tilted(lathe(cap_prof, 22, rfun=wavy)), "ChampiCap", rigid("cap"))
+    gill = [(0.0, 0.405), (0.235, 0.402), (0.17, 0.385), (0.0, 0.375)]
+    add_part("Gills", tilted(lathe(gill, 16)), "ChampiGill", rigid("cap"))
+    cc = Vector((0, 0, 0.4))
+    crr = Vector((0.262, 0.262, 0.235))
+    for k, (yaw, el, rr) in enumerate(CHAMPI_SPOTS):
+        p, n = surf(cc, crr, yaw, el)
+        x, y, n = frame(n)
+        add_part("Spot%d" % k, tilted(ellipsoid(p + n * 0.001, (rr, rr * 0.92, 0.01), 8, 5, basis(x, y, n))),
+                 "ChampiSpot", rigid("cap"))
+    # sweat drop on the side of the cap
+    p, n = surf(cc, crr, 0.8, 0.1)
+    add_part("Sweat", tilted(tube([p + n * 0.01 + Vector((0, 0, 0.03)), p + n * 0.02, p + n * 0.025 - Vector((0, 0, 0.03))],
+                                  [0.0, 0.016, 0.0], sides=6)), "ChampiSweat", rigid("cap"))
+    for s, S in ((1, "L"), (-1, "R")):
+        add_part("Arm." + S, ellipsoid((s * 0.215, -0.04, 0.13), (0.05, 0.04, 0.035), 8, 5), "ChampiFoot",
+                 rigid("arm." + S))
+        add_part("Foot." + S, ellipsoid((s * 0.08, -0.03, 0.028), (0.05, 0.06, 0.03), 8, 5), "ChampiFoot",
+                 rigid("root"))
+        # huge nervous eyes, tiny pupils looking in different directions
+        face_eye(s, bc, br, 0.34, 0.2, 0.06, 0.068, "body", sclera="ChampiSclera",
+                 pupil_shift=(0.22 if s > 0 else -0.08, 0.18 if s > 0 else -0.05))
+        # worried brows (inner end high) slanted into a cross little frown
+        brow("Brow." + S, bc, br, s, (0.12, 0.58), (0.52, 0.5), "body", thick=(0.01, 0.014, 0.008))
+        face_decal("Blush." + S, bc, br, s * 0.66, -0.06, (0.034, 0.019, 0.006), "Blush", "body")
+    # wobbly zigzag mouth
+    p, n = surf(bc, br, 0.0, -0.16)
+    x, y, n = frame(n)
+    pts = [p + x * (0.036 * (i / 3.0 - 1.0)) + y * (0.007 if i % 2 else -0.007) + n * 0.004 for i in range(7)]
+    add_part("Mouth", tube(pts, [0.0] + [0.0075] * 5 + [0.0], sides=5), "Mouth", rigid("body"))
+    for s in (1, -1):
+        fang("Fang.%d" % s, p + x * (s * 0.016) + n * 0.006 - y * 0.008, -y + n * 0.1, 0.018, 0.008, "body")
+    return {"root": "root", "lower": "body", "upper": "cap",
+            "arms": [("arm.L", 1), ("arm.R", -1)], "arm_rest": 0.5, "attack": True,
+            "extra": champi_extra, "attack_extra": champi_attack}
+
+
+def champi_extra(action, t):
+    if action == "Idle":  # nervous trembling of the cap
+        return {"cap": {"rot": (0, 0, 3 * math.sin(2 * math.pi * t * 12))}}
+    if action == "Move":
+        return {"cap": {"rot": (-6, 0, 5 * math.sin(2 * math.pi * t * 2))}}
+    if action == "Sleep":
+        return {"cap": {"rot": (6, 0, 6), "scale": (0.95, 0.92, 0.95)}}
+    return {}
+
+
+def champi_attack(phase):
+    return {"windup": {"cap": {"rot": (-10, 0, 0), "scale": (1.18, 1.14, 1.18)},
+                       "body": {"rot": (0, 0, 0), "scale": (1.24, 1.1, 1.24)}},
+            "lunge": {"cap": {"scale": (0.92, 0.8, 0.92)}, "body": {"scale": (0.95, 0.9, 0.95)}},
+            "settle": {"cap": {"scale": (1.04, 1.02, 1.04)}}}.get(phase, {})
+
+
 # ---------------------------------------------------------------- rig + animation
 def build_armature(name):
     arm_data = bpy.data.armatures.new(name + "Rig")
@@ -1089,16 +1478,19 @@ def build_actions(arm, rig):
     make_action(arm, "Caught", 18, keyed([(0, rest), (5, surprise), (11, spin), (18, end)]), step=1)
 
     if rig.get("attack"):
+        ax = rig.get("attack_extra") or (lambda phase: {})
+        # rooted hostiles (Ortie) never leave their spot: no lunge forward
+        reach = 0.0 if rig.get("rooted") else 1.0
         windup = merge(
             {lower: {"rot": (-10, 0, 0), "scale": (1.12, 0.82, 1.12)}, upper: {"rot": (-12, 0, 0)}},
-            arms(rig, lambda sd: 55.0), eyes(rig, squint=0.7))
+            arms(rig, lambda sd: 55.0), eyes(rig, squint=0.7), ax("windup"))
         lunge = merge(
-            {root: {"loc": (0, 0.04, 0.2)}, lower: {"rot": (14, 0, 0), "scale": (0.92, 1.1, 0.92)},
+            {root: {"loc": (0, 0.04 * reach, 0.2 * reach)}, lower: {"rot": (14, 0, 0), "scale": (0.92, 1.1, 0.92)},
              upper: {"rot": (16, 0, 0)}},
-            arms(rig, lambda sd: -15.0), eyes(rig, open_scale=1.1))
+            arms(rig, lambda sd: -15.0), eyes(rig, open_scale=1.1), ax("lunge"))
         settle = merge(
-            {root: {"loc": (0, 0, 0.12)}, lower: {"rot": (6, 0, 0)}, upper: {"rot": (6, 0, 0)}},
-            arms(rig, lambda sd: 10.0), eyes(rig, squint=0.85))
+            {root: {"loc": (0, 0, 0.12 * reach)}, lower: {"rot": (6, 0, 0)}, upper: {"rot": (6, 0, 0)}},
+            arms(rig, lambda sd: 10.0), eyes(rig, squint=0.85), ax("settle"))
         make_action(arm, "Attack", 36, keyed([(0, rest), (14, windup), (20, lunge), (28, settle), (36, rest)]),
                     step=1)
 
@@ -1113,6 +1505,10 @@ SPECIES = {
     "souffloine": ("Souffloine", build_souffloine),
     "melancolys": ("Melancolys", build_melancolys),
     "lumiole": ("Lumiole", build_lumiole),
+    "croque_colere": ("CroqueColere", build_croque_colere),
+    "lierre_jalousie": ("LierreJalousie", build_lierre_jalousie),
+    "ortie_regret": ("OrtieRegret", build_ortie_regret),
+    "champi_panique": ("ChampiPanique", build_champi_panique),
 }
 
 IMPORT_TEMPLATE = """[remap]
