@@ -223,6 +223,22 @@ func spawn_hazard(hazard: Hazard, at: Vector3, telegraph: float) -> Hazard:
 	hazard_spawned.emit(hazard)
 	return hazard
 
+## True while a hostile announces its attack (Croque's wind-up, Champi's swelling).
+func is_telegraphing() -> bool:
+	return _behavior != null and _behavior.is_telegraphing()
+
+func is_charging() -> bool:
+	return _behavior != null and _behavior.is_charging()
+
+## The ground sign owned by the behavior (Croque's lane), or null.
+func telegraph_mark() -> GroundMark:
+	return _behavior.telegraph_mark() if _behavior != null else null
+
+## Adds a world-placed effect (ground sign) that dies with the plant but does not follow it.
+func add_effect(node: Node3D) -> void:
+	node.top_level = true
+	add_child(node)
+
 ## Plays the model's Attack so that its strike lands `impact_in` seconds from now (0: at once).
 func play_attack(impact_in: float = 0.0) -> void:
 	if _model != null:

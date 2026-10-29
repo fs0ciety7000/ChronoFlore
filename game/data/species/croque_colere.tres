@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"croque_colere"
+display_name = "Croque-Colère"
+emotion = "colère"
+rarity = 1
+capturable = true
+hostile = true
+base_speed = 1.6
+min_hour = 2.0
+behavior = 8
+fragment = "(provisoire) Une grande bouche qui claque pour un rien : un mot de travers, une porte qui résiste. Elle se ramasse, gonfle les joues, puis fonce tout droit sans regarder. Un pas de côté suffit ; après, elle reste là, un peu bête, à souffler."
+details = PackedStringArray("(provisoire) Ses crocs sont tout petits ; c'est surtout le bruit qui fait peur.", "(provisoire) Endormie, elle garde la bouche entrouverte, comme pour s'excuser.")

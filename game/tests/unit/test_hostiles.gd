@@ -5,6 +5,7 @@ extends "res://tests/test_case.gd"
 const PLANT_SCENE := "res://scenes/plants/plant.tscn"
 const HEROINE_SCENE := preload("res://scenes/heroine/heroine.tscn")
 const DT := 1.0 / 60.0
+const HOSTILE_IDS: Array[String] = ["ronce_angoisse", "croque_colere"]
 
 var _root: Node3D
 
@@ -55,7 +56,7 @@ func _sleep(plant: Plant) -> void:
 # --- capture asleep (Review Focus 1) -----------------------------------------------------------
 
 func test_hostile_capturable_only_asleep() -> void:
-	for id in ["ronce_angoisse"]:
+	for id in HOSTILE_IDS:
 		var plant := _spawn(id, Vector2(10, 10))
 		assert_true(plant.species.hostile, "%s is hostile" % id)
 		assert_eq(plant.species.minutes_reward(), PlantSpecies.HOSTILE_REWARD_MINUTES, "%s gives 40 min" % id)
@@ -127,5 +128,70 @@ func test_eligible_hostiles_by_hour() -> void:
 			out.append(s.id)
 		return out
 	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 0.0)), [&"ronce_angoisse"], "0 h: Ronce only")
+	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 1.99)), [&"ronce_angoisse"], "Croque not before 2 h")
+	assert_eq(ids.call(SpawnRules.eligible_hostiles(c, 2.0)), [&"ronce_angoisse", &"croque_colere"], "2 h: + Croque")
 	for s in SpawnRules.eligible_capturables(c, 8.0):
 		assert_false(s.hostile, "%s: gentle list has no hostile" % s.id)
+
+# --- Croque-Colère (CHARGER) -------------------------------------------------------------------
+
+func test_charger_telegraphs_then_charges() -> void:
+	var croque := _species("croque_colere")
+	assert_eq(croque.behavior, PlantSpecies.Behavior.CHARGER, "croque charges")
+	assert_true(croque.hostile, "croque is hostile")
+	var plant := _spawn("croque_colere", Vector2(10, 10))
+	var threat := Vector2(14, 10)
+	var frames := 0
+	while not plant.is_telegraphing() and frames < 240:
+		plant.set_threat(threat, Vector2(-1, 0))
+		plant.step(DT)
+		frames += 1
+	assert_true(plant.is_telegraphing(), "winds up when the heroine is within 6 m")
+	assert_true(plant.telegraph_mark() != null and plant.telegraph_mark().visible, "lane shown on the ground")
+	var start := _xz(plant)
+	threat = Vector2(14, 16) # the heroine side-steps: the charge keeps its line
+	var still := 0
+	while plant.is_telegraphing() and still < 240:
+		plant.set_threat(threat, Vector2(-1, 0))
+		plant.step(DT)
+		still += 1
+		if plant.is_telegraphing() and still % 10 == 0:
+			assert_true(_xz(plant).distance_to(start) < 1e-4, "still during the wind-up")
+	assert_true(still * DT >= Hazard.MIN_TELEGRAPH, "wind-up lasts >= 0.6 s (%.2f)" % (still * DT))
+	assert_near(still * DT, BehaviorCharger.WINDUP_TIME, 2.0 * DT, "wind-up lasts 0.8 s")
+	for i in int(0.2 / DT):
+		plant.set_threat(threat, Vector2(-1, 0))
+		plant.step(DT)
+	var d := _xz(plant) - start
+	assert_near(d.x, BehaviorCharger.CHARGE_SPEED * 0.2, 0.2, "charges at 9 m/s")
+	assert_near(d.y, 0.0, 0.05, "along the line locked at the wind-up")
+	for i in int(0.6 / DT):
+		plant.set_threat(threat, Vector2(-1, 0))
+		plant.step(DT)
+	assert_false(plant.is_charging(), "charge over")
+	assert_near((_xz(plant) - start).x, BehaviorCharger.CHARGE_DISTANCE, 0.3, "charge covers 6 m")
+	_cleanup()
+
+func test_charger_hit_stops_charge() -> void:
+	var heroine := await _heroine(Vector2(13, 10))
+	var plant := _spawn("croque_colere", Vector2(10, 10))
+	var frames := 0
+	while heroine.lucidity.petals == 5 and frames < 300:
+		plant.set_threat(_xz(heroine), Vector2(-1, 0))
+		plant.step(DT)
+		frames += 1
+	assert_eq(heroine.lucidity.petals, 4, "the charge costs one petal")
+	assert_true(plant.is_stunned(), "croque stunned after its hit")
+	assert_false(plant.is_charging(), "the charge stops on the hit")
+	assert_false(plant.is_telegraphing(), "no wind-up while stunned")
+	_cleanup()
+
+func test_charger_asleep_never_charges() -> void:
+	var plant := _spawn("croque_colere", Vector2(10, 10))
+	_sleep(plant)
+	for i in 120:
+		plant.set_threat(Vector2(13, 10), Vector2(-1, 0))
+		plant.step(DT)
+	assert_false(plant.is_telegraphing() or plant.is_charging(), "a sleeping croque does not attack")
+	assert_true(_xz(plant).distance_to(Vector2(10, 10)) < 1e-4, "and does not move")
+	_cleanup()

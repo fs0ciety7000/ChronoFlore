@@ -20,6 +20,8 @@ static func for_species(species: PlantSpecies) -> PlantBehavior:
 			return BehaviorPondSeeker.new()
 		PlantSpecies.Behavior.FLOATER:
 			return BehaviorFloater.new()
+		PlantSpecies.Behavior.CHARGER:
+			return BehaviorCharger.new()
 	return BehaviorDarter.new()
 
 ## Called by the plant each time it (re)enters FLEE, and when it leaves FLEE/PANIC.
@@ -52,6 +54,18 @@ func net_window(_plant: Plant) -> bool:
 ## Height of the model above the ground (hop arc, float, dive below the water: negative).
 func hover_height(_plant: Plant) -> float:
 	return 0.0
+
+## Hostiles: true while an attack is announced on the ground (wind-up, swelling).
+func is_telegraphing() -> bool:
+	return false
+
+## Croque-Colère: true while charging.
+func is_charging() -> bool:
+	return false
+
+## The ground sign the behavior owns (charge lane), or null.
+func telegraph_mark() -> GroundMark:
+	return null
 
 ## False for a rooted hostile (Ortie-Regret): no wandering without a threat.
 func wanders() -> bool:
