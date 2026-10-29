@@ -6,34 +6,37 @@ roughness = 0.8
 
 [sub_resource type="CylinderMesh" id="Mesh_handle"]
 material = SubResource("Mat_handle")
-top_radius = 0.014
-bottom_radius = 0.014
-height = 0.55
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.9
 radial_segments = 8
 rings = 1
 
 [sub_resource type="StandardMaterial3D" id="Mat_hoop"]
-albedo_color = Color(0.941176, 0.541176, 0.658824, 1)
-roughness = 0.5
+albedo_color = Color(1, 0.45, 0.65, 1)
+roughness = 0.4
+emission_enabled = true
+emission = Color(1, 0.45, 0.65, 1)
+emission_energy_multiplier = 0.45
 
 [sub_resource type="TorusMesh" id="Mesh_hoop"]
 material = SubResource("Mat_hoop")
-inner_radius = 0.126
-outer_radius = 0.15
+inner_radius = 0.17
+outer_radius = 0.215
 rings = 24
 ring_segments = 6
 
 [sub_resource type="StandardMaterial3D" id="Mat_bag"]
 transparency = 1
 cull_mode = 2
-albedo_color = Color(1, 0.98, 0.94, 0.55)
+albedo_color = Color(1, 0.98, 0.94, 0.72)
 roughness = 0.9
 
 [sub_resource type="CylinderMesh" id="Mesh_bag"]
 material = SubResource("Mat_bag")
-top_radius = 0.132
-bottom_radius = 0.024
-height = 0.192
+top_radius = 0.18
+bottom_radius = 0.035
+height = 0.28
 radial_segments = 12
 rings = 1
 cap_top = false
@@ -113,20 +116,20 @@ rings = 1
 transform = Transform3D(-0.18020943, 0.9407209, -0.28734788, -0.98214144, -0.18814418, 0, -0.05406283, 0.28221628, 0.9578263, 0, 0.045, 0)
 
 [node name="Handle" type="MeshInstance3D" parent="Net"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.205, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.33, 0)
 mesh = SubResource("Mesh_handle")
 
 [node name="Hoop" type="MeshInstance3D" parent="Net"]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.63, 0)
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.97, 0)
 mesh = SubResource("Mesh_hoop")
 
 [node name="Bag" type="MeshInstance3D" parent="Net"]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.63, -0.096)
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.97, -0.14)
 mesh = SubResource("Mesh_bag")
 
 [node name="DartGun" type="Node3D" parent="."]
 visible = false
-transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, 0, 0.045, 0)
+transform = Transform3D(2.6, 0, 0, 0, 2.6, 0, 0, 0, 2.6, 0, 0.045, 0)
 
 [node name="Grip" type="MeshInstance3D" parent="DartGun"]
 mesh = SubResource("Mesh_gun_grip")
@@ -145,7 +148,7 @@ mesh = SubResource("Mesh_gun_tuft")
 
 [node name="Harpoon" type="Node3D" parent="."]
 visible = false
-transform = Transform3D(-0.18020943, 0.9407209, -0.28734788, -0.98214144, -0.18814418, 0, -0.05406283, 0.28221628, 0.9578263, 0, 0.045, 0)
+transform = Transform3D(-0.261304, 1.36405, -0.416654, -1.42411, -0.272809, 0, -0.0783911, 0.409214, 1.38885, 0, 0.045, 0)
 
 [node name="Shaft" type="MeshInstance3D" parent="Harpoon"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17, 0)
