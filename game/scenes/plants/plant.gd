@@ -53,6 +53,8 @@ const GLOW_ENERGY := 0.8
 const BOB_HEIGHT := 0.06
 const BOB_FREQ := 6.0
 const TREMBLE_AMPLITUDE := 0.04
+## How fast the model follows the behavior's hover height (hop arc, float, dive), 1/s.
+const HOVER_RATE := 14.0
 
 var species: PlantSpecies
 var torpor: Torpor
@@ -83,6 +85,8 @@ var _fall_travel: float = 0.0 ## ground distance run outward since the escape
 var _anim_t: float = 0.0
 var _moving: bool = false
 var _stun_left: float = 0.0
+var _hidden: bool = false ## last is_hidden(), to switch the collider when it changes
+var _hover: float = 0.0 ## smoothed model height above the ground
 
 func _init() -> void:
 	torpor = Torpor.new()
@@ -98,6 +102,7 @@ func setup(p_species: PlantSpecies, p_island: IslandShape, p_speed_multiplier: f
 	island = p_island
 	speed_multiplier = p_speed_multiplier
 	_behavior = PlantBehavior.for_species(species)
+	_hover = hover_height()
 	_build_visual()
 
 ## Heroine position and aim direction (XZ), fed every frame by the night session.
@@ -107,8 +112,9 @@ func set_threat(position_xz: Vector2, aim_dir: Vector2) -> void:
 	_aim = aim_dir
 
 ## TORPOR -> dart, PIN -> pin, CAPTURE -> net. Returns true only on a capture.
+## A hidden plant ignores every tool; an airborne one dodges the net (darts still hit).
 func hit_by_tool(effect: ToolData.Effect) -> bool:
-	if state == State.BURROWED or state == State.CAPTURED or state == State.ESCAPED:
+	if state == State.BURROWED or state == State.CAPTURED or state == State.ESCAPED or is_hidden():
 		return false
 	match effect:
 		ToolData.Effect.TORPOR:
@@ -118,7 +124,9 @@ func hit_by_tool(effect: ToolData.Effect) -> bool:
 			torpor.pin()
 			_alert_from_hit()
 		ToolData.Effect.CAPTURE:
-			if species.capturable and torpor.net_can_capture(is_emerging()):
+			if is_airborne():
+				return false
+			if species.capturable and torpor.net_can_capture(can_net_without_torpor()):
 				_capture()
 				return true
 			_alert_from_hit()
@@ -136,6 +144,32 @@ func is_startled() -> bool:
 
 func is_emerging() -> bool:
 	return state == State.EMERGING
+
+## Mid-hop, out of the net's reach (Souffloine).
+func is_airborne() -> bool:
+	return _behavior != null and _behavior.is_airborne()
+
+## In the pond, ignored by every tool (Mélancolys).
+func is_hidden() -> bool:
+	return _behavior != null and _behavior.is_hidden()
+
+## True while the net captures without darts: an emerging Timidelle, an approaching Câlinette.
+func can_net_without_torpor() -> bool:
+	if is_emerging():
+		return true
+	return _behavior != null and state == State.FLEE and _behavior.net_window(self)
+
+## Target height of the model above the ground (the plant body itself stays on the ground).
+func hover_height() -> float:
+	return _behavior.hover_height(self) if _behavior != null else 0.0
+
+## Ground speed without the startle boost (m/s): what a behavior's speed factor multiplies.
+func ground_speed() -> float:
+	return species.base_speed * speed_multiplier * torpor.speed_factor()
+
+## Moves the plant on the XZ plane (behaviors: dive into and out of the pond).
+func place_xz(p: Vector2) -> void:
+	_set_xz(p)
 
 func has_threat() -> bool:
 	return _has_threat
@@ -183,6 +217,10 @@ func step(delta: float) -> void:
 		_fall(delta)
 		return
 	torpor.tick(delta)
+	if is_hidden():
+		_behavior.tick_hidden(self, delta)
+		_update_hidden()
+		return
 	_sync_animation()
 	_state_time += delta
 	var dist := xz().distance_to(_threat) if _has_threat else INF
@@ -231,6 +269,7 @@ func step(delta: float) -> void:
 		speed *= STARTLE_BOOST
 	_move(dir * speed * delta)
 	_keep_on_island()
+	_update_hidden()
 
 func _is_stalker() -> bool:
 	return species.behavior == PlantSpecies.Behavior.STALKER
@@ -238,12 +277,14 @@ func _is_stalker() -> bool:
 func _set_state(value: State) -> void:
 	if value == state:
 		return
+	var was_fleeing := state == State.FLEE
 	state = value
 	_state_time = 0.0
 	if value == State.FLEE:
 		_calm_time = 0.0
-		if _behavior != null:
-			_behavior.reset()
+	# A flight cycle (hop, approach) never outlives the flight; FLEE -> PANIC carries on.
+	if _behavior != null and (value == State.FLEE or not (value == State.PANIC and was_fleeing)):
+		_behavior.reset()
 	var visual := get_node_or_null("Visual") as Node3D
 	if visual != null:
 		visual.visible = value != State.BURROWED
@@ -253,10 +294,21 @@ func _set_state(value: State) -> void:
 		shape.set_deferred("disabled", off)
 	_sync_animation()
 
+## Collider off while hidden in the pond (the model stays, sunk to a floating lily).
+func _update_hidden() -> void:
+	var hidden := is_hidden()
+	if hidden == _hidden:
+		return
+	_hidden = hidden
+	var shape := get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if shape != null:
+		shape.set_deferred("disabled", hidden)
+	_sync_animation()
+
 ## Idle/Move/Sleep/Caught on the model, from the state and the torpor.
 func _sync_animation() -> void:
 	if _model != null:
-		_model.play_state(state, torpor.is_asleep())
+		_model.play_state(State.WANDER if is_hidden() else state, torpor.is_asleep())
 
 func _alert_from_hit() -> void:
 	if not _is_stalker() and (state == State.WANDER or state == State.ALERT):
@@ -348,7 +400,10 @@ func _move(motion: Vector2) -> void:
 		position += m3
 	var visual := get_node_or_null("Visual") as Node3D
 	if visual != null:
-		visual.rotation.y = atan2(motion.x, motion.y)
+		var face := motion
+		if _has_threat and _behavior != null and _behavior.faces_threat() and _threat != xz():
+			face = _threat - xz()
+		visual.rotation.y = atan2(face.x, face.y)
 
 ## Outside PANIC the plant is clamped inside the outline; in PANIC, reaching the edge means a jump.
 func _keep_on_island() -> void:
@@ -390,10 +445,11 @@ func _animate_visual(delta: float) -> void:
 	if visual == null or state == State.CAPTURED:
 		return # the capture tween owns the visual's scale
 	_anim_t += delta
-	var offset := Vector3.ZERO # sleep, flight and capture are the model's own animations
+	_hover = lerpf(_hover, hover_height(), 1.0 - exp(-HOVER_RATE * delta))
+	var offset := Vector3(0.0, _hover, 0.0) # sleep, flight and capture are the model's own animations
 	if not torpor.is_asleep():
 		if state == State.ALERT:
 			offset.x = sin(_anim_t * 70.0) * TREMBLE_AMPLITUDE
 		elif state == State.WANDER and _moving:
-			offset.y = absf(sin(_anim_t * BOB_FREQ)) * BOB_HEIGHT * 2.0
+			offset.y += absf(sin(_anim_t * BOB_FREQ)) * BOB_HEIGHT * 2.0
 	visual.position = offset

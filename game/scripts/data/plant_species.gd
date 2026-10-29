@@ -3,7 +3,8 @@ extends Resource
 ## Static description of a plant species (an emotion), loaded from data/species/*.tres.
 
 enum Rarity { COMMON, UNCOMMON, RARE }
-enum Behavior { DARTER, ZIGZAG, BURROWER, STALKER }
+## Values are stored as ints in the .tres files: only append.
+enum Behavior { DARTER, ZIGZAG, BURROWER, STALKER, SHY_APPROACH, HOPPER, POND_SEEKER, FLOATER }
 
 const REWARD_MINUTES := { Rarity.COMMON: 20, Rarity.UNCOMMON: 40, Rarity.RARE: 60 }
 

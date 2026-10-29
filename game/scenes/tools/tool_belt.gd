@@ -72,7 +72,7 @@ func _live_plants() -> Array[Plant]:
 		return result
 	for node in get_tree().get_nodes_in_group("plants"):
 		var plant := node as Plant
-		if plant != null and plant.state != Plant.State.BURROWED \
+		if plant != null and plant.state != Plant.State.BURROWED and not plant.is_hidden() \
 				and plant.state != Plant.State.CAPTURED and plant.state != Plant.State.ESCAPED:
 			result.append(plant)
 	return result

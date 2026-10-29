@@ -43,7 +43,7 @@ func step(delta: float) -> void:
 
 static func _can_hit(plant: Plant) -> bool:
 	return plant.state != Plant.State.BURROWED and plant.state != Plant.State.CAPTURED \
-		and plant.state != Plant.State.ESCAPED
+		and plant.state != Plant.State.ESCAPED and not plant.is_hidden()
 
 func _on_body_entered(body: Node3D) -> void:
 	var plant := body as Plant

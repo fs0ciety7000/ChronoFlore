@@ -57,6 +57,11 @@ func clamp_inside(p: Vector2, margin: float) -> Vector2:
 		result -= outward_normal(result) * deficit
 	return result
 
+## Water areas, Vector3(x, z, radius) each: today every obstacle is the pond, so this is the
+## obstacle list itself (Mélancolys hides there). Split it out if dry obstacles appear.
+func water_zones() -> PackedVector3Array:
+	return obstacles
+
 ## True when p is at least margin away from every obstacle.
 func is_clear(p: Vector2, margin: float = 0.0) -> bool:
 	for o in obstacles:
