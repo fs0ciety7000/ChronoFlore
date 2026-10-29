@@ -1,0 +1,147 @@
+[gd_scene load_steps=22 format=3]
+
+[ext_resource type="Script" path="res://scenes/island/island.gd" id="1_island"]
+[ext_resource type="PackedScene" path="res://assets/polyfork/steampunk-farm-terrain-98cb8a/steampunk-farm-terrain-98cb8a.glb" id="2_terrain"]
+[ext_resource type="PackedScene" path="res://assets/polyfork/broadleaf-oak-997c22/broadleaf-oak-997c22.glb" id="3_broadleaf-oak"]
+[ext_resource type="PackedScene" path="res://assets/polyfork/common-daisy-6b2004/common-daisy-6b2004.glb" id="4_common-daisy"]
+[ext_resource type="PackedScene" path="res://assets/polyfork/glowing-bonnet-mushroom-13f518/glowing-bonnet-mushroom-13f518.glb" id="5_glowing-bonnet-mushroom"]
+[ext_resource type="PackedScene" path="res://assets/polyfork/maple-tree-65fa12/maple-tree-65fa12.glb" id="6_maple-tree"]
+[ext_resource type="PackedScene" path="res://assets/polyfork/moss-cushion-2eabef/moss-cushion-2eabef.glb" id="7_moss-cushion"]
+[ext_resource type="PackedScene" path="res://assets/polyfork/puffball-mushroom-3b1324/puffball-mushroom-3b1324.glb" id="8_puffball-mushroom"]
+[ext_resource type="PackedScene" path="res://assets/polyfork/white-clover-plant-6ed185/white-clover-plant-6ed185.glb" id="9_white-clover-plant"]
+[ext_resource type="PackedScene" path="res://assets/polyfork/young-pine-0d7695/young-pine-0d7695.glb" id="10_young-pine"]
+[ext_resource type="Resource" path="res://data/island_shape.tres" id="11_shape"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(22, 0.5, 20)
+
+[sub_resource type="CylinderShape3D" id="Cylinder_DaisyWest"]
+height = 8.0
+radius = 0.5
+
+[sub_resource type="CylinderShape3D" id="Cylinder_DaisyNorth"]
+height = 8.0
+radius = 0.5
+
+[sub_resource type="CylinderShape3D" id="Cylinder_Clover"]
+height = 4.0
+radius = 1.0
+
+[sub_resource type="CylinderShape3D" id="Cylinder_Puffball"]
+height = 4.5
+radius = 2.0
+
+[sub_resource type="CylinderShape3D" id="Cylinder_GlowingBonnet"]
+height = 7.0
+radius = 0.6
+
+[sub_resource type="CylinderShape3D" id="Cylinder_MossCushion"]
+height = 2.4
+radius = 2.0
+
+[sub_resource type="CylinderShape3D" id="Cylinder_Maple"]
+height = 4.0
+radius = 0.4
+
+[sub_resource type="CylinderShape3D" id="Cylinder_Oak"]
+height = 4.0
+radius = 0.45
+
+[sub_resource type="CylinderShape3D" id="Cylinder_Pine"]
+height = 3.0
+radius = 0.3
+
+[node name="Island" type="Node3D" groups=["island"]]
+script = ExtResource("1_island")
+shape = ExtResource("11_shape")
+
+[node name="Terrain" parent="." instance=ExtResource("2_terrain")]
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, -0.25, -0.25)
+shape = SubResource("BoxShape3D_ground")
+
+[node name="Decor" type="Node3D" parent="."]
+
+[node name="DaisyWest" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.939693, 0, -0.34202, 0, 1, 0, 0.34202, 0, 0.939693, -12, 0.33, 2)
+
+[node name="Model" parent="Decor/DaisyWest" instance=ExtResource("4_common-daisy")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/DaisyWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Cylinder_DaisyWest")
+
+[node name="DaisyNorth" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.819152, 0, 0.573576, 0, 1, 0, -0.573576, 0, 0.819152, -7, 1.07, -11)
+
+[node name="Model" parent="Decor/DaisyNorth" instance=ExtResource("4_common-daisy")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/DaisyNorth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Cylinder_DaisyNorth")
+
+[node name="Clover" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, -12)
+
+[node name="Model" parent="Decor/Clover" instance=ExtResource("9_white-clover-plant")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/Clover"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Cylinder_Clover")
+
+[node name="Puffball" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, 0.25, -2.5)
+
+[node name="Model" parent="Decor/Puffball" instance=ExtResource("8_puffball-mushroom")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/Puffball"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+shape = SubResource("Cylinder_Puffball")
+
+[node name="GlowingBonnet" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, 0.707107, -5, 0.02, 11)
+
+[node name="Model" parent="Decor/GlowingBonnet" instance=ExtResource("5_glowing-bonnet-mushroom")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/GlowingBonnet"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, 0)
+shape = SubResource("Cylinder_GlowingBonnet")
+
+[node name="MossCushion" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, -0.22, 7)
+
+[node name="Model" parent="Decor/MossCushion" instance=ExtResource("7_moss-cushion")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/MossCushion"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Cylinder_MossCushion")
+
+[node name="Maple" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.08, -10)
+
+[node name="Model" parent="Decor/Maple" instance=ExtResource("6_maple-tree")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/Maple"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Cylinder_Maple")
+
+[node name="Oak" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(0.866025, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866025, -11, 1.9, 7)
+
+[node name="Model" parent="Decor/Oak" instance=ExtResource("3_broadleaf-oak")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/Oak"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Cylinder_Oak")
+
+[node name="Pine" type="StaticBody3D" parent="Decor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.08, 3.5)
+
+[node name="Model" parent="Decor/Pine" instance=ExtResource("10_young-pine")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Decor/Pine"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("Cylinder_Pine")
