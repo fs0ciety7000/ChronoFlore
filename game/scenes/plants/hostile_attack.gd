@@ -1,6 +1,6 @@
 class_name HostileAttack
 extends RefCounted
-## A hostile plant's attacks: contact hits on the nearest player (and the stun after an accepted
+## A hostile plant's attacks: contact hits on every player in reach (and the stun after an accepted
 ## one), hazards spawned next to the plant, world effects and the attack animation trigger.
 ## Owned by Plant; behaviors reach it through Plant's thin wrappers.
 
@@ -36,14 +36,23 @@ func add_effect(node: Node3D) -> void:
 func play_attack(impact_in: float = 0.0) -> void:
 	_presenter.play_attack(impact_in)
 
-## Contact with the threat's player at `dist`: an accepted hit stuns the hostile and resets its
-## behavior.
-func check_contact(dist: float) -> void:
-	if dist >= Plant.CONTACT_DISTANCE or _plant.torpor.is_asleep() or not _plant.is_inside_tree():
+## Contact with every player (group "heroine") within CONTACT_DISTANCE, each on their own
+## invulnerability window (a charge lane can cross the farther player too). An accepted hit
+## stuns the hostile and resets its behavior.
+func check_contact() -> void:
+	if _plant.torpor.is_asleep() or not _plant.is_inside_tree():
 		return
-	var heroine := _plant.threat_player()
-	if heroine != null and heroine.has_method("take_nightmare_hit"):
-		if heroine.call("take_nightmare_hit", _plant.xz()) == true:
-			_stun_left = Plant.CONTACT_STUN_DURATION
-			_plant.reset_behavior() # a charge or a wind-up never outlives the hit
-			_presenter.play_attack()
+	var here := _plant.xz()
+	var hit := false
+	for node in _plant.get_tree().get_nodes_in_group("heroine"):
+		var player := node as Node3D
+		if player == null or not player.has_method("take_nightmare_hit"):
+			continue
+		if Vector2(player.global_position.x, player.global_position.z).distance_to(here) >= Plant.CONTACT_DISTANCE:
+			continue
+		if player.call("take_nightmare_hit", here) == true:
+			hit = true
+	if hit:
+		_stun_left = Plant.CONTACT_STUN_DURATION
+		_plant.reset_behavior() # a charge or a wind-up never outlives the hit
+		_presenter.play_attack()

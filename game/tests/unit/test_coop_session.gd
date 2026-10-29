@@ -239,6 +239,52 @@ func test_ronce_hits_the_nearest_player() -> void:
 	assert_false(p1.is_knocked_back(), "P1 untouched")
 	_end(s)
 
+## I2: contact tests every player, not only the threat (the nearest): a charge locked on P1
+## still hits P2 standing in its lane.
+func test_charge_hits_the_other_player_in_its_lane() -> void:
+	var s: NightSession = await _session()
+	var p1 := s.players[0]
+	var p2 := s.players[1]
+	var c := s.island.shape.centroid()
+	_place(p1, c + Vector2(4.0, 0.0))
+	_place(p2, c + Vector2(-6.0, 0.0))
+	var croque := s.add_plant(GameState.catalog.species_by_id(&"croque_colere"), c)
+	var frames := 0
+	while croque.find_child("ChargeLane*", false, false) == null and frames < 300:
+		croque.set_threat(_xz(p1), p1.aim_dir)
+		croque.step(DT)
+		frames += 1
+	assert_true(croque.find_child("ChargeLane*", false, false) != null, "winds up towards P1")
+	_place(p1, c + Vector2(1.0, 3.0)) # P1 side-steps; P2 walks into the locked lane
+	_place(p2, c + Vector2(2.5, 0.0))
+	for i in 120:
+		if p2.is_knocked_back():
+			break
+		croque.set_threat(_xz(p1), p1.aim_dir)
+		croque.step(DT)
+	assert_true(p2.is_knocked_back(), "the charge hits P2 in its lane")
+	assert_false(p1.is_knocked_back(), "P1 (the threat, out of the lane) untouched")
+	assert_eq(s.lucidity.petals, 4, "one petal")
+	assert_true(croque.is_stunned(), "croque stunned after the hit")
+	_end(s)
+
+func test_contact_hits_both_players_in_reach() -> void:
+	var s: NightSession = await _session()
+	var p1 := s.players[0]
+	var p2 := s.players[1]
+	var c := s.island.shape.centroid()
+	_place(p1, c + Vector2(0.5, 0.0))
+	_place(p2, c + Vector2(-0.5, 0.0))
+	var ronce := s.add_plant(GameState.catalog.species_by_id(&"ronce_angoisse"), c)
+	ronce.set_threat(_xz(p1), p1.aim_dir)
+	ronce.step(DT)
+	assert_true(p1.is_knocked_back() and p2.is_knocked_back(), "both players hit")
+	assert_eq(s.lucidity.petals, 3, "one petal each, own invulnerability windows")
+	_place(p1, c + Vector2(0.5, 0.0))
+	ronce.step(DT)
+	assert_eq(s.lucidity.petals, 3, "both still invulnerable")
+	_end(s)
+
 func test_spawn_far_from_every_player() -> void:
 	var s: NightSession = await _session()
 	var spots := _apart(s, 12.0)

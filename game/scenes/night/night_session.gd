@@ -165,13 +165,14 @@ func player_points() -> PackedVector2Array:
 		out.append(Vector2(player.global_position.x, player.global_position.z))
 	return out
 
-## Every plant reacts to its nearest player: position, aim, and who its contact hits.
+## Every plant reacts to (steers from) its nearest player: position and aim. Contact hits test
+## every player (HostileAttack).
 func feed_threats() -> void:
 	var points := player_points()
 	for plant in live_plants():
 		var i := CoopRules.nearest(plant.xz(), points)
 		if i >= 0:
-			plant.set_threat(points[i], players[i].aim_dir, players[i])
+			plant.set_threat(points[i], players[i].aim_dir)
 
 ## Co-op leash: beyond LEASH_DISTANCE the players are pulled back together, each by the share
 ## of the gap they walked away since the last check (whoever wanders off is the one held).

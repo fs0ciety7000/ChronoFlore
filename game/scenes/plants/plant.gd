@@ -71,7 +71,6 @@ var _attack: HostileAttack
 var _has_threat: bool = false
 var _threat: Vector2 = Vector2.ZERO
 var _aim: Vector2 = Vector2.ZERO
-var _threat_node: Node3D ## the player behind _threat (nearest one in co-op), or null
 
 var _state_time: float = 0.0
 var _panic_time: float = 0.0
@@ -105,13 +104,11 @@ func setup(p_species: PlantSpecies, p_island: IslandShape, p_speed_multiplier: f
 	_presenter.build()
 
 ## Position and aim direction (XZ) of the player to react to (the nearest one in co-op), fed
-## every frame by the night session. `player` is who a hostile's contact hits; null falls back
-## on the first player of the "heroine" group.
-func set_threat(position_xz: Vector2, aim_dir: Vector2, player: Node3D = null) -> void:
+## every frame by the night session. Steering only: a hostile's contact tests every player.
+func set_threat(position_xz: Vector2, aim_dir: Vector2) -> void:
 	_has_threat = true
 	_threat = position_xz
 	_aim = aim_dir
-	_threat_node = player
 
 ## TORPOR -> dart, PIN -> pin, CAPTURE -> net. Returns true only on a capture.
 ## A hidden plant ignores every tool; an airborne one dodges the net (darts still hit).
@@ -187,14 +184,6 @@ func threat_xz() -> Vector2:
 
 func aim_dir() -> Vector2:
 	return _aim
-
-## The player a hostile's contact hits: the threat's player, else the first of group "heroine".
-func threat_player() -> Node3D:
-	if _threat_node != null and is_instance_valid(_threat_node):
-		return _threat_node
-	if not is_inside_tree():
-		return null
-	return get_tree().get_first_node_in_group("heroine") as Node3D
 
 func panic_time() -> float:
 	return _panic_time
@@ -273,7 +262,7 @@ func step(delta: float) -> void:
 					var hurts := _behavior.contact_hurts()
 					dir = _behavior.desired_velocity(self, delta)
 					if hurts:
-						_attack.check_contact(dist)
+						_attack.check_contact()
 				elif _behavior.wanders():
 					dir = _wander(delta)
 			else:
