@@ -14,7 +14,7 @@ const links = [
     <h2 id="partager-title">Fais circuler le rêve</h2>
     <p>Le jeu pousse encore. Un lien partagé, c'est une graine.</p>
     <div class="actions actions--center">
-      <button type="button" class="btn btn--primary" data-copy-link>Copier le lien</button>
+      <button type="button" class="btn btn--primary" data-copy-link hidden>Copier le lien</button>
       {
         links.map((l) => (
           <a class="btn btn--soft" href={l.href} target="_blank" rel="noopener noreferrer">
@@ -24,7 +24,8 @@ const links = [
       }
     </div>
     <p class="sr-only" role="status" data-share-status></p>
-    <div class="share__manual" data-share-manual hidden>
+    <!-- Shown by default: without JS the copy button stays hidden (share.ts swaps them). -->
+    <div class="share__manual" data-share-manual>
       <label for="share-url">Copie ce lien :</label>
       <input id="share-url" type="text" readonly value={SHARE_URL} />
     </div>
@@ -81,7 +82,8 @@ const links = [
     gap: 0.5rem;
     width: min(100%, 26rem);
   }
-  .share__manual[hidden] {
+  .share__manual[hidden],
+  .btn[hidden] {
     display: none;
   }
   .share__manual input {

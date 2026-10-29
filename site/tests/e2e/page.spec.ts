@@ -126,6 +126,23 @@ test.describe('share and metadata', () => {
     expect(await input.evaluate((i: HTMLInputElement) => i.selectionEnd! - i.selectionStart!)).toBe(36);
   });
 
+  test('without JavaScript, shows the readonly link instead of an inert copy button', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto('/');
+    await expect(page.locator('[data-copy-link]')).toBeHidden();
+    const input = page.locator('#partager input[readonly]');
+    await expect(input).toBeVisible();
+    await expect(input).toHaveValue('https://chronoflore.cardormedia.com/');
+    await context.close();
+  });
+
+  test('with JavaScript, swaps the readonly link for the copy button', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('[data-copy-link]')).toBeVisible();
+    await expect(page.locator('#partager input[readonly]')).toBeHidden();
+  });
+
   test('"Partager le rêve" calls navigator.share when available', async ({ page }) => {
     await page.addInitScript(() => {
       (window as any).__shared = null;

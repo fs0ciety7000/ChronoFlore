@@ -47,6 +47,14 @@ export function initShare(): void {
   const idle = copyBtn?.textContent ?? 'Copier le lien';
   let timer: number | undefined;
 
+  // The page ships with the readonly link shown and the button hidden, so it
+  // works without JS; with JS the button takes over (the link returns as a
+  // fallback when the clipboard is unavailable).
+  if (copyBtn && manual) {
+    copyBtn.hidden = false;
+    manual.hidden = true;
+  }
+
   const showManual = () => {
     if (!manual) return;
     manual.hidden = false;
