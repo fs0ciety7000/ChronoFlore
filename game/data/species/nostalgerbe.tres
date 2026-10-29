@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"nostalgerbe"
+display_name = "Nostalgerbe"
+emotion = "nostalgie"
+rarity = 0
+capturable = true
+base_speed = 3.5
+min_hour = 0.0
+behavior = 1
+fragment = "(provisoire) Elle ne se souvient plus de quoi, seulement que c'était doux. Elle zigzague entre les herbes comme entre des photos jaunies. Quand on la regarde de trop près, elle se fige, un peu gênée."
+details = PackedStringArray("(provisoire) Ses brins se tournent toujours vers un endroit qui n'existe plus.", "(provisoire) Elle sent le goûter d'une cuisine d'enfance.")

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"timidelle"
+display_name = "Timidelle"
+emotion = "timidité"
+rarity = 1
+capturable = true
+base_speed = 3.0
+min_hour = 2.0
+behavior = 2
+fragment = "(provisoire) Elle voulait seulement dire bonjour, mais les mots sont restés sous la terre. Alors elle s'enterre dès qu'on s'approche, et ressort plus loin, le cœur battant. Un jour, quelqu'un lui répondra."
+details = PackedStringArray("(provisoire) Elle ne sort que le temps d'un souffle, les joues roses.", "(provisoire) Sous terre, elle répète en silence les phrases qu'elle n'a jamais dites.")

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="GameCatalog" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/game_catalog.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/tool_data.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/data/unlock_milestone.gd" id="4"]
+[ext_resource type="Resource" path="res://data/species/revette.tres" id="5"]
+[ext_resource type="Resource" path="res://data/species/nostalgerbe.tres" id="6"]
+[ext_resource type="Resource" path="res://data/species/timidelle.tres" id="7"]
+[ext_resource type="Resource" path="res://data/species/ronce_angoisse.tres" id="8"]
+[ext_resource type="Resource" path="res://data/tools/net.tres" id="9"]
+[ext_resource type="Resource" path="res://data/tools/tranquilizer.tres" id="10"]
+[ext_resource type="Resource" path="res://data/tools/harpoon.tres" id="11"]
+[ext_resource type="Resource" path="res://data/milestones/harpoon_at_3.tres" id="12"]
+
+[resource]
+script = ExtResource("1")
+species = Array[ExtResource("2")]([ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8")])
+tools = Array[ExtResource("3")]([ExtResource("9"), ExtResource("10"), ExtResource("11")])
+milestones = Array[ExtResource("4")]([ExtResource("12")])
+dawn_memories = PackedStringArray("(provisoire) Au premier matin, elle se souvient d'une fenêtre ouverte et d'un parfum de pluie. Quelqu'un chantonnait dans la pièce d'à côté.", "(provisoire) Au deuxième matin, elle retrouve un carnet aux pages froissées. Les dessins de plantes y ressemblent à ceux de ses rêves.", "(provisoire) Au troisième matin, elle comprend que la nuit n'est pas une ennemie. Les plantes étaient ses émotions, et elles ne voulaient que lui tenir compagnie.")

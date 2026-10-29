@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ToolData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/tool_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"harpoon"
+display_name = "Harpon"
+effect = 1
+cooldown = 2.5
+max_range = 10.0
+projectile_speed = 12.0
+unlocked_by_default = false
