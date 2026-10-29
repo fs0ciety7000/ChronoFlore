@@ -13,16 +13,17 @@ Règles communes à tous les agents de code (Claude Code, Codex, Cursor, etc.). 
 - **Diorama** : île de terrain flottante, bords en coupe de terre, lumière douce, ombres légères, fond crème uni, couleurs pastel.
 - **Caméra** : 3D, `Camera3D` orthographique, angle isométrique fixe.
 - **Héroïne** : peau foncée, longues tresses noires, lunettes rondes teintées roses, grand sourire, haut à rayures multicolores (vert, rouge, orange, violet), petit collier doré. Proportions chibi.
+- **Rendu** (réf. vidéo pêche) : 3D stylisée vue de dessus/iso, eau turquoise translucide aux caustiques, écume blanche, ombres franches et douces, HUD minimal en cartouches crème arrondies.
 - **Ton** : mélancolique mais kawaï ; les plantes sont des émotions, des souvenirs et des pensées.
 
 ## Commandes
 
 ```bash
-# Jeu (Godot 4.7, binaire `godot` dans le PATH)
+# Jeu (Godot 4.7.2, binaire `godot` dans le PATH ; export Web : templates 4.7.2 installés)
 import:  godot --headless --path game --import
 test:    godot --headless --path game --script res://tests/test_runner.gd
 run:     godot --path game
-build:   godot --headless --path game --export-release "Web" ../build/web/index.html
+build:   mkdir -p build/web && godot --headless --path game --export-release "Web" ../build/web/index.html
 
 # Site vitrine (Node 22, depuis site/)
 install: npm install
