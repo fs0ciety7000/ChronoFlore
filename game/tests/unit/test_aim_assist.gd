@@ -55,7 +55,7 @@ func test_heroine_default_aim() -> void:
 	var h: Heroine = await _heroine()
 	assert_eq(h.aim_dir, Vector2(0, 1), "default aim faces +Z")
 	assert_true(h.is_in_group("heroine"), "in heroine group")
-	assert_true(h.get_node_or_null("Visual/Body") != null, "visual built")
+	assert_true(h.get_node_or_null("Visual/Model") != null, "visual built")
 	assert_eq(h.facing(), Vector2(0, 1), "facing")
 	assert_eq(h.collision_layer, 2, "layer 2")
 	assert_eq(h.collision_mask, 1, "mask 1")
