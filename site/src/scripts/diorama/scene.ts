@@ -3,10 +3,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { compileGently, fadeTo, instantiate, loadCharacters, type CharacterInstance } from '../characters-3d';
 import { lightAt } from '../lighting';
 import { clampProgress, dawnFactor, nightFactor } from '../timeline';
 import { DESKTOP_MIN, ISLAND_SCREEN_RADIUS_M, focusRect, metresPerPixel } from './framing';
 import { ISLAND, buildIslandBase, type Placement } from './island';
+import { WALK_SPEED, duoAt } from './stroll';
 
 export type Diorama = {
   setProgress(p: number): void;
@@ -83,6 +85,7 @@ function softenCloud(mesh: THREE.Mesh, material: THREE.MeshStandardMaterial) {
 }
 
 type Swayer = { obj: THREE.Object3D; box: THREE.Box3; amp: number; start: number; petal: THREE.Color };
+type Stroller = CharacterInstance & { current?: THREE.AnimationAction };
 
 export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama {
   // Phones and tablets: fewer pixels and no shadow pass.
@@ -168,6 +171,17 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
   let nextPetal = 0;
 
   const swayers: Swayer[] = [];
+  // The heroine and her companion strolling around the pond (stroll.ts).
+  const duo: Stroller[] = [];
+  // A soft contact shadow under each of them (cheaper than casting skinned
+  // shadows, and readable at this size).
+  const footGeo = new THREE.CircleGeometry(0.36, 20);
+  footGeo.rotateX(-Math.PI / 2);
+  footGeo.scale(1, 1, 0.75);
+  const footMat = new THREE.MeshBasicMaterial({ color: '#3b3350', map: dot, transparent: true, opacity: 0.3, depthWrite: false });
+  const groundRay = new THREE.Raycaster();
+  const down = new THREE.Vector3(0, -1, 0);
+  const probe = new THREE.Vector3();
   const glowUniforms: { uniform: { value: number }; weight: number }[] = [];
   const materialCache = new Map<string, THREE.Material>();
   const timer = new THREE.Timer();
@@ -302,6 +316,7 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
     pond.material.emissive.set('#5fc3d6');
     pond.material.emissiveIntensity = l.glow * 0.45;
     flyMat.opacity = l.glow;
+    footMat.opacity = 0.3 - 0.14 * l.glow;
     fireflies.visible = l.glow > 0.01;
     return l;
   }
@@ -392,6 +407,28 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
     flyMat.size = 8 + 2.5 * Math.sin(now * 2);
   }
 
+  function updateDuo(now: number, dt: number) {
+    if (!duo.length) return;
+    const poses = duoAt(now);
+    duo.forEach((c, i) => {
+      const pose = poses[i];
+      // Stand on the meadow, which undulates by a few centimetres.
+      groundRay.set(island.localToWorld(probe.set(pose.x, 2, pose.z)), down);
+      const hit = groundRay.intersectObject(base, true)[0];
+      const y = hit ? island.worldToLocal(probe.copy(hit.point)).y : 0;
+      c.root.position.set(pose.x, y, pose.z);
+      c.root.rotation.y = pose.heading;
+      const next = pose.walking ? c.actions.Walk : c.actions.Idle;
+      if (next !== c.current) {
+        fadeTo(c.current, next, 0.35);
+        c.current = next;
+      }
+      // Stride follows the speed so the feet do not slide while easing in and out.
+      c.actions.Walk.timeScale = Math.max(0.45, pose.speed / WALK_SPEED);
+      c.mixer.update(dt);
+    });
+  }
+
   function render(dt: number) {
     const now = timer.getElapsed();
     progress = lerp(progress, progressTarget, damp(dt, 6));
@@ -411,6 +448,7 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
     updateSway(now);
     updatePetals(dt);
     updateFireflies(now);
+    updateDuo(now, dt);
     renderer.render(scene, camera);
   }
 
@@ -436,6 +474,9 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
     const loader = new GLTFLoader();
     const ids = [...new Set(ISLAND.map((p) => p.id))];
     const models = new Map<string, THREE.Object3D>();
+    // The characters load alongside; the island does not wait on (or fail with) them.
+    const characters = loadCharacters();
+    characters.catch(() => {});
     await Promise.all(
       ids.map(async (id) => {
         const file = manifest[id];
@@ -498,6 +539,45 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
     render(0);
     opts.onReady();
     schedule();
+    await addDuo(characters);
+  }
+
+  /**
+   * Adds the strolling pair once the island is live: their shaders compile
+   * asynchronously (parallel compile where supported), so the first frame of
+   * the island and the page's main thread never wait on them.
+   */
+  async function addDuo(characters: ReturnType<typeof loadCharacters>) {
+    try {
+      const { heroine, companion } = await characters;
+      if (disposed) return;
+      const group = new THREE.Group();
+      const pair: Stroller[] = [heroine, companion].map((gltf) => {
+        // Real size (about 1.1 m), origin at the feet: placed as authored.
+        const c: Stroller = instantiate(gltf);
+        c.root.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (mesh.isMesh) mesh.receiveShadow = true;
+        });
+        const foot = new THREE.Mesh(footGeo, footMat);
+        foot.position.y = 0.02;
+        foot.renderOrder = -1;
+        c.root.add(foot);
+        group.add(c.root);
+        return c;
+      });
+      await compileGently(renderer, group, camera, scene, () => disposed);
+      if (disposed) {
+        pair.forEach((c) => c.dispose());
+        return;
+      }
+      for (const c of pair) island.add(c.root);
+      duo.push(...pair);
+      updateDuo(timer.getElapsed(), 0);
+    } catch (e) {
+      if (!disposed) console.warn('[diorama] island without the duo:', e);
+    }
+    if (!disposed) host.dataset.duo = String(duo.length);
   }
   load().catch((e) => {
     if (!disposed) opts.onError(e);
@@ -525,9 +605,12 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
       resizeObserver.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
       timer.dispose();
+      for (const c of duo) c.dispose();
       const materials = new Set<THREE.Material>(replaced);
       scene.traverse((o) => {
         const mesh = o as THREE.Mesh;
+        // The characters' geometry and materials are shared with the portraits.
+        if (o.userData.sharedCharacter) return;
         if (mesh.geometry) mesh.geometry.dispose();
         const mats = mesh.material ? (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) : [];
         mats.forEach((m) => materials.add(m));
@@ -538,6 +621,8 @@ export function createDiorama(canvas: HTMLCanvasElement, opts: Options): Diorama
         m.dispose();
       }
       petals.dispose();
+      footGeo.dispose();
+      footMat.dispose();
       sun.shadow.dispose();
       dot.dispose();
       renderer.dispose();
