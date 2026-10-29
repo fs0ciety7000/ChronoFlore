@@ -87,6 +87,30 @@ func test_model_materials_are_named_with_base_colours() -> void:
 		assert_eq(named, total, "%s materials are named, without vertex colours" % id)
 		v.free()
 
+func test_plant_state_drives_model_animation() -> void:
+	var plant := _spawn("revette")
+	var model := _model(plant)
+	assert_true(model != null, "plant visual is a PlantModelVisual")
+	if model == null:
+		_cleanup()
+		return
+	var ap := model.animation_player()
+	assert_eq(ap.current_animation, "Idle", "wandering plays Idle")
+	plant.state = Plant.State.ALERT
+	assert_eq(ap.current_animation, "Idle", "alert plays Idle")
+	plant.state = Plant.State.FLEE
+	assert_eq(ap.current_animation, "Move", "fleeing plays Move")
+	plant.state = Plant.State.PANIC
+	assert_eq(ap.current_animation, "Move", "panic plays Move")
+	for i in 3:
+		plant.torpor.add_dart()
+	plant.step(1.0 / 60.0)
+	assert_true(plant.torpor.is_asleep(), "three darts put it to sleep")
+	assert_eq(ap.current_animation, "Sleep", "asleep plays Sleep")
+	assert_true(plant.hit_by_tool(ToolData.Effect.CAPTURE), "captured asleep")
+	assert_eq(ap.current_animation, "Caught", "captured plays Caught")
+	_cleanup()
+
 func test_model_play_state_mapping() -> void:
 	var v := _species("ronce_angoisse").visual_scene.instantiate() as PlantModelVisual
 	tree.root.add_child(v)

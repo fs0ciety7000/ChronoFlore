@@ -1,7 +1,7 @@
 class_name Plant
 extends CharacterBody3D
 ## A capturable (or nightmare) plant: state machine, flight, tool hits and its hand-made model
-## (PlantModelVisual).
+## (PlantModelVisual), whose animation follows the state.
 ## IslandShape is the only source of truth for edges: physics never decides a fall.
 
 enum State { WANDER, ALERT, FLEE, PANIC, BURROWED, EMERGING, CAPTURED, ESCAPED }
@@ -49,14 +49,10 @@ const STARTLE_BOOST := 1.5
 const CAPTURE_FREE_DELAY := 0.3
 ## Emission energy at plant_glow = 1.
 const GLOW_ENERGY := 0.8
-## Hop while moving.
+## Small hop while wandering between targets (the model plays Idle; Move has its own hops).
 const BOB_HEIGHT := 0.06
 const BOB_FREQ := 6.0
-## Gentle breathing bob while idle.
-const IDLE_BOB_HEIGHT := 0.035
-const IDLE_BOB_FREQ := 2.4
 const TREMBLE_AMPLITUDE := 0.04
-const SLEEP_SQUASH := 0.6
 
 var species: PlantSpecies
 var torpor: Torpor
@@ -187,6 +183,7 @@ func step(delta: float) -> void:
 		_fall(delta)
 		return
 	torpor.tick(delta)
+	_sync_animation()
 	_state_time += delta
 	var dist := xz().distance_to(_threat) if _has_threat else INF
 	var dir := Vector2.ZERO
@@ -254,6 +251,12 @@ func _set_state(value: State) -> void:
 	if shape != null:
 		var off := value == State.BURROWED or value == State.CAPTURED or value == State.ESCAPED
 		shape.set_deferred("disabled", off)
+	_sync_animation()
+
+## Idle/Move/Sleep/Caught on the model, from the state and the torpor.
+func _sync_animation() -> void:
+	if _model != null:
+		_model.play_state(state, torpor.is_asleep())
 
 func _alert_from_hit() -> void:
 	if not _is_stalker() and (state == State.WANDER or state == State.ALERT):
@@ -311,6 +314,8 @@ func _check_contact(dist: float) -> void:
 	if heroine != null and heroine.has_method("take_nightmare_hit"):
 		if heroine.call("take_nightmare_hit", xz()) == true:
 			_stun_left = CONTACT_STUN_DURATION
+			if _model != null:
+				_model.play_attack()
 
 func _wander(delta: float) -> Vector2:
 	if _wander_pause > 0.0:
@@ -378,24 +383,17 @@ func _build_visual() -> void:
 	holder.add_child(visual)
 	_model = visual as PlantModelVisual # owns per-plant material copies
 	set_glow(_glow)
+	_sync_animation()
 
 func _animate_visual(delta: float) -> void:
 	var visual := get_node_or_null("Visual") as Node3D
 	if visual == null or state == State.CAPTURED:
 		return # the capture tween owns the visual's scale
 	_anim_t += delta
-	var offset := Vector3.ZERO
-	var squash := 1.0
-	if torpor.is_asleep():
-		squash = SLEEP_SQUASH
-	elif state == State.ALERT:
-		offset.x = sin(_anim_t * 70.0) * TREMBLE_AMPLITUDE
-	elif state != State.CAPTURED and state != State.ESCAPED:
-		if _moving:
+	var offset := Vector3.ZERO # sleep, flight and capture are the model's own animations
+	if not torpor.is_asleep():
+		if state == State.ALERT:
+			offset.x = sin(_anim_t * 70.0) * TREMBLE_AMPLITUDE
+		elif state == State.WANDER and _moving:
 			offset.y = absf(sin(_anim_t * BOB_FREQ)) * BOB_HEIGHT * 2.0
-		else:
-			offset.y = (0.5 + 0.5 * sin(_anim_t * IDLE_BOB_FREQ)) * IDLE_BOB_HEIGHT
 	visual.position = offset
-	var sy := lerpf(visual.scale.y, squash, 1.0 - exp(-10.0 * delta))
-	var sxz := 1.0 / sqrt(maxf(sy, 0.01))
-	visual.scale = Vector3(sxz, sy, sxz)
