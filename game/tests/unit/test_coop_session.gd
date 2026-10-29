@@ -187,6 +187,8 @@ func test_leash_and_camera_frame_both() -> void:
 	var p1 := s.players[0]
 	var p2 := s.players[1]
 	var spots := _apart(s, 10.0)
+	var saved := s.island.shape.obstacles
+	s.island.shape.obstacles = PackedVector3Array() # the pond sits on this line (M11 test covers it)
 	_place(p1, spots[0])
 	_place(p2, spots[1])
 	s.apply_leash()
@@ -211,6 +213,28 @@ func test_leash_and_camera_frame_both() -> void:
 	_place(p2, spots[0] + Vector2(0.5, 0))
 	s.camera.snap_to_target()
 	assert_near(s.camera.ortho_size(), CoopRules.camera_size(IsoCamera.ORTHO_SIZE, 0.5), 1e-3, "close: near solo size")
+	s.island.shape.obstacles = saved
+	_end(s)
+
+## M11: the leash never pulls a player into the pond (clamp_walkable).
+func test_leash_keeps_players_walkable() -> void:
+	var s: NightSession = await _session()
+	var p1 := s.players[0]
+	var p2 := s.players[1]
+	var spots := _apart(s, 10.0)
+	var dir := (spots[1] - spots[0]).normalized()
+	var held := spots[0] + dir * CoopRules.LEASH_DISTANCE
+	var shape := s.island.shape
+	var saved := shape.obstacles
+	shape.obstacles = PackedVector3Array([Vector3(held.x, held.y, 1.0)])
+	_place(p1, spots[0])
+	_place(p2, spots[1])
+	s.apply_leash()
+	_place(p2, spots[0] + dir * (CoopRules.LEASH_DISTANCE + 2.0))
+	s.apply_leash()
+	assert_true(shape.is_clear(_xz(p2), Heroine.EDGE_MARGIN - 1e-3), "P2 held outside the pond (%s)" % _xz(p2))
+	assert_true(_xz(p2).distance_to(spots[0]) < CoopRules.LEASH_DISTANCE + 2.0, "still pulled back")
+	shape.obstacles = saved
 	_end(s)
 
 func test_solo_camera_unchanged() -> void:

@@ -245,7 +245,9 @@ func apply_leash() -> void:
 			points = player_points()
 	_last_xz = points
 
+## Leashed position, kept walkable (out of the pond, inside the edge margin).
 func _place_player(player: Heroine, p: Vector2) -> void:
+	p = island.shape.clamp_walkable(p, Heroine.EDGE_MARGIN, Heroine.EDGE_MARGIN)
 	player.global_position = Vector3(p.x, player.global_position.y, p.y)
 
 ## Reassigns devices for the connected pads (DeviceAssignment rules) and rebuilds the bindings;
