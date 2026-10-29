@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/plants/visuals/ronce_angoisse.tscn" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -11,6 +12,7 @@ rarity = 0
 capturable = false
 base_speed = 1.2
 min_hour = 0.0
+visual_scene = ExtResource("2")
 behavior = 3
 fragment = "(provisoire) Elle n'a pas de visage, seulement un poids sur la poitrine qui avance, doucement, sans jamais s'arrêter. On ne peut pas la capturer, juste l'endormir un moment. Le calme revient, mais elle sait où on habite."
 details = PackedStringArray("(provisoire) Ses épines se resserrent quand on pense à demain.", "(provisoire) Endormie, elle ressemble presque à un petit buisson fatigué.")

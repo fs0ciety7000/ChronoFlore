@@ -1,0 +1,130 @@
+[gd_scene load_steps=15 format=3]
+
+[sub_resource type="StandardMaterial3D" id="Mat_0"]
+albedo_color = Color(0.6235, 0.8627, 0.7059, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderMesh" id="Mesh_0"]
+material = SubResource("Mat_0")
+top_radius = 0.035
+bottom_radius = 0.045
+height = 0.32
+radial_segments = 10
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="Mat_1"]
+albedo_color = Color(0.7137, 0.9098, 0.7686, 1)
+roughness = 0.85
+
+[sub_resource type="SphereMesh" id="Mesh_1"]
+material = SubResource("Mat_1")
+radius = 0.1
+height = 0.2
+radial_segments = 16
+rings = 8
+
+[sub_resource type="SphereMesh" id="Mesh_2"]
+material = SubResource("Mat_1")
+radius = 0.1
+height = 0.2
+radial_segments = 16
+rings = 8
+
+[sub_resource type="StandardMaterial3D" id="Mat_2"]
+albedo_color = Color(1, 0.9412, 0.6588, 1)
+roughness = 0.85
+
+[sub_resource type="SphereMesh" id="Mesh_3"]
+material = SubResource("Mat_2")
+radius = 0.16
+height = 0.32
+radial_segments = 16
+rings = 8
+
+[sub_resource type="StandardMaterial3D" id="Mat_3"]
+albedo_color = Color(1, 0.7686, 0.8392, 1)
+roughness = 0.85
+
+[sub_resource type="SphereMesh" id="Mesh_4"]
+material = SubResource("Mat_3")
+radius = 0.08
+height = 0.16
+radial_segments = 16
+rings = 8
+
+[sub_resource type="SphereMesh" id="Mesh_5"]
+material = SubResource("Mat_3")
+radius = 0.08
+height = 0.16
+radial_segments = 16
+rings = 8
+
+[sub_resource type="SphereMesh" id="Mesh_6"]
+material = SubResource("Mat_3")
+radius = 0.08
+height = 0.16
+radial_segments = 16
+rings = 8
+
+[sub_resource type="SphereMesh" id="Mesh_7"]
+material = SubResource("Mat_3")
+radius = 0.08
+height = 0.16
+radial_segments = 16
+rings = 8
+
+[sub_resource type="SphereMesh" id="Mesh_8"]
+material = SubResource("Mat_3")
+radius = 0.08
+height = 0.16
+radial_segments = 16
+rings = 8
+
+[sub_resource type="SphereMesh" id="Mesh_9"]
+material = SubResource("Mat_3")
+radius = 0.08
+height = 0.16
+radial_segments = 16
+rings = 8
+
+[node name="Revette" type="Node3D"]
+
+[node name="Stem" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.16, 0)
+mesh = SubResource("Mesh_0")
+
+[node name="LeafL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.4501, 0.67619, 0, -0.12679, 0.27189, 0, 0, 0, 0.8, -0.12, 0.1, 0)
+mesh = SubResource("Mesh_1")
+
+[node name="LeafR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.4501, -0.67619, 0, 0.12679, 0.27189, 0, 0, 0, 0.8, 0.12, 0.14, 0)
+mesh = SubResource("Mesh_2")
+
+[node name="Head" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.44, 0)
+mesh = SubResource("Mesh_3")
+
+[node name="Petal0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.3, 0, 0, 0, 0.45, 0, 0, 0, 0.9, 0.17, 0.44, 0)
+mesh = SubResource("Mesh_4")
+
+[node name="Petal1" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.65, 0, 1.1258, 0, 0.45, 0, -0.77942, 0, 0.45, 0.085, 0.44, 0.14722)
+mesh = SubResource("Mesh_5")
+
+[node name="Petal2" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.65, 0, 1.1258, 0, 0.45, 0, -0.77942, 0, -0.45, -0.085, 0.44, 0.14722)
+mesh = SubResource("Mesh_6")
+
+[node name="Petal3" type="MeshInstance3D" parent="."]
+transform = Transform3D(-1.3, 0, 1.592e-16, 0, 0.45, 0, -1.1022e-16, 0, -0.9, -0.17, 0.44, 2.0819e-17)
+mesh = SubResource("Mesh_7")
+
+[node name="Petal4" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.65, 0, -1.1258, 0, 0.45, 0, 0.77942, 0, -0.45, -0.085, 0.44, -0.14722)
+mesh = SubResource("Mesh_8")
+
+[node name="Petal5" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.65, 0, -1.1258, 0, 0.45, 0, 0.77942, 0, 0.45, 0.085, 0.44, -0.14722)
+mesh = SubResource("Mesh_9")

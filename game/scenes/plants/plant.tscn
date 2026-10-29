@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/plants/plant.gd" id="1_plant"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_plant"]
+radius = 0.3
+height = 0.8
+
+[node name="Plant" type="CharacterBody3D"]
+motion_mode = 1
+script = ExtResource("1_plant")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("CapsuleShape3D_plant")
+
+[node name="Visual" type="Node3D" parent="."]

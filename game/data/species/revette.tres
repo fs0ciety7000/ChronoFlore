@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="PlantSpecies" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PlantSpecies" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/plant_species.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/plants/visuals/revette.tscn" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -11,6 +12,7 @@ rarity = 0
 capturable = true
 base_speed = 4.5
 min_hour = 0.0
+visual_scene = ExtResource("2")
 behavior = 0
 fragment = "(provisoire) Une petite joie qui ne pesait rien, comme un rire entendu de l'autre côté d'un mur. Elle file dès qu'on la regarde, de peur qu'on la retienne. Pourtant elle sent encore le matin d'été."
 details = PackedStringArray("(provisoire) Elle s'arrête souvent pour respirer, et ses feuilles tremblent de rire.", "(provisoire) Au fond de ses pétales, on devine un jour de vacances.")

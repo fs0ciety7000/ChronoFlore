@@ -1,0 +1,142 @@
+[gd_scene load_steps=14 format=3]
+
+[sub_resource type="StandardMaterial3D" id="Mat_0"]
+albedo_color = Color(0.6039, 0.4784, 0.6588, 1)
+roughness = 0.85
+
+[sub_resource type="SphereMesh" id="Mesh_0"]
+material = SubResource("Mat_0")
+radius = 0.24
+height = 0.48
+radial_segments = 16
+rings = 8
+
+[sub_resource type="StandardMaterial3D" id="Mat_1"]
+albedo_color = Color(0.4314, 0.3373, 0.4941, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderMesh" id="Mesh_1"]
+material = SubResource("Mat_1")
+top_radius = 0.0
+bottom_radius = 0.045
+height = 0.2
+radial_segments = 10
+rings = 1
+
+[sub_resource type="CylinderMesh" id="Mesh_2"]
+material = SubResource("Mat_1")
+top_radius = 0.0
+bottom_radius = 0.045
+height = 0.2
+radial_segments = 10
+rings = 1
+
+[sub_resource type="CylinderMesh" id="Mesh_3"]
+material = SubResource("Mat_1")
+top_radius = 0.0
+bottom_radius = 0.045
+height = 0.2
+radial_segments = 10
+rings = 1
+
+[sub_resource type="CylinderMesh" id="Mesh_4"]
+material = SubResource("Mat_1")
+top_radius = 0.0
+bottom_radius = 0.045
+height = 0.2
+radial_segments = 10
+rings = 1
+
+[sub_resource type="CylinderMesh" id="Mesh_5"]
+material = SubResource("Mat_1")
+top_radius = 0.0
+bottom_radius = 0.045
+height = 0.2
+radial_segments = 10
+rings = 1
+
+[sub_resource type="CylinderMesh" id="Mesh_6"]
+material = SubResource("Mat_1")
+top_radius = 0.0
+bottom_radius = 0.045
+height = 0.2
+radial_segments = 10
+rings = 1
+
+[sub_resource type="CylinderMesh" id="Mesh_7"]
+material = SubResource("Mat_1")
+top_radius = 0.0
+bottom_radius = 0.045
+height = 0.2
+radial_segments = 10
+rings = 1
+
+[sub_resource type="CylinderMesh" id="Mesh_8"]
+material = SubResource("Mat_1")
+top_radius = 0.0
+bottom_radius = 0.045
+height = 0.2
+radial_segments = 10
+rings = 1
+
+[sub_resource type="CylinderMesh" id="Mesh_9"]
+material = SubResource("Mat_1")
+top_radius = 0.0
+bottom_radius = 0.045
+height = 0.2
+radial_segments = 10
+rings = 1
+
+[sub_resource type="CylinderMesh" id="Mesh_10"]
+material = SubResource("Mat_1")
+top_radius = 0.0
+bottom_radius = 0.045
+height = 0.2
+radial_segments = 10
+rings = 1
+
+[node name="RonceAngoisse" type="Node3D"]
+
+[node name="Core" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9, 0, 0, 0, 1, 0, 0.32, 0)
+mesh = SubResource("Mesh_0")
+
+[node name="Thorn0" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.25882, 0, -0.96593, 0.90025, 0.36245, 0.24122, 0.3501, -0.932, 0.093808, 0.25207, 0.41424, 0.067542)
+mesh = SubResource("Mesh_1")
+
+[node name="Thorn1" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.96593, 0, -0.25882, 0.24122, 0.36245, 0.90025, 0.093808, -0.932, 0.3501, 0.067542, 0.41424, 0.25207)
+mesh = SubResource("Mesh_2")
+
+[node name="Thorn2" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.70711, -0, 0.70711, -0.65903, 0.36245, 0.65903, -0.25629, -0.932, 0.25629, -0.18453, 0.41424, 0.18453)
+mesh = SubResource("Mesh_3")
+
+[node name="Thorn3" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.25882, 0, 0.96593, -0.90025, 0.36245, -0.24122, -0.3501, -0.932, -0.093808, -0.25207, 0.41424, -0.067542)
+mesh = SubResource("Mesh_4")
+
+[node name="Thorn4" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.96593, 0, 0.25882, -0.24122, 0.36245, -0.90025, -0.093808, -0.932, -0.3501, -0.067542, 0.41424, -0.25207)
+mesh = SubResource("Mesh_5")
+
+[node name="Thorn5" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.70711, 0, -0.70711, 0.65903, 0.36245, -0.65903, 0.25629, -0.932, -0.25629, 0.18453, 0.41424, -0.18453)
+mesh = SubResource("Mesh_6")
+
+[node name="Thorn6" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.70711, 0, -0.70711, 0.35852, 0.86193, 0.35852, 0.60948, -0.50702, 0.60948, 0.10038, 0.5441, 0.10038)
+mesh = SubResource("Mesh_7")
+
+[node name="Thorn7" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.25882, -0, 0.96593, -0.48974, 0.86193, 0.13123, -0.83256, -0.50702, 0.22308, -0.13713, 0.5441, 0.036743)
+mesh = SubResource("Mesh_8")
+
+[node name="Thorn8" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.96593, 0, -0.25882, 0.13123, 0.86193, -0.48974, 0.22308, -0.50702, -0.83256, 0.036743, 0.5441, -0.13713)
+mesh = SubResource("Mesh_9")
+
+[node name="Thorn9" type="MeshInstance3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0.58, 0)
+mesh = SubResource("Mesh_10")
