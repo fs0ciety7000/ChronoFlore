@@ -4,3 +4,4 @@ dist
 public/models/polyfork
 public/jouer
 public/telecharger
+.e2e-downloads

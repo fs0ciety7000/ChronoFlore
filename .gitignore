@@ -33,3 +33,6 @@ site/public/jouer/
 
 # Desktop builds of the game: downloaded at build time (npm run fetch:downloads), never committed
 site/public/telecharger/
+
+# Site built with a fixture manifest for the downloads e2e test
+site/.e2e-downloads/

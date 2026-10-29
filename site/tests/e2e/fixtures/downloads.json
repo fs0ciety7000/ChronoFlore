@@ -1,0 +1,10 @@
+{
+  "version": "0.1.42",
+  "date": "2026-10-29T12:00:00Z",
+  "files": {
+    "macos": { "name": "ChronoFlore-macos.dmg", "size": 64800000 },
+    "windows": { "name": "ChronoFlore-windows.exe", "size": 111208848 },
+    "deb": { "name": "ChronoFlore-linux.deb", "size": 23573902 },
+    "tarball": { "name": "ChronoFlore-linux.tar.gz", "size": 30303438 }
+  }
+}

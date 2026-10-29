@@ -1,0 +1,149 @@
+---
+// Desktop builds, read at build time from public/telecharger/manifest.json
+// (npm run fetch:downloads). A missing file shows "bientôt" instead of a link,
+// so there is never a dead link. DOWNLOADS_MANIFEST overrides the path (e2e
+// fixtures). The visitor's OS is highlighted by the tiny script below.
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { formatSize, parseManifest, type Os, type Platform } from '../scripts/downloads';
+
+const path = resolve(process.env.DOWNLOADS_MANIFEST || 'public/telecharger/manifest.json');
+let raw: unknown = null;
+try {
+  if (existsSync(path)) raw = JSON.parse(readFileSync(path, 'utf8'));
+} catch {
+  raw = null;
+}
+const { version, files } = parseManifest(raw);
+
+const items: { key: Platform; os: Os; label: string; ext: string }[] = [
+  { key: 'macos', os: 'macos', label: 'macOS', ext: '.dmg' },
+  { key: 'windows', os: 'windows', label: 'Windows', ext: '.exe' },
+  { key: 'deb', os: 'linux', label: 'Linux', ext: '.deb' },
+];
+const any = items.some((i) => files[i.key]);
+const href = (name: string) => `/telecharger/${name}`;
+---
+
+<div class="downloads" data-downloads={any ? 'ready' : 'soon'}>
+  <p class="downloads__title">
+    Télécharger{version && <span class="downloads__version"> · version {version}</span>}
+  </p>
+  {
+    any ? (
+      <>
+        <ul class="downloads__list" role="list">
+          {items.map((i) => {
+            const f = files[i.key];
+            return (
+              <li data-os={i.os}>
+                {f ? (
+                  <a class="btn btn--quiet downloads__btn" href={href(f.name)} download data-platform={i.key}>
+                    {i.label}
+                    <small>
+                      {i.ext} · {formatSize(f.size)}
+                    </small>
+                  </a>
+                ) : (
+                  <span class="downloads__soon-item">{i.label} : bientôt</span>
+                )}
+                {i.key === 'deb' && files.tarball && (
+                  <a class="downloads__alt" href={href(files.tarball.name)} download data-platform="tarball">
+                    .tar.gz · {formatSize(files.tarball.size)}
+                  </a>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <p class="downloads__note">
+          Versions non signées. macOS : clic droit sur l'app → Ouvrir. Windows : « Informations
+          complémentaires » → « Exécuter quand même ».
+        </p>
+      </>
+    ) : (
+      <p class="downloads__note">Versions macOS, Windows et Linux : bientôt disponibles.</p>
+    )
+  }
+</div>
+
+<script>
+  import { detectOs } from '../scripts/downloads';
+
+  const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+  const os = detectOs(navigator.userAgent, nav.userAgentData?.platform ?? '');
+  if (os) {
+    document.querySelector(`[data-downloads] li[data-os="${os}"]`)?.setAttribute('data-current', '');
+  }
+</script>
+
+<style>
+  .downloads {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    max-width: 100%;
+  }
+  .downloads__title {
+    margin: 0;
+    font-weight: 700;
+  }
+  .downloads__version {
+    font-weight: 400;
+    color: var(--ink-soft);
+  }
+  .downloads__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .downloads__list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.625rem;
+  }
+  .downloads__btn {
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 1.125rem;
+  }
+  .downloads__btn small {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  /* The visitor's OS (set by the script above). */
+  li[data-current] .downloads__btn {
+    box-shadow: inset 0 0 0 2px var(--ink);
+  }
+  .downloads__alt {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: inherit;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-underline-offset: 0.2em;
+  }
+  .downloads__soon-item {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 0.5rem;
+    color: var(--ink-soft);
+    font-size: 0.9375rem;
+  }
+  .downloads__note {
+    margin: 0;
+    max-width: 34rem;
+    color: var(--ink-soft);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+</style>
