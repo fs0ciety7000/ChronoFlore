@@ -58,7 +58,7 @@ cat <<'EOF'
 
 Plugin Superpowers (à lancer dans Claude Code) :
   /plugin marketplace add obra/superpowers
-  /plugin install superpowers@superpowers-marketplace
+  /plugin install superpowers@superpowers-dev
 
 Puis redémarre Claude Code pour charger les skills.
 EOF

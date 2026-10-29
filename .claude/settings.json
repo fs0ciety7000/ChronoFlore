@@ -11,14 +11,11 @@
       "WebSearch",
       "WebFetch",
       "Skill",
-
       "Bash(git *)",
       "Bash(gh *)",
-
       "Bash(wrangler *)",
       "Bash(npx wrangler *)",
       "Bash(pnpm wrangler *)",
-
       "Bash(npx skills *)",
       "Bash(npx skills@latest *)",
       "Bash(npm *)",
@@ -28,7 +25,6 @@
       "Bash(bun *)",
       "Bash(node *)",
       "Bash(deno *)",
-
       "Bash(cargo *)",
       "Bash(rustc *)",
       "Bash(go *)",
@@ -36,12 +32,10 @@
       "Bash(python3 *)",
       "Bash(pip *)",
       "Bash(uv *)",
-
       "Bash(godot *)",
       "Bash(shopify *)",
       "Bash(docker *)",
       "Bash(make *)",
-
       "Bash(ls *)",
       "Bash(cat *)",
       "Bash(head *)",
@@ -69,7 +63,6 @@
       "Bash(git branch -D *)",
       "Bash(git push * --delete *)",
       "Bash(git push origin :*)",
-
       "Bash(gh repo delete *)",
       "Bash(gh release delete *)",
       "Bash(gh api * -X DELETE*)",
@@ -77,7 +70,6 @@
       "Bash(gh secret *)",
       "Bash(gh auth *)",
       "Bash(gh repo edit * --visibility *)",
-
       "Bash(wrangler delete *)",
       "Bash(wrangler * delete *)",
       "Bash(wrangler secret *)",
@@ -85,7 +77,6 @@
       "Bash(npx wrangler delete *)",
       "Bash(npx wrangler * delete *)",
       "Bash(npx wrangler secret *)",
-
       "Bash(rm -rf *)",
       "Bash(rm -r *)",
       "Bash(docker system prune*)",
@@ -109,5 +100,16 @@
       "Bash(wget * | sh*)",
       "Bash(wget * | bash*)"
     ]
+  },
+  "extraKnownMarketplaces": {
+    "superpowers-dev": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "superpowers@superpowers-dev": true
   }
 }

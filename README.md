@@ -15,7 +15,7 @@ chmod +x scripts/setup-skills.sh
 
 # 3. Dans Claude Code : installer le plugin Superpowers
 #    /plugin marketplace add obra/superpowers
-#    /plugin install superpowers@superpowers-marketplace
+#    /plugin install superpowers@superpowers-dev
 
 # 4. Lancer Claude Code et initialiser
 claude
