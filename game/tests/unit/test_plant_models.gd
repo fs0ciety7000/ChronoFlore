@@ -112,6 +112,40 @@ func test_plant_state_drives_model_animation() -> void:
 	assert_eq(ap.current_animation, "Caught", "captured plays Caught")
 	_cleanup()
 
+## I3: a hostile walking towards the player plays Move, Idle when it stands still.
+func test_moving_hostile_plays_move() -> void:
+	for id in HOSTILE_IDS:
+		var plant := _spawn(id)
+		var model := _model(plant)
+		if model == null:
+			assert_true(false, "%s has a PlantModelVisual" % id)
+			continue
+		var ap := model.animation_player()
+		assert_eq(ap.current_animation, "Idle", "%s starts Idle" % id)
+		var at := Vector2(plant.position.x, plant.position.z)
+		for i in 3:
+			plant.set_threat(at + Vector2(5.5, 0), Vector2(-1, 0))
+			plant.step(1.0 / 60.0)
+		if plant.is_moving():
+			assert_eq(ap.current_animation, "Move", "%s approaching plays Move" % id)
+		else:
+			assert_eq(ap.current_animation, "Idle", "%s standing (rooted) plays Idle" % id)
+		_cleanup()
+	var ronce := _spawn("ronce_angoisse")
+	var ap := _model(ronce).animation_player()
+	var p := Vector2(ronce.position.x, ronce.position.z)
+	for i in 3:
+		ronce.set_threat(p + Vector2(3, 0), Vector2(-1, 0))
+		ronce.step(1.0 / 60.0)
+	assert_true(ronce.is_moving(), "ronce stalks")
+	assert_eq(ap.current_animation, "Move", "stalking ronce plays Move")
+	ronce.torpor.pin()
+	ronce.step(1.0 / 60.0)
+	ronce.step(1.0 / 60.0)
+	assert_false(ronce.is_moving(), "pinned ronce stands still")
+	assert_eq(ap.current_animation, "Idle", "standing ronce back to Idle")
+	_cleanup()
+
 func test_model_play_state_mapping() -> void:
 	var v := _species("ronce_angoisse").visual_scene.instantiate() as PlantModelVisual
 	tree.root.add_child(v)
@@ -120,6 +154,10 @@ func test_model_play_state_mapping() -> void:
 	assert_eq(ap.current_animation, "Idle", "WANDER -> Idle")
 	v.play_state(Plant.State.FLEE, false)
 	assert_eq(ap.current_animation, "Move", "FLEE -> Move")
+	v.play_state(Plant.State.WANDER, false, true)
+	assert_eq(ap.current_animation, "Move", "WANDER approaching -> Move")
+	v.play_state(Plant.State.WANDER, true, true)
+	assert_eq(ap.current_animation, "Sleep", "asleep -> Sleep, even approaching")
 	v.play_state(Plant.State.WANDER, true)
 	assert_eq(ap.current_animation, "Sleep", "asleep -> Sleep")
 	v.play_state(Plant.State.CAPTURED, true)

@@ -51,13 +51,16 @@ func materials() -> Array[StandardMaterial3D]:
 	return _materials
 
 ## WANDER/ALERT/EMERGING -> Idle, FLEE/PANIC/ESCAPED -> Move, asleep -> Sleep, CAPTURED -> Caught.
-func play_state(state: Plant.State, asleep: bool) -> void:
+## `approaching`: a hostile moving in WANDER (stalking, charging) plays Move too.
+func play_state(state: Plant.State, asleep: bool, approaching: bool = false) -> void:
 	var anim_name: StringName = &"Idle"
 	if state == Plant.State.CAPTURED:
 		anim_name = &"Caught"
 	elif asleep:
 		anim_name = &"Sleep"
 	elif state == Plant.State.FLEE or state == Plant.State.PANIC or state == Plant.State.ESCAPED:
+		anim_name = &"Move"
+	elif state == Plant.State.WANDER and approaching:
 		anim_name = &"Move"
 	_wanted = anim_name
 	_setup()

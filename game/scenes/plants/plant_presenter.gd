@@ -45,10 +45,12 @@ func set_glow(value: float) -> void:
 	if model != null:
 		model.set_glow(value)
 
-## Idle/Move/Sleep/Caught on the model, from the state and the torpor.
+## Idle/Move/Sleep/Caught on the model, from the state, the torpor and (hostiles) the motion.
 func sync_animation() -> void:
 	if model != null:
-		model.play_state(Plant.State.WANDER if _plant.is_hidden() else _plant.state, _plant.torpor.is_asleep())
+		var hidden := _plant.is_hidden()
+		model.play_state(Plant.State.WANDER if hidden else _plant.state, _plant.torpor.is_asleep(),
+				not hidden and _plant.is_hostile() and _plant.is_moving())
 
 ## Plays the model's Attack so that its strike lands `impact_in` seconds from now (0: at once).
 func play_attack(impact_in: float = 0.0) -> void:
@@ -66,6 +68,6 @@ func animate(delta: float, moving: bool) -> void:
 	if not _plant.torpor.is_asleep():
 		if _plant.state == Plant.State.ALERT:
 			offset.x = sin(_anim_t * 70.0) * Plant.TREMBLE_AMPLITUDE
-		elif _plant.state == Plant.State.WANDER and moving:
+		elif _plant.state == Plant.State.WANDER and moving and not _plant.is_hostile(): # Move hops on its own
 			offset.y += absf(sin(_anim_t * Plant.BOB_FREQ)) * Plant.BOB_HEIGHT * 2.0
 	visual.position = offset

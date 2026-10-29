@@ -49,7 +49,7 @@ const STARTLE_BOOST := 1.5
 const CAPTURE_FREE_DELAY := 0.3
 ## Emission energy at plant_glow = 1.
 const GLOW_ENERGY := 0.8
-## Small hop while wandering between targets (the model plays Idle; Move has its own hops).
+## Small hop while a gentle plant wanders between targets (it plays Idle; Move has its own hops).
 const BOB_HEIGHT := 0.06
 const BOB_FREQ := 6.0
 const TREMBLE_AMPLITUDE := 0.04
@@ -207,6 +207,10 @@ func _physics_process(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	_presenter.animate(delta, _moving)
+
+## True when the last tick moved the plant.
+func is_moving() -> bool:
+	return _moving
 
 func is_hostile() -> bool:
 	return species != null and species.hostile
