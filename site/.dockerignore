@@ -3,3 +3,4 @@ dist
 .astro
 public/models/polyfork
 public/jouer
+public/telecharger

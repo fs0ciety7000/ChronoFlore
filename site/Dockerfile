@@ -4,7 +4,8 @@ WORKDIR /app
 # build from the private release `game-web-latest`. Set it as a Coolify *build*
 # variable. It only exists in this build stage: the final nginx image below is
 # a separate stage and carries neither the build args nor this layer.
-# Without it, fetch:game writes a "coming soon" page at /jouer/.
+# Without it, fetch:game writes a "coming soon" page at /jouer/ and
+# fetch:downloads an empty manifest (the site shows "bientôt disponible").
 ARG GAME_RELEASE_TOKEN
 COPY package*.json ./
 # npm ci installs devDependencies too (needed by `astro build`).
@@ -14,6 +15,9 @@ COPY . .
 RUN npm run fetch:models
 # The game build is not committed either (never fails the build, see above).
 RUN npm run fetch:game
+# Desktop builds (.dmg/.exe/.deb/.tar.gz, ~230 MB) for /telecharger/, same token,
+# same rule: never fails the build.
+RUN npm run fetch:downloads
 RUN npm run build
 
 FROM nginx:1.27-alpine
