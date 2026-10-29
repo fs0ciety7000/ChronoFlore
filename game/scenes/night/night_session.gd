@@ -33,6 +33,7 @@ const HURT_FLASH_DURATION := 0.25
 ## Shader pre-warm at night start (Web: no shader cache, long WebGL compiles): a disc and a lane
 ## ground sign at zero opacity plus a black omni light (the Lumiole's light pass) are drawn
 ## on screen for this many frames, then freed, so the first hazard or night light never stalls.
+## The muzzle puff is pre-warmed the same way (first shot); the net trail pre-warms itself.
 const PREWARM_FRAMES := 3
 const PREWARM_LIGHT_RANGE := 30.0
 
@@ -119,7 +120,11 @@ func _start_prewarm() -> void:
 	disc.name = "PrewarmDisc"
 	lane.name = "PrewarmLane"
 	light.name = "PrewarmLight"
-	for node: Node3D in [disc, lane, light]:
+	var puff := MuzzlePuff.new()
+	puff.set_opacity(0.0)
+	puff.name = "PrewarmPuff"
+	puff.position = Vector3.UP * TOOL_ORIGIN_HEIGHT
+	for node: Node3D in [disc, lane, light, puff]:
 		add_child(node)
 		node.global_position += at
 		_prewarm.append(node)
@@ -166,6 +171,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			for i in 3:
 				if event.is_action_pressed(player.action(StringName("tool_%d" % (i + 1)))):
+					if i >= belt.tools.size() and player == heroine:
+						hud.nudge_locked(i) # locked (harpoon before 4 species)
 					belt.select(i)
 
 ## Builds the players for a mode: the scene's Heroine node is always P1 (heroine visual, or the

@@ -1,6 +1,8 @@
 class_name Heroine
 extends CharacterBody3D
 ## The dreamer-botanist: iso-relative movement, aim from mouse/stick/move, nightmare hits.
+## Body facing: the walk direction while moving, the aim when idle, and the tool's (assisted)
+## direction for TOOL_FACE_TIME after a use. A ground chevron (AimMarker) always shows the aim.
 
 signal nightmare_hit
 
@@ -15,6 +17,14 @@ const KNOCKBACK_DISTANCE := 1.5
 const KNOCKBACK_DURATION := 0.15
 ## The heroine is kept this far inside the island outline (NightSession clamps with it too).
 const EDGE_MARGIN := 0.4
+## The body turns toward its facing at this exponential rate (1/s): quick, never a pop.
+const TURN_RATE := 18.0
+## After a tool use the body faces the shot this long (the 0.45 s Swing), then the walk again.
+const TOOL_FACE_TIME := 0.45
+## Aim chevron on the ground, this far in front of the feet along aim_dir.
+const AIM_MARKER_DISTANCE := 1.2
+const AIM_MARKER_LIFT := 0.05
+const AIM_MARKER_COLOR := Color(1.0, 0.8, 0.88, 0.92)
 
 ## 0 for P1 (the heroine in co-op), 1 for P2. Picks the p1_* / p2_* input actions.
 @export var player_index: int = 0
@@ -47,18 +57,30 @@ var _knockback_velocity: Vector3 = Vector3.ZERO
 var _knockback_left: float = 0.0
 
 var _mouse_moved: bool = false
+var _move_dir: Vector2 = Vector2.ZERO ## unit XZ walk direction, zero when not walking
+var _tool_face_left: float = 0.0
+var _tool_face_dir: Vector2 = Vector2(0, 1)
+var _aim_marker: MeshInstance3D
 var _own_time: float = 0.0 ## physics seconds ticked by tick_status
 @onready var _visual: Node = $Visual
 
 func _ready() -> void: # group "heroine" comes from heroine.tscn
 	if visual_scene != null:
 		_apply_visual_scene()
+	_build_aim_marker()
 	_apply_facing()
 	var belt := get_node_or_null("ToolBelt") as ToolBelt
 	# The lambdas read _visual at call time, so they follow a later visual swap.
 	if belt != null:
 		belt.tool_used.connect(func(_tool: ToolData) -> void:
-			if _visual != null and _visual.has_method("play_swing"):
+			face_tool(belt.last_use_dir))
+		belt.tool_used.connect(func(tool: ToolData) -> void:
+			if _visual == null:
+				return
+			var shot := tool != null and tool.effect != ToolData.Effect.CAPTURE
+			if shot and _visual.has_method("play_shot"):
+				_visual.call("play_shot")
+			elif _visual.has_method("play_swing"):
 				_visual.call("play_swing"))
 		belt.tool_changed.connect(func(tool: ToolData) -> void:
 			if _visual != null and _visual.has_method("set_tool"):
@@ -95,8 +117,37 @@ func _apply_visual_scene() -> void:
 static func screen_to_world(v: Vector2) -> Vector2:
 	return SCREEN_RIGHT.normalized() * v.x + SCREEN_UP.normalized() * -v.y
 
+## Aim direction (gameplay): where the tools point.
 func facing() -> Vector2:
 	return aim_dir
+
+## Where the body looks: the tool's direction just after a use, else the walk while moving,
+## else the aim.
+func body_facing() -> Vector2:
+	if _tool_face_left > 0.0:
+		return _tool_face_dir
+	if _move_dir.length_squared() > 1e-6:
+		return _move_dir
+	return aim_dir
+
+## Walk direction on XZ (zero = standing still); set every physics frame from the input.
+func set_move_intent(world_dir: Vector2) -> void:
+	_move_dir = world_dir.normalized() if world_dir.length_squared() > 1e-6 else Vector2.ZERO
+
+## Turns the body to `dir` (the shot / swing direction) for TOOL_FACE_TIME, at once.
+func face_tool(dir: Vector2) -> void:
+	_tool_face_dir = dir.normalized() if dir.length_squared() > 1e-6 else aim_dir
+	_tool_face_left = TOOL_FACE_TIME
+	_apply_facing()
+
+func is_facing_tool() -> bool:
+	return _tool_face_left > 0.0
+
+## Counts the tool-facing window down and turns the body toward body_facing().
+func tick_facing(delta: float) -> void:
+	_tool_face_left = maxf(_tool_face_left - delta, 0.0)
+	_turn_toward(body_facing(), 1.0 - exp(-TURN_RATE * delta))
+	_place_aim_marker()
 
 ## True while this player's pad (any pad for ALL_PADS) is connected.
 func has_pad() -> bool:
@@ -124,8 +175,11 @@ func _physics_process(_delta: float) -> void:
 		velocity = Vector3.ZERO
 		move_and_collide(_knockback_velocity * dt) # input ignored during the slide
 	move_and_slide()
+	var walking := move.length() > 0.1 and move_speed() > 0.0 and _knockback_left <= 0.0
+	set_move_intent(w if walking else Vector2.ZERO)
 	update_aim(_mouse_moved, _mouse_ground_point(), stick, move, has_pad())
 	_mouse_moved = false
+	tick_facing(_delta)
 	if _visual != null and _visual.has_method("set_walking"):
 		_visual.call("set_walking", move.length() > 0.1 and move_speed() > 0.0)
 
@@ -147,7 +201,6 @@ func update_aim(mouse_moved: bool, mouse_ground: Variant, stick: Vector2, move: 
 			dir = screen_to_world(move)
 	if dir.length_squared() > 1e-4:
 		aim_dir = dir.normalized()
-		_apply_facing()
 
 ## Nightmare contact from a nightmare at from_xz (XZ). Returns true when the hit is accepted
 ## (not invulnerable); an accepted hit with a source position knocks the heroine back.
@@ -222,9 +275,52 @@ func tick_status(delta: float) -> void:
 func is_knocked_back() -> bool:
 	return _knockback_left > 0.0
 
+## Snaps the body to body_facing() (spawn, visual swap, tool use).
 func _apply_facing() -> void:
-	if _visual is Node3D:
-		(_visual as Node3D).rotation.y = atan2(aim_dir.x, aim_dir.y)
+	_turn_toward(body_facing(), 1.0)
+	_place_aim_marker()
+
+## Turns the visual toward `dir` by `weight` (1 = snap) of the remaining angle.
+func _turn_toward(dir: Vector2, weight: float) -> void:
+	if _visual is Node3D and dir.length_squared() > 1e-6:
+		var v := _visual as Node3D
+		var yaw := lerp_angle(v.rotation.y, atan2(dir.x, dir.y), clampf(weight, 0.0, 1.0))
+		v.rotation.y = wrapf(yaw, -PI, PI)
+
+## The ground chevron that shows aim_dir (child of the body, so it follows without lag).
+func aim_marker() -> MeshInstance3D:
+	return _aim_marker
+
+func _place_aim_marker() -> void:
+	if _aim_marker == null:
+		return
+	_aim_marker.position = Vector3(aim_dir.x, 0.0, aim_dir.y) * AIM_MARKER_DISTANCE + Vector3.UP * AIM_MARKER_LIFT
+	_aim_marker.rotation.y = atan2(aim_dir.x, aim_dir.y)
+
+## Soft cream-pink arrowhead (0.5 m wide) pointing along local +Z, flat on the ground.
+func _build_aim_marker() -> void:
+	if _aim_marker != null:
+		return
+	var verts := PackedVector3Array([
+		Vector3(0.0, 0.0, 0.2), Vector3(-0.25, 0.0, -0.12), Vector3(0.0, 0.0, -0.02),
+		Vector3(0.0, 0.0, 0.2), Vector3(0.0, 0.0, -0.02), Vector3(0.25, 0.0, -0.12),
+	])
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.albedo_color = AIM_MARKER_COLOR
+	mesh.surface_set_material(0, mat)
+	_aim_marker = MeshInstance3D.new()
+	_aim_marker.name = "AimMarker"
+	_aim_marker.mesh = mesh
+	_aim_marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_aim_marker)
 
 ## Cursor projected on the y = 0 plane, or null without a camera (headless).
 func _mouse_ground_point() -> Variant:
