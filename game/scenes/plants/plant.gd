@@ -39,9 +39,13 @@ const STARTLE_DURATION := 0.8
 const STARTLE_BOOST := 1.5
 const CAPTURE_FREE_DELAY := 0.3
 ## Emission energy at plant_glow = 1.
-const GLOW_ENERGY := 1.2
+const GLOW_ENERGY := 0.8
+## Hop while moving.
 const BOB_HEIGHT := 0.06
 const BOB_FREQ := 6.0
+## Gentle breathing bob while idle.
+const IDLE_BOB_HEIGHT := 0.035
+const IDLE_BOB_FREQ := 2.4
 const TREMBLE_AMPLITUDE := 0.04
 const SLEEP_SQUASH := 0.6
 
@@ -77,6 +81,7 @@ func _init() -> void:
 	torpor = Torpor.new()
 	torpor.fell_asleep.connect(func() -> void: fell_asleep.emit(self))
 	_rng.randomize()
+	_anim_t = _rng.randf() * TAU # desynchronise idle bobs
 
 func _ready() -> void:
 	add_to_group("plants")
@@ -369,8 +374,10 @@ func _animate_visual(delta: float) -> void:
 	elif state == State.ALERT:
 		offset.x = sin(_anim_t * 70.0) * TREMBLE_AMPLITUDE
 	elif state != State.CAPTURED and state != State.ESCAPED:
-		var amp := BOB_HEIGHT * (2.0 if _moving else 1.0)
-		offset.y = absf(sin(_anim_t * BOB_FREQ)) * amp
+		if _moving:
+			offset.y = absf(sin(_anim_t * BOB_FREQ)) * BOB_HEIGHT * 2.0
+		else:
+			offset.y = (0.5 + 0.5 * sin(_anim_t * IDLE_BOB_FREQ)) * IDLE_BOB_HEIGHT
 	visual.position = offset
 	var sy := lerpf(visual.scale.y, squash, 1.0 - exp(-10.0 * delta))
 	var sxz := 1.0 / sqrt(maxf(sy, 0.01))
