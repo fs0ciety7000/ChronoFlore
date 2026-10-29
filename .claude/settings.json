@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
-    "defaultMode": "acceptEdits",
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Read",
       "Edit",
@@ -52,7 +52,12 @@
       "Bash(pwd)",
       "Bash(which *)",
       "Bash(echo *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash",
+      "Agent",
+      "mcp__polyfork",
+      "mcp__claude-code-remote",
+      "mcp__github"
     ],
     "ask": [
       "Bash(git push --force*)",
@@ -111,5 +116,6 @@
   },
   "enabledPlugins": {
     "superpowers@superpowers-dev": true
-  }
+  },
+  "skipDangerousModePermissionPrompt": true
 }
